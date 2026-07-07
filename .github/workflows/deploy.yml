@@ -181,13 +181,12 @@ jobs:
           files: deploy.zip
           fail_on_unmatched_files: true
 
-      - name: Upload deploy archive to server
+      - name: Upload deploy archive via Laravel endpoint
         continue-on-error: true
         shell: bash
         run: |
           VER="v${{ steps.version.outputs.version }}"
           echo "Release: $VER"
-          # Try new upload endpoint first
           if curl -sf --max-time 300 \
             -F "file=@deploy.zip;filename=deploy.zip" \
             "https://shop.laravel.tunispromo.tn/deploy/upload?token=${{ secrets.DEPLOY_TOKEN }}"; then
@@ -197,8 +196,39 @@ jobs:
             "https://shop.laravel.tunispromo.tn/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}"; then
             echo "Deployed via /deploy/check (legacy)"
           else
-            echo "Bootstrap required. Download deploy.zip from:"
-            echo "https://github.com/nreljed/laravel.shop/releases/download/$VER/deploy.zip"
-            echo "Upload to cPanel project root, extract, then visit:"
-            echo "https://shop.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
+            echo "::notice::Laravel deploy endpoints unreachable"
           fi
+
+      - name: FTP Upload fallback (DirectAdmin)
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $ftpUrl = "ftp://${{ secrets.FTP_SERVER }}/domains/laravel.shop.tunispromo.tn/public_html/deploy.zip"
+          $cred = New-Object System.Net.NetworkCredential("${{ secrets.FTP_USERNAME }}", "${{ secrets.FTP_PASSWORD }}")
+          try {
+            $ftp = [System.Net.FtpWebRequest]::Create($ftpUrl)
+            $ftp.Method = [System.Net.WebRequestMethods+Ftp]::UploadFile
+            $ftp.Credentials = $cred
+            $ftp.UseBinary = $true
+            $ftp.UsePassive = $true
+            $ftp.KeepAlive = $false
+            $fileBytes = [System.IO.File]::ReadAllBytes("deploy.zip")
+            $ftp.ContentLength = $fileBytes.Length
+            $rs = $ftp.GetRequestStream()
+            $rs.Write($fileBytes, 0, $fileBytes.Length)
+            $rs.Close()
+            $resp = $ftp.GetResponse()
+            Write-Output "FTP upload OK: $($resp.StatusDescription)"
+            $resp.Close()
+            Write-Output "---"
+            Write-Output "Extract via DirectAdmin File Manager, then visit:"
+            Write-Output "https://shop.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
+          } catch {
+            Write-Output "FTP upload failed: $_"
+            $VER = "${{ steps.version.outputs.version }}"
+            Write-Output "Manual steps:"
+            Write-Output "1. Download from: https://github.com/nreljed/laravel.shop/releases/download/$VER/deploy.zip"
+            Write-Output "2. Upload via DirectAdmin File Manager to public_html/"
+            Write-Output "3. Extract, then visit:"
+            Write-Output "   https://shop.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
