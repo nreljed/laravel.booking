@@ -64,6 +64,7 @@
 |----------|-------------|
 | [Setup Guide](workflow/setup.md) | Local development environment setup |
 | [Development](workflow/development.md) | Commands, conventions, type safety |
+| [GitHub CLI](github-cli.md) | `gh` CLI for secrets, releases, workflow management (preferred method) |
 | [CI Pipeline](workflow/ci.md) | GitHub Actions validation workflow |
 | [Release](workflow/release.md) | Versioning, changelog, release process |
 | [Deployment](workflow/deploy.md) | Server deploy, admin bootstrap, troubleshooting |

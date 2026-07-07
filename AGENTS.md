@@ -199,22 +199,23 @@ php artisan demo:generate --fresh    # Clear all demo data and regenerate
 
 ### CI/CD Pipeline (GitHub Actions → Release + Server Deploy)
 
-Deploys automatically on every push to `main`:
+Deploys automatically on every push to `master`:
 
 **Workflow 1 — `deploy.yml`** (GitHub-hosted `windows-latest` runner):
 1. Checkout with full depth + tags
-2. Setup PHP 8.4 (extensions: fileinfo, gd, mbstring, pdo_mysql, pdo_sqlite, intl, bcmath, zip) + Node 22
+2. Setup PHP 8.4 (extensions: fileinfo, gd, mbstring, pdo_mysql, pdo_sqlite, intl, bcmath, zip) + Node 22 (npm cache on)
 3. git-cliff: parse commits → bump semver → generate CHANGELOG.md + release-notes.md
 4. Generate build .env (SQLite)
-5. `composer install --prefer-dist --no-scripts`
+5. `composer install --prefer-dist --no-scripts` (composer cache on)
 6. `php artisan package:discover + migrate --force`
 7. [cached] `npm install` → `npm run typecheck` → `npm run build` (generates manifest.json)
 8. `php artisan test` + `vendor/bin/pint` (auto-fix)
 9. `composer install --no-dev --optimize-autoloader`
-10. Overwrite .env (production MySQL config)
+10. Overwrite .env (production MySQL config — APP_KEY from secrets, not hardcoded)
 11. Package `deploy.zip` (excludes `bootstrap/cache/`)
 12. Create GitHub Release with semver tag `vX.Y.Z` + changelog body + deploy.zip attachment
-13. Curl `/deploy/check?token=` directly on server to trigger deploy
+13. Upload via Laravel `/deploy/upload` endpoint (or legacy `/deploy/check`)
+14. **FTP fallback** via `FtpWebRequest` to DirectAdmin — uploads `deploy.zip` for manual extraction if steps 13 fails
 
 **On the server — `DeployController::check()`**:
 - Verifies token, checks `.deploy-lock` (10 min TTL)
@@ -235,6 +236,8 @@ Deploys automatically on every push to `main`:
 
 ### GitHub Secrets
 
+All secrets are managed via the `gh` CLI (NOT the GitHub web UI — see `gh CLI` section below).
+
 | Secret | Purpose |
 |--------|---------|
 | `DEPLOY_TOKEN` | Must match `config('app.deploy_token')` in server `.env` |
@@ -245,6 +248,52 @@ Deploys automatically on every push to `main`:
 | `ADMIN_EMAIL` | Email for initial admin user (created on first deploy) |
 | `ADMIN_PASSWORD` | Password for initial admin user |
 | `ADMIN_NAME` | Display name / username for initial admin user |
+| `APP_KEY` | Unique Laravel `base64:...` key (never hardcoded) |
+| `FTP_SERVER` | DirectAdmin FTP hostname (for shared hosting fallback) |
+| `FTP_PORT` | DirectAdmin FTP port (typically 21) |
+| `FTP_USERNAME` | DirectAdmin FTP username |
+| `FTP_PASSWORD` | DirectAdmin FTP password |
+
+### GitHub CLI (`gh`)
+
+All GitHub administration for this project is done via the official GitHub CLI (`gh`), not the web UI. This ensures reproducibility and can be automated.
+
+**Setup:**
+```bash
+# Install (Windows)
+winget install --id GitHub.cli
+
+# Authenticate
+gh auth login
+# → Login via web browser, select repo scope
+```
+
+**Manage secrets:**
+```bash
+# Set a secret (creates/updates)
+gh secret set SECRET_NAME -b "value" -R nreljed/laravel.shop
+
+# List all secrets
+gh secret list -R nreljed/laravel.shop
+
+# Generate a secure Laravel APP_KEY
+php -r "echo 'base64:' . base64_encode(random_bytes(32));"
+gh secret set APP_KEY -b "$(php -r 'echo "base64:" . base64_encode(random_bytes(32));')" -R nreljed/laravel.shop
+```
+
+**Repo operations:**
+```bash
+gh repo view nreljed/laravel.shop      # View repo details
+gh run list                             # View recent workflow runs
+gh run watch <run-id>                   # Watch a workflow live
+gh release list                         # List releases
+gh release create v1.2.3 --generate-notes  # Create release with changelog
+```
+
+**Checking auth status:**
+```bash
+gh auth status
+```
 
 ### Playwright MCP (Browser Testing)
 
