@@ -16,7 +16,7 @@ class ShippingZonesController extends Controller
 
         $zones = ShippingZone::with('methods')->orderBy('name')->paginate(20);
 
-        return Inertia::render('Modules/Shop/ShippingZones/Index', [
+        return Inertia::render('shop/shippingzones/index', [
             'zones' => $zones,
         ]);
     }
@@ -25,7 +25,7 @@ class ShippingZonesController extends Controller
     {
         $this->authorize('create', ShippingZone::class);
 
-        return Inertia::render('Modules/Shop/ShippingZones/Form', [
+        return Inertia::render('shop/shippingzones/form', [
             'zone' => null,
             'methods' => ShippingMethod::active()->get(),
         ]);
@@ -62,7 +62,7 @@ class ShippingZonesController extends Controller
 
         $shippingZone->load('methods');
 
-        return Inertia::render('Modules/Shop/ShippingZones/Form', [
+        return Inertia::render('shop/shippingzones/form', [
             'zone' => $shippingZone,
             'methods' => ShippingMethod::active()->get(),
         ]);

@@ -4,23 +4,31 @@ import Sparkline from "@/Components/dashboard/Sparkline";
 
 interface KpiCardProps {
   title: string;
+  subtitle?: string;
   value: string;
   change?: number;
   icon: React.ComponentType<{ className?: string }>;
   sparklineData?: number[];
-  format?: string;
+  description?: string;
 }
 
-export default function KpiCard({ title, value, change, icon: Icon, sparklineData }: KpiCardProps) {
+export default function KpiCard({
+  title, subtitle, value, change, icon: Icon, sparklineData, description,
+}: KpiCardProps) {
   const isPositive = change !== undefined && change > 0;
   const isNegative = change !== undefined && change < 0;
   const isNeutral = change === 0;
 
   return (
-    <Card>
+    <Card className="relative overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <div className="min-w-0">
+          <CardTitle className="text-sm font-medium truncate">{title}</CardTitle>
+          {subtitle && (
+            <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>
+          )}
+        </div>
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       </CardHeader>
       <CardContent className="space-y-2">
         <p className="text-2xl font-bold tracking-tight">{value}</p>
@@ -44,6 +52,9 @@ export default function KpiCard({ title, value, change, icon: Icon, sparklineDat
             </span>
           )}
         </div>
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
       </CardContent>
     </Card>
   );

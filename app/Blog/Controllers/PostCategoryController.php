@@ -2,8 +2,8 @@
 
 namespace App\Blog\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Blog\Models\PostCategory;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -18,7 +18,7 @@ class PostCategoryController extends Controller
             ->orderBy('name')
             ->get();
 
-        return Inertia::render('Modules/Posts/Categories/Index', [
+        return Inertia::render('blog/categories/index', [
             'categories' => $categories,
         ]);
     }

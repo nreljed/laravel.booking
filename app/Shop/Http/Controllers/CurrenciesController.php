@@ -16,7 +16,7 @@ class CurrenciesController extends Controller
 
         $currencies = Currency::orderBy('code')->paginate(20);
 
-        return Inertia::render('Modules/Shop/Currencies/Index', [
+        return Inertia::render('shop/currencies/index', [
             'currencies' => $currencies,
         ]);
     }

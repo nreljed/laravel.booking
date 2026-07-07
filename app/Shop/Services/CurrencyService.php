@@ -2,8 +2,8 @@
 
 namespace App\Shop\Services;
 
-use App\Shop\Models\Currency;
 use App\Services\SettingsService;
+use App\Shop\Models\Currency;
 use Illuminate\Support\Facades\Cache;
 
 class CurrencyService

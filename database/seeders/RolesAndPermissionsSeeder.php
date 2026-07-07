@@ -10,6 +10,23 @@ class RolesAndPermissionsSeeder extends Seeder
 {
     public function run(): void
     {
+        // Migrate old crm_user role → customer (for existing installs)
+        $oldCrmUser = Role::where('slug', 'crm_user')->first();
+        if ($oldCrmUser) {
+            $customerRole = Role::where('slug', 'customer')->first();
+            if ($customerRole) {
+                // Move users from old crm_user to customer
+                foreach ($oldCrmUser->users as $user) {
+                    if (! $user->hasRole('customer')) {
+                        $user->roles()->attach($customerRole->id);
+                    }
+                }
+                $oldCrmUser->users()->detach();
+            }
+            $oldCrmUser->permissions()->detach();
+            $oldCrmUser->delete();
+        }
+
         $permissions = [
             ['name' => 'Manage Users', 'slug' => 'manage-users', 'description' => 'Create, edit, delete users'],
             ['name' => 'Manage Settings', 'slug' => 'manage-settings', 'description' => 'Change application settings'],
@@ -33,23 +50,34 @@ class RolesAndPermissionsSeeder extends Seeder
             ['name' => 'Admin', 'description' => 'Full access to everything']
         );
 
-        $crmUserRole = Role::firstOrCreate(
-            ['slug' => 'crm_user'],
-            ['name' => 'CRM User', 'description' => 'Standard user: modules + profile + notifications']
+        $shopOwnerRole = Role::firstOrCreate(
+            ['slug' => 'shop_owner'],
+            ['name' => 'Shop Owner', 'description' => 'Full shop control: products, orders, categories, reviews, etc.']
+        );
+
+        $shopManagerRole = Role::firstOrCreate(
+            ['slug' => 'shop_manager'],
+            ['name' => 'Shop Manager', 'description' => 'Manage existing shop content: edit products, view orders']
+        );
+
+        $customerRole = Role::firstOrCreate(
+            ['slug' => 'customer'],
+            ['name' => 'Customer', 'description' => 'Account management: profile, notifications, account settings']
         );
 
         $adminRole->permissions()->sync(Permission::all()->pluck('id'));
 
-        $crmUserRole->permissions()->sync(
-            Permission::whereIn('slug', [
-                'view-dashboard',
-                'view-profile',
-                'edit-profile',
-                'delete-account',
-                'view-notifications',
-                'manage-notifications',
-                'shop.view',
-            ])->pluck('id')
-        );
+        $corePerms = Permission::whereIn('slug', [
+            'view-dashboard',
+            'view-profile',
+            'edit-profile',
+            'delete-account',
+            'view-notifications',
+            'manage-notifications',
+        ])->pluck('id');
+
+        $shopOwnerRole->permissions()->sync($corePerms);
+        $shopManagerRole->permissions()->sync($corePerms);
+        $customerRole->permissions()->sync($corePerms);
     }
 }

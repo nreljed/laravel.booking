@@ -196,7 +196,7 @@ logMsg("New version: $latestTag");
 $commands = [
     'package:discover' => [],
     'migrate' => ['--force' => true],
-    'modules:sync-permissions' => [],
+    'permissions:sync' => [],
     'config:cache' => [],
     'route:cache' => [],
     'view:cache' => [],

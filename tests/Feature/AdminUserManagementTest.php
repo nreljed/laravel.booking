@@ -39,21 +39,21 @@ class AdminUserManagementTest extends TestCase
 
     public function test_admin_can_create_user_with_role(): void
     {
-        $crmRole = Role::where('slug', 'crm_user')->first();
+        $customerRole = Role::where('slug', 'customer')->first();
 
         $response = $this->actingAs($this->admin())->post('/dashboard/admin/users', [
             'username' => 'janedoe',
             'name' => 'Jane Doe',
             'email' => 'jane@example.com',
             'password' => 'securepass123',
-            'role_id' => $crmRole->id,
+            'role_id' => $customerRole->id,
         ]);
 
         $response->assertRedirect();
 
         $user = User::where('email', 'jane@example.com')->first();
         $this->assertNotNull($user);
-        $this->assertTrue($user->hasRole('crm_user'));
+        $this->assertTrue($user->hasRole('customer'));
     }
 
     public function test_admin_can_edit_user(): void

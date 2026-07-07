@@ -64,9 +64,11 @@ class Product extends Model
         'attributes' => 'array',
         'seo' => 'array',
         'default_attributes' => 'array',
+        'average_rating' => 'float',
+        'reviews_count' => 'integer',
     ];
 
-    protected $appends = ['active_price', 'on_sale'];
+    protected $appends = ['active_price', 'on_sale', 'is_in_stock'];
 
     public function getActivePriceAttribute(): float
     {
@@ -389,6 +391,11 @@ class Product extends Model
         return ! $this->isInStock();
     }
 
+    public function getIsInStockAttribute(): bool
+    {
+        return $this->isInStock();
+    }
+
     // --- Type checks ---
 
     public function isSimple(): bool
@@ -432,6 +439,22 @@ class Product extends Model
     }
 
     // --- Default variation (G6: updated for key-value format) ---
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        // Try slug first, fallback to ID for backward compatibility
+        $product = $this->where('slug', $value)->first();
+        if ($product) {
+            return $product;
+        }
+
+        return $this->where('id', $value)->first();
+    }
 
     public function getDefaultVariation(): ?ProductVariation
     {

@@ -55,7 +55,7 @@ class StorefrontController extends Controller
         $minPrice = Product::where('status', 'published')->min('price');
         $maxPrice = Product::where('status', 'published')->max('price');
 
-        return Inertia::render('Modules/Shop/Storefront/ProductGrid', [
+        return Inertia::render('shop/storefront/productgrid', [
             'products' => $products,
             'categories' => $categories,
             'filters' => $request->only(['search', 'category', 'min_price', 'max_price', 'sort']),
@@ -124,7 +124,7 @@ class StorefrontController extends Controller
             ->limit(4)
             ->get();
 
-        return Inertia::render('Modules/Shop/Storefront/ProductDetail', [
+        return Inertia::render('shop/storefront/productdetail', [
             'product' => $product,
             'related' => $related,
             'variations' => $variations,
@@ -150,7 +150,7 @@ class StorefrontController extends Controller
             ->orderBy('name')
             ->get();
 
-        return Inertia::render('Modules/Shop/Storefront/ProductGrid', [
+        return Inertia::render('shop/storefront/productgrid', [
             'products' => $products,
             'categories' => $categories,
             'filters' => ['category' => $slug, 'search' => null, 'min_price' => null, 'max_price' => null, 'sort' => null],

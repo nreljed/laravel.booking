@@ -35,7 +35,7 @@ class CustomersController extends Controller
                 'created_at' => $user->created_at,
             ]);
 
-        return Inertia::render('Modules/Shop/Customers/Index', [
+        return Inertia::render('shop/customers/index', [
             'customers' => $customers,
             'filters' => $request->only(['search']),
         ]);
@@ -58,7 +58,7 @@ class CustomersController extends Controller
             'completed_orders' => Order::where('user_id', $user->id)->where('status', 'completed')->count(),
         ];
 
-        return Inertia::render('Modules/Shop/Customers/Show', [
+        return Inertia::render('shop/customers/show', [
             'customer' => [
                 'id' => $user->id,
                 'name' => $user->name,

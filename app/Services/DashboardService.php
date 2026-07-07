@@ -3,11 +3,12 @@
 namespace App\Services;
 
 use App\Models\User;
-use App\Services\FeatureRegistry;
 use App\Shop\Models\Cart;
 use App\Shop\Models\Order;
 use App\Shop\Models\OrderItem;
 use App\Shop\Models\Product;
+use App\Shop\Models\ProductCategory;
+use App\Shop\Models\ProductReview;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -59,9 +60,9 @@ class DashboardService
         });
     }
 
-    public function getAnalytics(): array
+    public function getAnalytics(int $days = 14): array
     {
-        return Cache::remember('dashboard.analytics', 300, function () {
+        return Cache::remember('dashboard.analytics', 300, function () use ($days) {
             if (! Schema::hasTable('orders')) {
                 return [
                     'kpis' => [],
@@ -73,8 +74,10 @@ class DashboardService
                     'total_orders' => 0,
                     'total_products' => 0,
                     'total_customers' => 0,
+                    'active_products' => 0,
                     'abandoned_carts' => 0,
                     'recovered_carts' => 0,
+                    'days' => $days,
                 ];
             }
 
@@ -84,6 +87,7 @@ class DashboardService
             $lastWeek = [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()];
             $thisMonth = [now()->startOfMonth(), now()->endOfMonth()];
             $lastMonth = [now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth()];
+            $periodStart = today()->subDays($days - 1);
 
             $completedStatuses = ['completed', 'processing'];
 
@@ -107,45 +111,176 @@ class DashboardService
             $revenueThisMonth = Order::whereIn('status', $completedStatuses)->whereBetween('created_at', $thisMonth)->sum('total');
             $revenueLastMonth = Order::whereIn('status', $completedStatuses)->whereBetween('created_at', $lastMonth)->sum('total');
 
+            // Period KPIs (based on $days)
+            $periodRevenue = Order::whereIn('status', $completedStatuses)->whereDate('created_at', '>=', $periodStart)->sum('total');
+            $prevPeriodRevenue = Order::whereIn('status', $completedStatuses)
+                ->whereDate('created_at', '>=', (clone $periodStart)->subDays($days))
+                ->whereDate('created_at', '<', $periodStart)
+                ->sum('total');
+
+            $periodOrders = Order::whereDate('created_at', '>=', $periodStart)->count();
+            $prevPeriodOrders = Order::whereDate('created_at', '>=', (clone $periodStart)->subDays($days))
+                ->whereDate('created_at', '<', $periodStart)
+                ->count();
+
+            $periodAov = $periodOrders > 0 ? round($periodRevenue / $periodOrders, 2) : 0;
+            $prevPeriodAov = $prevPeriodOrders > 0 ? round($prevPeriodRevenue / $prevPeriodOrders, 2) : 0;
+
+            // Customer insights
+            $totalCustomers = User::count();
+            $returningCustomers = Order::whereNotNull('user_id')
+                ->select('user_id', DB::raw('count(*) as order_count'))
+                ->groupBy('user_id')
+                ->having('order_count', '>', 1)
+                ->count();
+            $retentionRate = $totalCustomers > 0 ? round(($returningCustomers / $totalCustomers) * 100, 1) : 0;
+
+            $customerLtv = $totalCustomers > 0
+                ? round(Order::whereIn('status', $completedStatuses)->sum('total') / $totalCustomers, 2)
+                : 0;
+
+            $prevMonthCustomers = User::where('created_at', '<', now()->startOfMonth())->count();
+            $prevMonthReturning = Order::whereNotNull('user_id')
+                ->where('created_at', '<', now()->startOfMonth())
+                ->select('user_id', DB::raw('count(*) as order_count'))
+                ->groupBy('user_id')
+                ->having('order_count', '>', 1)
+                ->count();
+            $prevRetentionRate = $prevMonthCustomers > 0
+                ? round(($prevMonthReturning / $prevMonthCustomers) * 100, 1)
+                : 0;
+
+            // Customer growth over time (last 6 months)
+            $customerGrowth = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $month = now()->subMonths($i);
+                $endOfMonth = (clone $month)->endOfMonth();
+                $customerGrowth[] = [
+                    'month' => $month->format('M'),
+                    'customers' => User::where('created_at', '<=', $endOfMonth)->count(),
+                    'new' => User::whereYear('created_at', $month->year)
+                        ->whereMonth('created_at', $month->month)
+                        ->count(),
+                ];
+            }
+
+            // Revenue breakdown by product category
+            $revenueBreakdown = [];
+            try {
+                $categoryRevenue = OrderItem::select(
+                    'product_category_product.category_id',
+                    DB::raw('SUM(order_items.total) as total'),
+                )
+                    ->join('product_category_product', 'order_items.product_id', '=', 'product_category_product.product_id')
+                    ->whereIn('order_items.order_id', function ($q) use ($completedStatuses) {
+                        $q->select('id')->from('orders')
+                            ->whereIn('status', $completedStatuses);
+                    })
+                    ->groupBy('product_category_product.category_id')
+                    ->get();
+
+                $totalRevenue = $categoryRevenue->sum('total');
+                $categoryNames = ProductCategory::pluck('name', 'id')->toArray();
+
+                $sorted = $categoryRevenue->sortByDesc('total')->values();
+                $top5 = $sorted->take(5);
+                $othersTotal = $sorted->skip(5)->sum('total');
+
+                foreach ($top5 as $item) {
+                    $name = $categoryNames[$item->category_id] ?? 'Uncategorized';
+                    $revenueBreakdown[] = [
+                        'name' => $name,
+                        'value' => (float) $item->total,
+                        'percentage' => $totalRevenue > 0 ? round(($item->total / $totalRevenue) * 100, 1) : 0,
+                    ];
+                }
+                if ($othersTotal > 0) {
+                    $revenueBreakdown[] = [
+                        'name' => 'Others',
+                        'value' => (float) $othersTotal,
+                        'percentage' => $totalRevenue > 0 ? round(($othersTotal / $totalRevenue) * 100, 1) : 0,
+                    ];
+                }
+            } catch (\Exception) {
+                // pivot table may not exist
+            }
+
+            // If no category breakdown, fall back to simple product-based breakdown
+            if (empty($revenueBreakdown)) {
+                $productRevenue = OrderItem::select('product_name', DB::raw('SUM(total) as total'))
+                    ->whereIn('order_id', function ($q) use ($completedStatuses) {
+                        $q->select('id')->from('orders')->whereIn('status', $completedStatuses);
+                    })
+                    ->groupBy('product_name')
+                    ->orderByDesc('total')
+                    ->take(5)
+                    ->get();
+
+                $totalRev = $productRevenue->sum('total');
+                foreach ($productRevenue as $item) {
+                    $revenueBreakdown[] = [
+                        'name' => $item->product_name,
+                        'value' => (float) $item->total,
+                        'percentage' => $totalRev > 0 ? round(($item->total / $totalRev) * 100, 1) : 0,
+                    ];
+                }
+            }
+
+            $activeProducts = Product::where('status', 'published')->count();
+
             return [
+                'days' => $days,
                 'kpis' => [
                     [
-                        'label' => 'Revenue Today',
-                        'value' => (float) $revenueToday,
+                        'label' => 'Revenue',
+                        'subtitle' => "Last {$days} days",
+                        'value' => (float) $periodRevenue,
                         'format' => 'currency',
-                        'change' => $this->pctChange($revenueYesterday, $revenueToday),
+                        'change' => $this->pctChange($prevPeriodRevenue, $periodRevenue),
                         'icon' => 'DollarSign',
                     ],
                     [
-                        'label' => 'Orders Today',
-                        'value' => $ordersToday,
+                        'label' => 'Orders',
+                        'subtitle' => "Last {$days} days",
+                        'value' => $periodOrders,
                         'format' => 'number',
-                        'change' => $this->pctChange($ordersYesterday, $ordersToday),
+                        'change' => $this->pctChange($prevPeriodOrders, $periodOrders),
                         'icon' => 'ShoppingCart',
                     ],
                     [
                         'label' => 'Avg Order Value',
-                        'value' => (float) $aovThisMonth,
+                        'subtitle' => "Last {$days} days",
+                        'value' => (float) $periodAov,
                         'format' => 'currency',
-                        'change' => $this->pctChange($aovLastMonth, $aovThisMonth),
+                        'change' => $this->pctChange($prevPeriodAov, $periodAov),
                         'icon' => 'TrendingUp',
                     ],
                     [
                         'label' => 'Conversion Rate',
+                        'subtitle' => 'This month',
                         'value' => $conversionRate,
                         'format' => 'percent',
                         'change' => $conversionRate - $previousConversionRate,
                         'icon' => 'BarChart3',
                     ],
                     [
-                        'label' => 'Revenue This Month',
-                        'value' => (float) $revenueThisMonth,
-                        'format' => 'currency',
-                        'change' => $this->pctChange($revenueLastMonth, $revenueThisMonth),
-                        'icon' => 'TrendingUp',
+                        'label' => 'Total Customers',
+                        'subtitle' => 'All time',
+                        'value' => $totalCustomers,
+                        'format' => 'number',
+                        'change' => $this->pctChange($prevMonthCustomers, $totalCustomers),
+                        'icon' => 'Users',
+                    ],
+                    [
+                        'label' => 'Active Products',
+                        'subtitle' => 'Published',
+                        'value' => $activeProducts,
+                        'format' => 'number',
+                        'change' => 0,
+                        'icon' => 'Package',
                     ],
                 ],
-                'revenue_over_time' => $this->getRevenueOverTime(14),
+                'revenue_over_time' => $this->getRevenueOverTime($days),
                 'recent_orders' => $this->getRecentOrders(5),
                 'top_products' => $this->getTopProducts(5),
                 'order_status_counts' => Order::select('status', DB::raw('count(*) as count'))
@@ -155,9 +290,29 @@ class DashboardService
                 'total_revenue' => (float) Order::whereIn('status', $completedStatuses)->sum('total'),
                 'total_orders' => Order::count(),
                 'total_products' => Product::count(),
-                'total_customers' => Order::whereNotNull('user_id')->distinct()->count('user_id'),
+                'total_customers' => $totalCustomers,
+                'active_products' => $activeProducts,
                 'abandoned_carts' => Cart::whereNotNull('abandoned_at')->whereNull('recovered_at')->whereNull('converted_to_order_id')->count(),
                 'recovered_carts' => Cart::whereNotNull('recovered_at')->count(),
+                'customer_insights' => [
+                    'total_customers' => $totalCustomers,
+                    'retention_rate' => $retentionRate,
+                    'prev_retention_rate' => $prevRetentionRate,
+                    'avg_ltv' => $customerLtv,
+                    'growth' => $customerGrowth,
+                ],
+                'revenue_breakdown' => $revenueBreakdown,
+                'low_stock_products' => Product::lowStock()
+                    ->orderBy('stock_quantity')
+                    ->take(5)
+                    ->get(['id', 'name', 'slug', 'thumbnail_url', 'stock_quantity', 'low_stock_threshold', 'track_stock'])
+                    ->toArray(),
+                'pending_reviews' => ProductReview::with(['product:id,name,slug,thumbnail_url', 'user:id,name'])
+                    ->where('is_approved', false)
+                    ->latest()
+                    ->take(5)
+                    ->get()
+                    ->toArray(),
             ];
         });
     }

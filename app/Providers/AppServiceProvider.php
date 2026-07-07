@@ -2,18 +2,9 @@
 
 namespace App\Providers;
 
+use App\Blog\Models\Post;
 use App\Models\Notification;
 use App\Models\User;
-use App\Blog\Models\Post;
-use App\Shop\Models\Coupon;
-use App\Shop\Models\Currency;
-use App\Shop\Models\Order;
-use App\Shop\Models\Product;
-use App\Shop\Models\ProductReview;
-use App\Shop\Models\ShippingMethod;
-use App\Shop\Models\ShippingZone;
-use App\Shop\Models\TaxRate;
-use App\Shop\Models\Webhook;
 use App\Notifications\ResetPassword as CustomResetPassword;
 use App\Notifications\VerifyEmail as CustomVerifyEmail;
 use App\Policies\CouponPolicy;
@@ -28,6 +19,15 @@ use App\Policies\TaxRatePolicy;
 use App\Policies\WebhookPolicy;
 use App\Services\FormattingService;
 use App\Services\MailerConfigurator;
+use App\Shop\Models\Coupon;
+use App\Shop\Models\Currency;
+use App\Shop\Models\Order;
+use App\Shop\Models\Product;
+use App\Shop\Models\ProductReview;
+use App\Shop\Models\ShippingMethod;
+use App\Shop\Models\ShippingZone;
+use App\Shop\Models\TaxRate;
+use App\Shop\Models\Webhook;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Gate;

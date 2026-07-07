@@ -67,7 +67,9 @@ Every permission slug is registered as a Laravel Gate, so all standard Laravel a
 | Role | Slug | Description |
 |------|------|-------------|
 | Admin | `admin` | Full access — bypasses all Gate checks via `Gate::before` |
-| CRM User | `crm_user` | Standard user with module permissions + profile/notifications |
+| Shop Owner | `shop_owner` | Full shop control: products, orders, categories, reviews, coupons, shipping, taxes, webhooks, posts |
+| Shop Manager | `shop_manager` | Manage existing content: edit products, view/update orders, moderate reviews |
+| Customer | `customer` | Account management: profile, notifications, account settings. Default registration role |
 
 ---
 
@@ -215,7 +217,7 @@ The following actions are automatically logged to `audit_logs`:
 
 | Test Suite | Tests | What it covers |
 |------------|-------|----------------|
-| `AuthorizationTest` | 8 | Route access for admin/crm_user/guest |
+| `AuthorizationTest` | 8 | Route access for admin/customer/guest |
 | `AdminUserManagementTest` | 6 | CRUD user operations |
 | `RoleAssignmentTest` | 3 | Registration role, permission checks |
 | `PermissionSyncTest` | 4 | Permission sync consistency |

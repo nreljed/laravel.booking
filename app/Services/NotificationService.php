@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\NotificationPreference;
-use App\Services\FeatureRegistry;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
@@ -12,17 +11,17 @@ class NotificationService
 {
     protected NotificationTypeRegistry $typeRegistry;
 
-    protected FeatureRegistry $moduleRegistry;
+    protected FeatureRegistry $featureRegistry;
 
     protected MailService $mailService;
 
     public function __construct(
         NotificationTypeRegistry $typeRegistry,
-        FeatureRegistry $moduleRegistry,
+        FeatureRegistry $featureRegistry,
         MailService $mailService,
     ) {
         $this->typeRegistry = $typeRegistry;
-        $this->moduleRegistry = $moduleRegistry;
+        $this->featureRegistry = $featureRegistry;
         $this->mailService = $mailService;
     }
 

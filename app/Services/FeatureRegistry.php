@@ -14,10 +14,15 @@ class FeatureRegistry
 
     public function __construct()
     {
-        $this->providers = [
-            app(ShopServiceProvider::class),
-            app(BlogServiceProvider::class),
-        ];
+        $this->providers = [];
+        $shop = app()->getProvider(ShopServiceProvider::class);
+        $blog = app()->getProvider(BlogServiceProvider::class);
+        if ($shop) {
+            $this->providers[] = $shop;
+        }
+        if ($blog) {
+            $this->providers[] = $blog;
+        }
     }
 
     /**

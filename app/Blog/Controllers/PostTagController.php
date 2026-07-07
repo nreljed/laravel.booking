@@ -2,9 +2,9 @@
 
 namespace App\Blog\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Blog\Models\Post;
 use App\Blog\Models\PostTag;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class PostTagController extends Controller
@@ -19,7 +19,7 @@ class PostTagController extends Controller
             return response()->json($tags);
         }
 
-        return Inertia::render('Modules/Posts/Tags/Index', [
+        return Inertia::render('blog/tags/index', [
             'tags' => $tags,
         ]);
     }

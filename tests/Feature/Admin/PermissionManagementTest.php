@@ -96,7 +96,7 @@ class PermissionManagementTest extends TestCase
     public function test_non_admin_cannot_create_permission(): void
     {
         $user = User::factory()->create();
-        $role = Role::where('slug', 'crm_user')->first();
+        $role = Role::where('slug', 'customer')->first();
         $user->roles()->attach($role);
 
         $response = $this->actingAs($user)

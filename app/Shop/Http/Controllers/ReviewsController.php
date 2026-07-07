@@ -35,7 +35,7 @@ class ReviewsController extends Controller
 
         $reviews = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        return Inertia::render('Modules/Shop/Reviews/Index', [
+        return Inertia::render('shop/reviews/index', [
             'reviews' => $reviews,
             'filters' => $request->only(['status', 'search']),
         ]);

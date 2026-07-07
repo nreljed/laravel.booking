@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Services\FeatureRegistry;
 use Illuminate\Support\Facades\Cache;
 
 class FormattingService

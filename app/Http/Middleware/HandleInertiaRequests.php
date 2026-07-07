@@ -167,10 +167,17 @@ class HandleInertiaRequests extends Middleware
      */
     protected function featureProviders(): array
     {
-        return [
-            app(ShopServiceProvider::class),
-            app(BlogServiceProvider::class),
-        ];
+        $providers = [];
+        $shop = app()->getProvider(ShopServiceProvider::class);
+        $blog = app()->getProvider(BlogServiceProvider::class);
+        if ($shop) {
+            $providers[] = $shop;
+        }
+        if ($blog) {
+            $providers[] = $blog;
+        }
+
+        return $providers;
     }
 
     protected function getModuleNavItems(): array

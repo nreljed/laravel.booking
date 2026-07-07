@@ -9,11 +9,14 @@ use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function index(DashboardService $dashboard)
+    public function index(DashboardService $dashboard, Request $request)
     {
+        $days = (int) $request->input('days', 14);
+        $days = max(7, min(365, $days));
+
         return Inertia::render('dashboard/index', [
             'stats' => $dashboard->getStats(),
-            'analytics' => $dashboard->getAnalytics(),
+            'analytics' => $dashboard->getAnalytics($days),
         ]);
     }
 

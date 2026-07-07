@@ -4,6 +4,9 @@ namespace App\Shop\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\AppNotification;
+use App\Services\MediaService;
+use App\Services\NotificationService;
 use App\Shop\Models\Attribute;
 use App\Shop\Models\Product;
 use App\Shop\Models\ProductAttribute;
@@ -15,9 +18,6 @@ use App\Shop\Requests\AdjustStockRequest;
 use App\Shop\Requests\ImportProductRequest;
 use App\Shop\Requests\StoreProductRequest;
 use App\Shop\Services\InventoryService;
-use App\Notifications\AppNotification;
-use App\Services\MediaService;
-use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -64,7 +64,7 @@ class ProductsController extends Controller
 
         $products = $query->orderBy('created_at', 'desc')->get();
 
-        return Inertia::render('Modules/Shop/Products/Index', [
+        return Inertia::render('shop/products/index', [
             'products' => $products,
             'categories' => ProductCategory::active()->get(),
             'tags' => ProductTag::active()->get(),
@@ -77,7 +77,7 @@ class ProductsController extends Controller
     {
         $this->authorize('create', Product::class);
 
-        return Inertia::render('Modules/Shop/Products/Form', [
+        return Inertia::render('shop/products/form', [
             'product' => null,
             'categories' => ProductCategory::active()->get(),
             'tags' => ProductTag::active()->get(),
@@ -144,7 +144,7 @@ class ProductsController extends Controller
             $userReview = $product->reviews->firstWhere('user_id', $user->id);
         }
 
-        return Inertia::render('Modules/Shop/Products/Show', [
+        return Inertia::render('shop/products/show', [
             'product' => $product,
             'userReview' => $userReview,
         ]);
@@ -156,7 +156,7 @@ class ProductsController extends Controller
 
         $product->load('categories', 'tags', 'brands', 'variations', 'productAttributes', 'groupedItems', 'downloads');
 
-        return Inertia::render('Modules/Shop/Products/Form', [
+        return Inertia::render('shop/products/form', [
             'product' => $product,
             'categories' => ProductCategory::active()->get(),
             'tags' => ProductTag::active()->get(),
@@ -751,7 +751,7 @@ class ProductsController extends Controller
 
         $adjustments = $this->inventoryService->getHistory($product, 50);
 
-        return Inertia::render('Modules/Shop/Products/StockHistory', [
+        return Inertia::render('shop/products/stockhistory', [
             'product' => $product->only(['id', 'name', 'sku', 'stock_quantity']),
             'adjustments' => $adjustments,
         ]);

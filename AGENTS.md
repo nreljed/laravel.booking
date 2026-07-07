@@ -30,9 +30,9 @@ A SaaS application built with Laravel + Inertia.js + React 19.
 ## Architecture
 
 ```
-app/
+app/                          # Core Laravel application
   Http/
-    Controllers/              # Core controllers
+    Controllers/              # Core controllers (auth, admin, account, dashboard)
       Admin/                  # User, Role, Permission, Impersonation, BulkUser, AuditLog, Session
       Api/                    # NotificationPollController (JSON endpoints)
       Auth/                   # Login, Register, Password, Email verification
@@ -42,58 +42,57 @@ app/
       DashboardController.php # Index, Stats, Notifications, switchMode
       DeployController.php    # check, cacheClear, updateEnv
       EmailSettingsController.php
-      ModuleController.php    # toggle, reorder
       NotificationTestController.php
       ProfileController.php   # Edit, update, destroy (delegates to AccountService)
       PublicController.php    # About, Services, Contact
       SettingsController.php  # Edit, update, upload/delete logo
     Middleware/
-      HandleInertiaRequests.php  # Shares auth, notifications, flash, userMode, canSwitchMode, moduleDebugData, moduleNavItems, userCapabilities
+      HandleInertiaRequests.php  # Shares auth, notifications, flash, userMode, canSwitchMode, sharedData, featureNavItems, userCapabilities
       AdminMiddleware.php        # 403 if not admin
       CheckPermission.php       # user.permission:slug middleware
       CheckRole.php             # user.role:slug middleware
       ContentSecurityPolicy.php
       ForceInertiaCacheHeaders.php
-    Requests/
-      Module/ToggleModuleRequest.php
   Models/
     User.php              # getDisplayNameOptions(), isAdmin(), role/permission checks, hasPermission()
-    Module.php            # Module DB model (name, slug, enabled, version, dependencies, order)
   Policies/               # Gate-based authorization
-    PropertyPolicy.php    # viewAny/view/create/update/delete (owner or admin)
-    BookingPolicy.php     # viewAny/view/create/update/delete/transition (owner or admin)
     PostPolicy.php        # viewAny/view/create/update/delete (owner or admin)
     ProductPolicy.php     # viewAny/view/create/update/delete (permission-based)
     OrderPolicy.php       # viewAny/view/update (permission-based)
+    CouponPolicy.php, ProductReviewPolicy.php, ShippingMethodPolicy.php, ShippingZonePolicy.php, TaxRatePolicy.php
   Services/
+    FeatureRegistry.php   # Lightweight aggregator of Shop/Blog service providers
     AccountService.php    # deleteAccount()
     SettingsService.php   # DB-driven app config
     NotificationService.php
     DashboardService.php  # Stats + Analytics cache (5-min TTL)
-    FormattingService.php # Price/surface formatting
-  Modules/
-    Properties/           # Property listings (slug: properties, deps: [])
-    Booking/              # Guest bookings (slug: bookings, deps: ['properties'])
-    Shop/            # Online store (slug: Shop, deps: [])
-    Posts/                # Blog posts (slug: posts, deps: [])
-    Contracts/
-      ModuleInterface.php   # 53 methods including getNavGroupLabel()
-    ModuleRegistry.php      # Central registry: boot, dependencies, routes, nav items
-    ModuleLoader.php        # Scans app/Modules/*/ for {Name}Module.php
-    Traits/
-      HasRoutes.php         # loadRoutes(), loadAdminRoutes(), loadPublicRoutes(), loadApiRoutes()
+    FormattingService.php # Price formatting
+  Shop/                   # Shop domain (namespace App\Shop)
+    ShopServiceProvider.php  # Registers nav, permissions, email templates, notification types, shared data
+    Models/               # Product, Order, Cart, Coupon, Shipping*, TaxRate, Webhook, etc.
+    Controllers/          # CartController, CheckoutController, OrdersController, ProductsController, etc.
+    Services/             # InventoryService, CheckoutService, CouponService, ShippingService, TaxService, WebhookService, CurrencyService
+    Resources/js/Pages/   # Inertia page components (aliased as @shop/Pages/...)
+    Resources/js/components/  # Module-specific React components (aliased as @shop/components/...)
+    database/migrations/  # Shop-specific migrations
+  Blog/                   # Blog domain (namespace App\Blog)
+    BlogServiceProvider.php   # Registers nav, permissions, email templates, notification types, shared data
+    Models/               # Post, PostCategory, PostTag, ContentBlock
+    Controllers/          # PostController, PostCategoryController, PostTagController
+    Resources/js/Pages/   # Inertia page components (aliased as @blog/Pages/...)
+    database/migrations/  # Blog-specific migrations
 database/
-  migrations/             # Standard + module migrations
-  seeders/                # RolesAndPermissionsSeeder
+  migrations/             # Core app migrations (settings, roles, permissions, users, etc.)
+  seeders/                # DatabaseSeeder, RolesAndPermissionsSeeder, SettingsSeeder, DemoGenerator
 resources/js/
   Components/
     ui/                   # shadcn/ui components + PublishSection, DateTimePicker, Field
     shared/               # FeaturedImageSelector, TermsSelector, GalleryUploader
     dashboard/            # KpiCard, Sparkline, RevenueChart, RecentOrdersTable, TopProductsTable
-    app-sidebar.tsx       # Dynamic sidebar from moduleNavItems + groupLabel
+    app-sidebar.tsx       # Sidebar from featureNavItems + groupLabel
     nav-main.tsx          # Collapsible nav
-    nav-user.tsx          # User dropdown: theme toggle, host/guest switch, logout
-    command-search.tsx    # Ctrl+K palette (includes module items dynamically)
+    nav-user.tsx          # User dropdown: theme toggle, logout
+    command-search.tsx    # Ctrl+K palette (includes nav items dynamically)
     ThemeSwitcher.tsx     # Light/dark toggle
     NotificationBell.tsx  # 20s polling
   hooks/
@@ -108,12 +107,15 @@ resources/js/
   Pages/
     Dashboard/            # Index (stats/analytics), Notifications, Stats
     Account/Edit.tsx      # Name, email, password, delete, address
-    Admin/                # Settings (tabs), SystemHealth (module debug card)
+    Admin/                # Settings (tabs), System Health
     Auth/                 # Login, Register
     Welcome.tsx           # Landing page
 routes/
   web.php                 # Dashboard, admin, public, deploy routes
   auth.php                # Breeze auth routes + profile + switch-mode
+  shop.php                # Shop dashboard routes (loaded by ShopServiceProvider)
+  shop-api.php            # Shop JSON API routes
+  blog.php                # Blog dashboard routes (loaded by BlogServiceProvider)
 
 ## Routes
 
@@ -122,69 +124,54 @@ routes/
 | `/` | none (guest) | Welcome, About, Services, Contact |
 | `/dashboard` | auth+verified | Dashboard, Stats, Notifications, Account, Profile |
 | `/dashboard/admin` | auth+verified+admin+throttle:60,1 | Users, Roles, Permissions, Settings, System Health, Audit Logs |
-| `/dashboard/properties` | auth+verified+permission:properties.view | Properties CRUD + terms |
-| `/dashboard/bookings` | auth+verified+permission:bookings.view | Bookings CRUD, Calendar, Demo |
-| `/dashboard/posts` | auth+verified+permission:posts.view | Posts CRUD |
+| `/dashboard/posts` | auth+verified+permission:posts.view | Posts CRUD, Categories, Tags |
 | `/dashboard/shop` | auth+verified+permission:shop.view | Products, Orders, Cart, Customers, Coupons, Reviews, Shipping, Tax, Reports, Webhooks, Attributes, Categories, Tags, Brands |
-| `/booking/...` | none (guest) | Guest portal (magic-link auth) |
-| `/store` | none (guest) | Storefront (product grid, detail, category) |
+| `/store` | none (guest) | Storefront (product grid, detail, category, cart, checkout) |
 | `/deploy/...` | token | Deploy endpoints |
 | `/api/notifications/...` | auth | Notification JSON endpoints |
 | `/api/...` | auth | JSON API (products) |
 
 ## Key Patterns
 
-- **Shared props**: `HandleInertiaRequests` shares `auth.user`, `latestNotifications`, `notificationUnreadCount`, `flash`, `userMode`, `canSwitchMode`, `moduleDebugData`, `moduleNavItems` (with `groupLabel`), `userCapabilities`, `modules`, `repeaterConfigs`, `profileFieldConfigs`, `emailSettings`, `brand`, `impersonating`
-- **Partial reloads**: `router.reload({ only: ['notifications'] })` for polling (replaced by axios)
+- **Shared props**: `HandleInertiaRequests` shares `auth.user`, `latestNotifications`, `notificationUnreadCount`, `flash`, `userMode`, `canSwitchMode`, `sharedData` (from FeatureRegistry), `featureNavItems` (with `groupLabel`), `userCapabilities`, `repeaterConfigs`, `profileFieldConfigs`, `emailSettings`, `brand`, `impersonating`
 - **Admin check**: `useAuth().isAdmin` + `admin` middleware + `User::isAdmin()`
-- **Component imports**: Use `@/Components/...` alias (NOT `@/components/...`) — Windows case-insensitive FS workaround
+- **Component imports**: Use `@/Components/...` alias (NOT `@/components/...`) — Windows case-insensitive FS workaround; use `@shop` for Shop modules, `@blog` for Blog modules
 - **No ShadCN `asChild`**: Avoid `Slot` pattern when possible; use plain `<Link>` instead
-- **Module authorization**: Route group uses `permission:module.view` middleware. Individual create/edit/delete actions are authorized via Policy + `$this->authorize()` in controllers or FormRequest `authorize()`
-- **Module policies**: Each module model has a Policy in `app/Policies/` registered in `AppServiceProvider`
-- **Module group labels**: Defined via `ModuleInterface::getNavGroupLabel()` — used by sidebar to display group headings like "Manage Property", "Shop", "Manage Booking", "Content"
+- **Authorization**: Route groups use `permission:{slug}` middleware. Individual create/edit/delete actions are authorized via Policy + `$this->authorize()` in controllers or FormRequest `authorize()`
+- **Policies**: Registered in `AppServiceProvider` via `Gate::policy()`
+- **Nav group labels**: Defined via providers' `getNavGroupLabel()` — used by sidebar to display group headings like "Shop", "Content"
 - **Rate limiting**:
   - Login: application-level `RateLimiter` — `{username}|{ip}` key, 5 attempts, 60s decay
   - Other auth: `throttle:5,60` — IP-based, returns 429
   - Admin routes: `throttle:60,1` — 60 requests/min
 - **Validation**: Optional Zod + `$request->validate()` on all mutation endpoints
-- **Host/Guest mode**: `userMode` stored in session (default `guest`). Toggle via `dashboard.switch-mode` POST. `canSwitchMode` checks `bookings.view` permission. Displayed in nav-user dropdown.
 
-## Module Architecture
+## Feature Architecture
 
-Each module lives in `app/Modules/{ModuleName}/` and implements `ModuleInterface` (53 methods).
+The old `app/Modules/*/` module system has been consolidated into two first-class Laravel domains:
 
-| Module | Slug | Dependencies | Group Label | Permissions | Frontend Pages |
-|--------|------|-------------|-------------|-------------|----------------|
-| Properties | `properties` | `[]` | Manage Property | `properties.view/create/edit/delete` | Index, Form, Types, Cities, Features, Statuses |
-| Booking | `bookings` | `['properties']` | Manage Booking | `bookings.view/create/edit/delete` | Index, Form, Show, Calendar, Demo, DemoResult, GuestView, MyBookings, Settings |
-| Shop | `shop` | `[]` | Shop | `shop.view`, `shop.products.create/edit/delete`, `shop.orders.view/edit`, `shop.tags.manage`, `shop.brands.manage`, `shop.coupons.manage`, `shop.reviews.moderate`, `shop.shipping.manage`, `shop.taxes.manage`, `shop.webhooks.manage`, `shop.currencies.manage` | Products/Index, Products/Form, Products/Show, Orders/Index, Orders/Show, Orders/Form, Categories/Index, Tags/Index, Brands/Index, Attributes/Index, Customers/Index, Customers/Show, Reports/Index, Coupons/Index, Coupons/Form, Reviews/Index, ShippingMethods/Index, ShippingZones/Index, ShippingZones/Form, TaxRates/Index, Webhooks/Index, Currencies/Index, StockHistory, Storefront/ProductGrid, Storefront/ProductDetail, Storefront/ShoppingCart|
-| Posts | `posts` | `[]` | Content | `posts.view/create/edit/delete` | Index, Form, Categories |
+| Domain | Namespace | Directory | Service Provider | Slug |
+|--------|-----------|-----------|-----------------|------|
+| Shop | `App\Shop` | `app/Shop/` | `ShopServiceProvider` | `shop` |
+| Blog | `App\Blog` | `app/Blog/` | `BlogServiceProvider` | `posts` |
 
-Module files follow this structure:
-```
-app/Modules/{Name}/
-  {Name}Module.php          # Module class (slug, deps, routes, nav, permissions, etc.)
-  Routes/
-    web.php                 # Dashboard routes
-    admin.php               # (optional) Admin-only routes
-    guest.php               # (optional) Public guest routes
-  Controllers/
-  Models/
-  Services/
-  Requests/                 # Form requests with authorize() checks
-  Resources/js/
-    Pages/                  # Inertia page components (auto-loaded via glob)
-    components/             # Module-specific React components
-    lib/                    # Module-specific utilities
-  database/migrations/      # (optional) Module-specific migrations (Shop only)
-```
+Each service provider implements provider methods (`name()`, `slug()`, `version()`, `permissions()`, `getNavItems()`, `getSharedData()`, `getEmailTemplates()`, `getNotificationTypes()`, `getDashboardData()`, `onUserDelete()`) that are aggregated by `FeatureRegistry`.
 
-### Module Discovery & Boot
-1. `ModuleServiceProvider` registers `ModuleRegistry` and `ModuleLoader`
-2. `ModuleLoader::load()` scans `app/Modules/*/` for `{Name}Module.php`
-3. `ModuleRegistry::bootEnabled()` boots enabled modules in dependency order
-4. Each booted module's `routes()` is called, registering web/auth/admin routes with proper middleware
-5. Frontend pages are auto-discovered via Vite glob imports in `app.tsx` (supports `web` and `guest-store` route patterns)
+### FeatureRegistry
+`App\Services\FeatureRegistry` replaces the old `ModuleRegistry`. It:
+- Collects `ShopServiceProvider` + `BlogServiceProvider` in its constructor via `app()->getProvider()`
+- Exposes `all()`, `get(string $slug)`, `getAllNavItems()`, `getAllSharedData()`, `permissions()`, etc.
+- Used by `HandleInertiaRequests`, `PermissionGateServiceProvider`, `DashboardService`, `FormattingService`, `NotificationTypeRegistry`, `EmailSettingsController`, and other services
+
+### Route Loading
+Routes are loaded via conventional route files (`routes/shop.php`, `routes/blog.php`, `routes/shop-api.php`, `routes/api.php`), loaded by the providers' `boot()` method or directly via `bootstrap/app.php`. No more `HasRoutes` trait or `ModuleInterface`.
+
+### Frontend Page Loading
+Inertia pages are loaded via Vite glob imports in `app.tsx`:
+- `@shop/Pages/**/*.tsx` → registered under `shop/*` page keys
+- `@blog/Pages/**/*.tsx` → registered under `blog/*` page keys
+
+Alias mappings: `@shop` → `app/Shop/Resources/js/`, `@blog` → `app/Blog/Resources/js/`
 
 ## Dev Environment
 
@@ -202,11 +189,10 @@ php artisan migrate      # Run migrations
 php artisan test         # PHPUnit
 npm run typecheck        # tsc --noEmit
 vendor/bin/pint          # Laravel Pint (PSR-12)
-php artisan modules:sync-permissions  # Sync module permissions to DB
-php artisan modules:debug {slug?}     # Debug module registration
-php artisan permissions:list          # List all permissions
-php artisan demo:generate             # Create realistic demo data (--fresh to clear first)
-php artisan demo:generate --fresh     # Clear all demo data and regenerate
+php artisan permissions:sync         # Sync feature permissions to DB
+php artisan permissions:list         # List all permissions
+php artisan demo:generate            # Create realistic demo data (--fresh to clear first)
+php artisan demo:generate --fresh    # Clear all demo data and regenerate
 ```
 
 ## Deployment
@@ -260,7 +246,51 @@ Deploys automatically on every push to `main`:
 | `ADMIN_PASSWORD` | Password for initial admin user |
 | `ADMIN_NAME` | Display name / username for initial admin user |
 
-### Deploy Endpoints
+### Playwright MCP (Browser Testing)
+
+Playwright MCP (`@playwright/mcp` v0.0.77 by Microsoft) is installed globally and configured via `playwright-mcp.json` in the project root. The MCP server is registered in `~/.config/opencode/opencode.jsonc`.
+
+### How It Works
+- Run headless Chromium via `npx @playwright/mcp --config playwright-mcp.json`
+- Accessible as MCP tools to interact with `http://shop-laravel.local/`
+- Config: headless, isolated profiles (no disk caching), `core+network+storage+testing` caps
+- Output dir: `storage/debug/playwright-output/` (auto-cleaned on size > 50MB via `outputMaxSize`)
+
+### Bloat Prevention (Why Playwright Eats Disk)
+Playwright's persistent Chrome profiles download massive ML models if not disabled. The config in `playwright-mcp.json` prevents this with:
+- **`isolated: true`** — profiles stay in memory, never written to disk
+- **`--disable-features=OptimizationGuideModelDownloading,...`** — prevents the 4GB Chrome ML model download
+- **`--disable-component-update`** — prevents Chrome component updates
+- **`outputMaxSize: 52428800`** — auto-evicts old output files at 50MB
+
+### Cleanup Commands
+```bash
+npm run playwright:clean-output     # Clean test output files only
+npm run playwright:clean-profiles   # Delete persisted browser profiles (~5GB!)
+npm run playwright:clean-npx        # Clean npx download cache
+npm run playwright:clean-all        # All of the above
+npm run playwright:doctor           # Show Playwright disk usage breakdown
+```
+
+### Disk Usage Breakdown
+| Location | Typical Size | Notes |
+|----------|-------------|-------|
+| `%USERPROFILE%\AppData\Local\ms-playwright\chromium-1228` | ~415 MB | Browser binary (needed, don't delete) |
+| `%USERPROFILE%\AppData\Local\ms-playwright\mcp-*` | ~5 GB | **Persisted profiles** (clean via `playwright:clean-profiles`) |
+| `storage/debug/playwright-output/` | ~0-50 MB | Screenshots/traces (auto-evicted) |
+
+### First-Time Setup
+```bash
+npm install -g @playwright/mcp                # Already done
+npx playwright install chromium                # Download browser binary (already done)
+```
+
+### Key Files
+- `playwright-mcp.json` — MCP server config (launch args, caps, output dir)
+- `~/.config/opencode/opencode.jsonc` — MCP server registration
+- `.opencode/opencode.json` — custom commands for cleanup
+
+## Deploy Endpoints
 
 - `GET /deploy/check?token=...` — Main deploy entry point
 - `GET /deploy/cache-clear?token=...` — Emergency reset: migrate:fresh + cache clear
@@ -276,7 +306,7 @@ See also: `app/Console/Commands/CreateAdmin.php`, `DEPLOY.md`
 ```bash
 php artisan migrate
 php artisan db:seed --class=RolesAndPermissionsSeeder
-php artisan modules:sync-permissions
+php artisan permissions:sync
 ```
 
 Then run typecheck + build + phpunit and deliver the results. Do not wait for user approval to deploy — automate the full pipeline.
@@ -1248,7 +1278,7 @@ MODIFIED:
 
 - **TagsController** — full CRUD (`index`, `store`, `update`, `destroy`), authorized via `ProductPolicy` (`viewAny/create`). All mutation endpoints return JSON `{ id, name }` when `$request->wantsJson()` (i.e., called with `Accept: application/json` header) — enables inline creation from the product form's TermsSelector.
 - **ProductTag** model already existed from Phase 5.1; `withCount('products')` on index.
-- **Permissions**: `shop.tags.manage` registered in `ShopModule::permissions()`, synced to DB via `modules:sync-permissions`.
+- **Permissions**: `shop.tags.manage` registered in `ShopModule::permissions()`, synced to DB via `permissions:sync`.
 
 ### Backend — Brands
 

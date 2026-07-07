@@ -17,7 +17,7 @@ class CouponsController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return Inertia::render('Modules/Shop/Coupons/Index', [
+        return Inertia::render('shop/coupons/index', [
             'coupons' => $coupons,
         ]);
     }
@@ -26,7 +26,7 @@ class CouponsController extends Controller
     {
         $this->authorize('create', Coupon::class);
 
-        return Inertia::render('Modules/Shop/Coupons/Form', [
+        return Inertia::render('shop/coupons/form', [
             'coupon' => null,
         ]);
     }
@@ -66,7 +66,7 @@ class CouponsController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
 
-        return Inertia::render('Modules/Shop/Coupons/Form', [
+        return Inertia::render('shop/coupons/form', [
             'coupon' => array_merge($coupon->toArray(), [
                 'total_discount_given' => (float) $totalDiscount,
                 'last_used_at' => $lastUsed?->created_at,

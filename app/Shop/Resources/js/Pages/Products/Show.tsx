@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Badge } from "@/Components/ui/badge";
 import { Separator } from "@/Components/ui/separator";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from "@/Components/ui/empty";
-import { StarRating } from "@modules-shop/components/StarRating";
+import { StarRating } from "@shop/components/StarRating";
 
 interface ReviewUser { id: number; name: string }
 interface Review {

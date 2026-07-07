@@ -3,7 +3,7 @@ import { Heart, ShoppingCart, ArrowLeft } from 'lucide-react'
 import StoreLayout from '@/Layouts/StoreLayout'
 import { Button } from '@/Components/ui/button'
 import { Card, CardContent } from '@/Components/ui/card'
-import { WishlistButton } from '@modules-shop/components/WishlistButton'
+import { WishlistButton } from '@shop/components/WishlistButton'
 
 interface ProductItem {
   id: number; name: string; slug: string;

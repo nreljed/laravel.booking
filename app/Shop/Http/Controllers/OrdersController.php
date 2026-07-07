@@ -4,6 +4,8 @@ namespace App\Shop\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\AppNotification;
+use App\Services\NotificationService;
 use App\Shop\Models\Order;
 use App\Shop\Models\OrderNote;
 use App\Shop\Models\Product;
@@ -15,8 +17,7 @@ use App\Shop\Services\InventoryService;
 use App\Shop\Services\OrderActionService;
 use App\Shop\Services\OrderStatusService;
 use App\Shop\Services\WebhookService;
-use App\Notifications\AppNotification;
-use App\Services\NotificationService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -64,7 +65,7 @@ class OrdersController extends Controller
 
         $orders = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        return Inertia::render('Modules/Shop/Orders/Index', [
+        return Inertia::render('shop/orders/index', [
             'orders' => $orders,
             'filters' => $request->only(['search', 'status']),
             'statuses' => OrderStatusService::STATUSES,
@@ -77,7 +78,7 @@ class OrdersController extends Controller
 
         $order->load(['items.product', 'user', 'actions.user', 'refunds.creator', 'notes.user']);
 
-        return Inertia::render('Modules/Shop/Orders/Show', [
+        return Inertia::render('shop/orders/show', [
             'order' => $order,
             'statuses' => OrderStatusService::STATUSES,
             'allowedTransitions' => $this->orderStatusService->getAllowedTransitions($order->status),
@@ -102,7 +103,7 @@ class OrdersController extends Controller
             ->limit(50)
             ->get();
 
-        return Inertia::render('Modules/Shop/Orders/Form', [
+        return Inertia::render('shop/orders/form', [
             'products' => $products,
             'customers' => $customers,
             'order' => null,
@@ -147,15 +148,15 @@ class OrdersController extends Controller
                 'user_id' => $user?->id,
                 'customer_name' => $user?->name ?? $validated['customer_name'],
                 'customer_email' => $user?->email ?? $validated['customer_email'],
-                'customer_phone' => $validated['customer_phone'],
+                'customer_phone' => $validated['customer_phone'] ?? null,
                 'subtotal' => $subtotal,
                 'total' => $total,
                 'status' => $validated['is_draft'] ?? false ? 'draft' : 'pending',
                 'payment_method' => 'manual',
                 'payment_status' => 'pending',
                 'billing_address' => $validated['billing_address'],
-                'shipping_address' => $validated['shipping_address'],
-                'notes' => $validated['notes'],
+                'shipping_address' => $validated['shipping_address'] ?? null,
+                'notes' => $validated['notes'] ?? null,
                 'processed_by' => $request->user()->id,
             ]);
 
@@ -197,7 +198,7 @@ class OrdersController extends Controller
             ->limit(50)
             ->get();
 
-        return Inertia::render('Modules/Shop/Orders/Form', [
+        return Inertia::render('shop/orders/form', [
             'products' => $products,
             'customers' => $customers,
             'order' => $order,
@@ -214,6 +215,9 @@ class OrdersController extends Controller
         $user = $validated['customer_type'] === 'existing'
             ? User::find($validated['user_id'])
             : null;
+
+        $oldItemCount = $order->items()->count();
+        $oldTotal = (float) $order->total;
 
         DB::transaction(function () use ($validated, $order, $request, $user) {
             $subtotal = 0;
@@ -242,12 +246,12 @@ class OrdersController extends Controller
                 'user_id' => $user?->id,
                 'customer_name' => $user?->name ?? $validated['customer_name'],
                 'customer_email' => $user?->email ?? $validated['customer_email'],
-                'customer_phone' => $validated['customer_phone'],
+                'customer_phone' => $validated['customer_phone'] ?? null,
                 'subtotal' => $subtotal,
                 'total' => $total,
                 'billing_address' => $validated['billing_address'],
-                'shipping_address' => $validated['shipping_address'],
-                'notes' => $validated['notes'],
+                'shipping_address' => $validated['shipping_address'] ?? null,
+                'notes' => $validated['notes'] ?? null,
                 'processed_by' => $request->user()->id,
             ]);
 
@@ -268,7 +272,14 @@ class OrdersController extends Controller
             }
         });
 
-        $this->orderActionService->edited($order, $request->user()->id);
+        $changeNotes = sprintf(
+            '%d items → %d items, total %s → %s',
+            $oldItemCount,
+            count($validated['items']),
+            number_format($oldTotal, 2),
+            number_format((float) $order->fresh()->total, 2)
+        );
+        $this->orderActionService->edited($order, $request->user()->id, $changeNotes);
 
         return redirect()->route('dashboard.shop.orders.show', $order->id)
             ->with('status', 'Order updated successfully.');
@@ -366,7 +377,7 @@ class OrdersController extends Controller
             $updateData['payment_status'] = 'paid';
         }
 
-        if (in_array($newStatus, ['completed', 'shipped'])) {
+        if ($newStatus === 'completed') {
             $updateData['shipped_at'] = now();
         }
 
@@ -467,11 +478,20 @@ class OrdersController extends Controller
         return redirect()->back()->with('status', 'Draft order converted to pending.');
     }
 
-    public function invoice(Order $order)
+    public function invoice(Order $order, Request $request)
     {
         $this->authorize('view', $order);
 
         $order->load('items');
+
+        if ($request->boolean('download') || $request->query('format') === 'pdf') {
+            $pdf = Pdf::loadView('email.templates.order-invoice', [
+                'order' => $order,
+                'siteName' => config('app.name'),
+            ]);
+
+            return $pdf->download('invoice-'.$order->order_number.'.pdf');
+        }
 
         return view('email.templates.order-invoice', [
             'order' => $order,

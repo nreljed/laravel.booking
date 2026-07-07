@@ -15,7 +15,7 @@ class TaxRatesController extends Controller
 
         $rates = TaxRate::orderBy('country')->orderBy('name')->paginate(20);
 
-        return Inertia::render('Modules/Shop/TaxRates/Index', [
+        return Inertia::render('shop/taxrates/index', [
             'rates' => $rates,
         ]);
     }

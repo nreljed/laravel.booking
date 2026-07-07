@@ -8,8 +8,8 @@ import { Input } from '@/Components/ui/input'
 import { Badge } from '@/Components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select'
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/Components/ui/pagination'
-import { StarRating } from '@modules-shop/components/StarRating'
-import { WishlistButton } from '@modules-shop/components/WishlistButton'
+import { StarRating } from '@shop/components/StarRating'
+import { WishlistButton } from '@shop/components/WishlistButton'
 import { Slider } from '@/Components/ui/slider'
 
 interface Product {
@@ -80,6 +80,7 @@ export default function StorefrontIndex() {
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <Head title={pageTitle}>
                     <meta name="description" content={pageTitle === 'Store' ? 'Browse our product catalog' : `Browse ${pageTitle} products`} />
+                    {typeof window !== 'undefined' && <link rel="canonical" href={window.location.href} />}
                 </Head>
                 <div className="flex items-center justify-between mb-8">
                     <div>
@@ -97,7 +98,7 @@ export default function StorefrontIndex() {
                 </div>
 
                 <div className="flex gap-8">
-                    <aside className="w-56 shrink-0 space-y-6">
+                    <aside className="hidden lg:block w-56 shrink-0 space-y-6">
                         <div>
                             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                                 <SlidersHorizontal className="h-4 w-4" /> Categories
@@ -160,7 +161,7 @@ export default function StorefrontIndex() {
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {products.data.map((product) => (
-                                        <Link key={product.id} href={route('store.show', product.id)} className="group">
+                                        <Link key={product.id} href={route('store.show', product.slug)} className="group">
                                         <Card className="overflow-hidden transition-shadow hover:shadow-lg relative">
                                             <div className="absolute top-2 right-2 z-10" onClick={(e) => e.preventDefault()}>
                                                 <WishlistButton productId={product.id} initiallyActive={wishlistIds?.includes(product.id) ?? false} />

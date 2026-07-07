@@ -61,7 +61,7 @@ class ReportsController extends Controller
                 'total_revenue' => (float) $item->total_revenue,
             ]);
 
-        return Inertia::render('Modules/Shop/Reports/Index', [
+        return Inertia::render('shop/reports/index', [
             'summary' => $summary,
             'salesOverTime' => $salesOverTime,
             'topProducts' => $topProducts,

@@ -17,7 +17,7 @@ class AttributesController extends Controller
     {
         $attributes = Attribute::with('terms')->orderBy('sort_order')->get();
 
-        return Inertia::render('Modules/Shop/Attributes/Index', [
+        return Inertia::render('shop/attributes/index', [
             'attributes' => $attributes,
         ]);
     }

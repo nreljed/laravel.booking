@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Email\SendTestEmailRequest;
 use App\Http\Requests\Email\UpdateEmailSettingsRequest;
-use App\Services\FeatureRegistry;
 use App\Services\EmailSettingsService;
 use App\Services\EmailTemplateService;
+use App\Services\FeatureRegistry;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 
@@ -18,18 +18,18 @@ class EmailSettingsController extends Controller
 
     protected EmailTemplateService $templateService;
 
-    protected ModuleRegistry $moduleRegistry;
+    protected FeatureRegistry $featureRegistry;
 
     public function __construct(
         EmailSettingsService $settingsService,
         MailService $mailService,
         EmailTemplateService $templateService,
-        ModuleRegistry $moduleRegistry
+        FeatureRegistry $featureRegistry
     ) {
         $this->settingsService = $settingsService;
         $this->mailService = $mailService;
         $this->templateService = $templateService;
-        $this->moduleRegistry = $moduleRegistry;
+        $this->featureRegistry = $featureRegistry;
     }
 
     /**
@@ -211,7 +211,7 @@ class EmailSettingsController extends Controller
     {
         $templates = $this->getCoreTemplates();
 
-        foreach ($this->moduleRegistry->getBooted() as $module) {
+        foreach ($this->featureRegistry->all() as $module) {
             $moduleTemplates = $module->getEmailTemplates();
             if (! empty($moduleTemplates)) {
                 $templates = array_merge($templates, $moduleTemplates);
@@ -311,18 +311,7 @@ class EmailSettingsController extends Controller
                     'siteName' => config('app.name'),
                 ],
             ],
-            'property-inquiry' => [
-                'label' => 'Property Inquiry',
-                'group' => 'Properties',
-                'sample_data' => [
-                    'inquiryName' => $user?->name ?? 'Guest',
-                    'inquiryEmail' => $user?->email ?? 'guest@example.com',
-                    'inquiryMessage' => 'I am interested in this property. Please contact me with more details.',
-                    'propertyTitle' => 'Sample Property',
-                    'propertyUrl' => route('dashboard'),
-                    'siteName' => config('app.name'),
-                ],
-            ],
+
         ];
     }
 }

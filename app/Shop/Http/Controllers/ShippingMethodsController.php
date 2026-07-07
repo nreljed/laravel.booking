@@ -15,7 +15,7 @@ class ShippingMethodsController extends Controller
 
         $methods = ShippingMethod::orderBy('sort_order')->paginate(20);
 
-        return Inertia::render('Modules/Shop/ShippingMethods/Index', [
+        return Inertia::render('shop/shippingmethods/index', [
             'methods' => $methods,
         ]);
     }

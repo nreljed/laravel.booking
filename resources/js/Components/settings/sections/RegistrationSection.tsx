@@ -25,8 +25,8 @@ export function RegistrationSection({
   asAccordion,
 }: RegistrationSectionProps) {
   const [data, setData] = useState(() => {
-    const storedRole = settings.default_role ?? "crm_user";
-    const validRole = roles.some((r) => r.slug === storedRole) ? storedRole : "crm_user";
+    const storedRole = settings.default_role ?? "customer";
+    const validRole = roles.some((r) => r.slug === storedRole) ? storedRole : "customer";
     return {
       enable_registration: settings.enable_registration ?? "0",
       default_role: validRole,
@@ -97,7 +97,7 @@ export function RegistrationSection({
           </SelectTrigger>
           <SelectContent>
             {roles.length === 0 ? (
-              <SelectItem value="crm_user" disabled>
+              <SelectItem value="customer" disabled>
                 No roles available
               </SelectItem>
             ) : (

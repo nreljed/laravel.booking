@@ -5,6 +5,9 @@ namespace App\Shop\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Notifications\AppNotification;
+use App\Services\MailService;
+use App\Services\NotificationService;
 use App\Shop\Models\Cart;
 use App\Shop\Models\Order;
 use App\Shop\Models\OrderItem;
@@ -15,9 +18,6 @@ use App\Shop\Services\CurrencyService;
 use App\Shop\Services\ShippingService;
 use App\Shop\Services\StripeService;
 use App\Shop\Services\TaxService;
-use App\Notifications\AppNotification;
-use App\Services\MailService;
-use App\Services\NotificationService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -71,7 +71,7 @@ class CheckoutController extends Controller
             $taxResult = $this->taxService->calculate((float) $cart->subtotal, $billingAddress);
         }
 
-        return Inertia::render('Modules/Shop/Orders/Checkout', [
+        return Inertia::render('shop/orders/checkout', [
             'cart' => $cart,
             'shippingMethods' => $shippingMethods,
             'userBillingAddress' => $billingAddress,
@@ -91,7 +91,7 @@ class CheckoutController extends Controller
 
         $order->load('items');
 
-        return Inertia::render('Modules/Shop/Orders/Confirmation', [
+        return Inertia::render('shop/orders/confirmation', [
             'order' => $order,
         ]);
     }
@@ -159,9 +159,9 @@ class CheckoutController extends Controller
                     'password' => Hash::make($validated['password']),
                 ]);
 
-                $crmRole = Role::where('slug', 'crm_user')->where('slug', '!=', 'admin')->first();
-                if ($crmRole) {
-                    $user->roles()->attach($crmRole->id);
+                $customerRole = Role::where('slug', 'customer')->where('slug', '!=', 'admin')->first();
+                if ($customerRole) {
+                    $user->roles()->attach($customerRole->id);
                 }
 
                 event(new Registered($user));
@@ -305,7 +305,7 @@ class CheckoutController extends Controller
             return redirect()->route('login')->with('status', 'An account with this email already exists. Please sign in.');
         }
 
-        return Inertia::render('Modules/Shop/Storefront/PostCheckoutRegister', [
+        return Inertia::render('shop/storefront/postcheckoutregister', [
             'order' => $order->only(['id', 'order_number', 'customer_email', 'customer_name', 'total', 'status']),
             'email' => $email,
         ]);
@@ -339,9 +339,9 @@ class CheckoutController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $crmRole = Role::where('slug', 'crm_user')->where('slug', '!=', 'admin')->first();
-        if ($crmRole) {
-            $user->roles()->attach($crmRole->id);
+        $customerRole = Role::where('slug', 'customer')->where('slug', '!=', 'admin')->first();
+        if ($customerRole) {
+            $user->roles()->attach($customerRole->id);
         }
 
         $order->update(['user_id' => $user->id]);

@@ -5,7 +5,7 @@ import { Check, X, Trash2, MessageSquare } from "lucide-react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Button } from "@/Components/ui/button";
 import { Badge } from "@/Components/ui/badge";
-import { StarRating } from "@modules-shop/components/StarRating";
+import { StarRating } from "@shop/components/StarRating";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/Components/ui/dialog";
 import { PageHeader, FilterBar, PaginationLinks, TableList } from "../../components/templates";
 

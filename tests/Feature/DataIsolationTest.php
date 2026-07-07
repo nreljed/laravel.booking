@@ -32,8 +32,8 @@ class DataIsolationTest extends TestCase
 
     public function test_user_can_only_see_own_notification_preferences(): void
     {
-        $user1 = $this->createUserWithRole('crm_user');
-        $user2 = $this->createUserWithRole('crm_user');
+        $user1 = $this->createUserWithRole('customer');
+        $user2 = $this->createUserWithRole('customer');
 
         NotificationPreference::create([
             'user_id' => $user1->id,
@@ -50,8 +50,8 @@ class DataIsolationTest extends TestCase
 
     public function test_user_cannot_update_another_users_notification_preferences(): void
     {
-        $user1 = $this->createUserWithRole('crm_user');
-        $user2 = $this->createUserWithRole('crm_user');
+        $user1 = $this->createUserWithRole('customer');
+        $user2 = $this->createUserWithRole('customer');
 
         $pref = NotificationPreference::create([
             'user_id' => $user1->id,
@@ -68,8 +68,8 @@ class DataIsolationTest extends TestCase
 
     public function test_user_profile_is_scoped_to_own_user(): void
     {
-        $user1 = $this->createUserWithRole('crm_user');
-        $user2 = $this->createUserWithRole('crm_user');
+        $user1 = $this->createUserWithRole('customer');
+        $user2 = $this->createUserWithRole('customer');
 
         $response = $this->actingAs($user2)->get('/dashboard/profile');
         $response->assertStatus(200);
@@ -79,7 +79,7 @@ class DataIsolationTest extends TestCase
 
     public function test_account_page_shows_only_own_data(): void
     {
-        $user = $this->createUserWithRole('crm_user');
+        $user = $this->createUserWithRole('customer');
 
         $response = $this->actingAs($user)->get('/dashboard/account');
 
@@ -88,8 +88,8 @@ class DataIsolationTest extends TestCase
 
     public function test_notifications_scoped_to_own_user(): void
     {
-        $user1 = $this->createUserWithRole('crm_user');
-        $user2 = $this->createUserWithRole('crm_user');
+        $user1 = $this->createUserWithRole('customer');
+        $user2 = $this->createUserWithRole('customer');
 
         $user1->notifications()->create([
             'id' => (string) Str::uuid(),
@@ -103,8 +103,8 @@ class DataIsolationTest extends TestCase
 
     public function test_notification_controller_scopes_to_own_user(): void
     {
-        $user1 = $this->createUserWithRole('crm_user');
-        $user2 = $this->createUserWithRole('crm_user');
+        $user1 = $this->createUserWithRole('customer');
+        $user2 = $this->createUserWithRole('customer');
 
         $user1->notifications()->create([
             'id' => (string) Str::uuid(),

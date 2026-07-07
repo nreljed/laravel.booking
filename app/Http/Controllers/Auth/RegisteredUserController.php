@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Role;
 use App\Models\User;
-use App\Shop\Services\CartMergeService;
 use App\Services\SettingsService;
+use App\Shop\Services\CartMergeService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -41,7 +41,7 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $defaultRoleSlug = SettingsService::get('default_role', 'crm_user');
+        $defaultRoleSlug = SettingsService::get('default_role', 'customer');
         $userRole = Role::where('slug', $defaultRoleSlug)->where('slug', '!=', 'admin')->first();
         if ($userRole) {
             $user->roles()->attach($userRole->id);

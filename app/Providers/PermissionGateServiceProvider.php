@@ -44,10 +44,15 @@ class PermissionGateServiceProvider extends ServiceProvider
                 'manage-notifications',
             ];
 
-            $featureProviders = [
-                app(ShopServiceProvider::class),
-                app(BlogServiceProvider::class),
-            ];
+            $featureProviders = [];
+            $shop = app()->getProvider(ShopServiceProvider::class);
+            $blog = app()->getProvider(BlogServiceProvider::class);
+            if ($shop) {
+                $featureProviders[] = $shop;
+            }
+            if ($blog) {
+                $featureProviders[] = $blog;
+            }
 
             $moduleSlugs = [];
             foreach ($featureProviders as $provider) {

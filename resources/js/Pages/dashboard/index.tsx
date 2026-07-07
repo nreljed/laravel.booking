@@ -1,10 +1,8 @@
-import { useMemo } from "react";
-import { Link, Head } from "@inertiajs/react";
+import { useMemo, useState } from "react";
+import { Link, Head, router } from "@inertiajs/react";
 import {
   Users,
   TrendingUp,
-  FileText,
-  UserPlus,
   DollarSign,
   ShoppingCart,
   BarChart3,
@@ -13,24 +11,23 @@ import {
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Button } from "@/Components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import KpiCard from "@/Components/dashboard/KpiCard";
-import RevenueChart from "@/Components/dashboard/RevenueChart";
+import RevenueAreaChart from "@/Components/dashboard/RevenueAreaChart";
+import RevenueBreakdownChart from "@/Components/dashboard/RevenueBreakdownChart";
+import OrderStatusChart from "@/Components/dashboard/OrderStatusChart";
 import RecentOrdersTable from "@/Components/dashboard/RecentOrdersTable";
 import TopProductsTable from "@/Components/dashboard/TopProductsTable";
-
-interface StatData {
-  label: string;
-  icon?: string;
-  total?: number;
-  published?: number;
-  draft?: number;
-  value?: number;
-}
+import CustomerInsights from "@/Components/dashboard/CustomerInsights";
+import LowStockAlerts from "@/Components/dashboard/LowStockAlerts";
+import PendingReviews from "@/Components/dashboard/PendingReviews";
 
 interface AnalyticsData {
+  days: number;
   kpis: Array<{
     label: string;
+    subtitle?: string;
     value: number;
     format?: string;
     change?: number;
@@ -61,50 +58,91 @@ interface AnalyticsData {
   total_orders: number;
   total_products: number;
   total_customers: number;
+  active_products: number;
   abandoned_carts: number;
   recovered_carts: number;
+  customer_insights: {
+    total_customers: number;
+    retention_rate: number;
+    prev_retention_rate: number;
+    avg_ltv: number;
+    growth: Array<{
+      month: string;
+      customers: number;
+      new: number;
+    }>;
+  };
+  revenue_breakdown: Array<{
+    name: string;
+    value: number;
+    percentage: number;
+  }>;
+  low_stock_products: Array<{
+    id: number;
+    name: string;
+    slug: string;
+    thumbnail_url: string | null;
+    stock_quantity: number;
+    low_stock_threshold: number;
+    track_stock: boolean;
+  }>;
+  pending_reviews: Array<{
+    id: number;
+    product: { id: number; name: string; slug: string; thumbnail_url: string | null };
+    user: { id: number; name: string };
+    rating: number;
+    title: string;
+    content: string;
+    created_at: string;
+  }>;
 }
 
 interface DashboardIndexProps {
-  stats?: Record<string, StatData>;
   analytics?: AnalyticsData;
 }
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Users,
   TrendingUp,
-  FileText,
-  UserPlus,
   DollarSign,
   ShoppingCart,
   BarChart3,
   Package,
 };
 
-export default function DashboardIndex({ stats = {}, analytics }: DashboardIndexProps) {
-  const { user } = useAuth();
+const PERIODS = [
+  { label: "7d", days: 7 },
+  { label: "30d", days: 30 },
+  { label: "90d", days: 90 },
+  { label: "365d", days: 365 },
+];
 
-  const statCards = useMemo(
-    () =>
-      Object.entries(stats).map(([key, data]) => {
-        const Icon = iconMap[data.icon || ""] || FileText;
-        return {
-          key,
-          title: data.label || key,
-          icon: Icon,
-          value: data.total ?? data.value ?? 0,
-        };
-      }),
-    [stats],
-  );
+export default function DashboardIndex({ analytics }: DashboardIndexProps) {
+  const { user } = useAuth();
+  const [period, setPeriod] = useState(analytics?.days ?? 14);
 
   const analyticsKpis = analytics?.kpis ?? [];
+  const revenueData = analytics?.revenue_over_time ?? [];
+
+  const sparklineData = useMemo(() => {
+    if (revenueData.length < 2) return undefined;
+    return revenueData.map((d) => d.revenue);
+  }, [revenueData]);
 
   const formatKpiValue = (val: number, fmt?: string) => {
     if (fmt === "currency")
-      return new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR" }).format(val);
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(val);
     if (fmt === "percent") return `${val}%`;
     return val.toLocaleString();
+  };
+
+  const handlePeriodChange = (days: number) => {
+    setPeriod(days);
+    router.get(
+      route("dashboard.index"),
+      { days },
+      { preserveState: true, preserveScroll: true, only: ["analytics"] },
+    );
   };
 
   return (
@@ -112,149 +150,144 @@ export default function DashboardIndex({ stats = {}, analytics }: DashboardIndex
       <Head title="Dashboard" />
 
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">
-            Welcome back, {user?.name || "User"}!
-          </h2>
-          <p className="text-muted-foreground">Here's what's happening with your platform today.</p>
+        {/* Header with period tabs */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Welcome back, {user?.name || "User"}!
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {analytics?.total_orders ?? 0} total orders · €{((analytics?.total_revenue ?? 0) / 1000).toFixed(0)}k revenue
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Tabs value={String(period)} onValueChange={(v) => handlePeriodChange(Number(v))}>
+              <TabsList>
+                {PERIODS.map((p) => (
+                  <TabsTrigger key={p.days} value={String(p.days)}>{p.label}</TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            <Button asChild size="sm">
+              <Link href={route("dashboard.shop.products.create")}>
+                <Package className="mr-1.5 h-4 w-4" />
+                New Product
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href={route("dashboard.shop.orders.index")}>
+                <ShoppingCart className="mr-1.5 h-4 w-4" />
+                Orders
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        {/* Analytics KPIs */}
+        {/* KPI row — 6 cards */}
         {analyticsKpis.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
             {analyticsKpis.map((kpi, i) => {
-              const Icon = iconMap[kpi.icon] || DollarSign;
+              const Icon = iconMap[kpi.icon] || Package;
               return (
                 <KpiCard
                   key={i}
                   title={kpi.label}
+                  subtitle={kpi.subtitle}
                   value={formatKpiValue(kpi.value, kpi.format)}
                   change={kpi.change}
                   icon={Icon}
+                  sparklineData={sparklineData}
                 />
               );
             })}
           </div>
         )}
 
-        {/* Module Stats */}
-        {statCards.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {statCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <Card key={card.key}>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold">{card.value}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
+        {/* Hero Area Chart — full width */}
+        {revenueData.length > 0 && (
+          <RevenueAreaChart data={revenueData} />
+        )}
+
+        {/* Charts row: Order Status + Revenue Breakdown side by side */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <OrderStatusChart data={analytics?.order_status_counts ?? {}} />
+          <RevenueBreakdownChart data={analytics?.revenue_breakdown ?? []} />
+        </div>
+
+        {/* Customer Insights */}
+        {analytics?.customer_insights && analytics.customer_insights.growth.length > 0 && (
+          <CustomerInsights
+            totalCustomers={analytics.customer_insights.total_customers}
+            retentionRate={analytics.customer_insights.retention_rate}
+            prevRetentionRate={analytics.customer_insights.prev_retention_rate}
+            avgLtv={analytics.customer_insights.avg_ltv}
+            growth={analytics.customer_insights.growth}
+          />
+        )}
+
+        {/* Recent Orders + Top Products side by side */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <RecentOrdersTable orders={analytics?.recent_orders ?? []} />
+          {analytics && analytics.top_products.length > 0 && (
+            <TopProductsTable products={analytics.top_products} />
+          )}
+        </div>
+
+        {/* Bottom widgets row */}
+        {(analytics && (analytics.low_stock_products?.length ?? 0) + (analytics.pending_reviews?.length ?? 0) > 0) && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {(analytics.low_stock_products?.length ?? 0) > 0 && (
+              <LowStockAlerts products={analytics.low_stock_products ?? []} />
+            )}
+            {(analytics.pending_reviews?.length ?? 0) > 0 && (
+              <PendingReviews reviews={analytics.pending_reviews ?? []} />
+            )}
           </div>
         )}
 
-        {/* Revenue Chart + Order Status */}
-        {analytics && analytics.revenue_over_time.length > 0 && (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <RevenueChart data={analytics.revenue_over_time} />
+        {/* Footer stats — compact row */}
+        {analytics && (
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Order Status
-                </CardTitle>
+              <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Abandoned Carts</CardTitle>
+                <ShoppingCart className="h-3.5 w-3.5 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                {Object.keys(analytics.order_status_counts).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">No orders yet.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {Object.entries(analytics.order_status_counts).map(([status, count]) => (
-                      <div key={status} className="flex items-center justify-between text-sm">
-                        <span className="capitalize text-muted-foreground">{status}</span>
-                        <span className="font-medium tabular-nums">{count}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <CardContent className="p-4 pt-0">
+                <div className="text-lg font-bold">{analytics.abandoned_carts}</div>
+                <p className="text-xs text-muted-foreground">Recovered: {analytics.recovered_carts}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Total Revenue</CardTitle>
+                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="text-lg font-bold">{formatKpiValue(analytics.total_revenue, "currency")}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Total Orders</CardTitle>
+                <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="text-lg font-bold">{analytics.total_orders.toLocaleString()}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Products</CardTitle>
+                <Package className="h-3.5 w-3.5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="text-lg font-bold">{analytics.active_products.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">Active / {analytics.total_products} total</p>
               </CardContent>
             </Card>
           </div>
         )}
-
-        {/* Recent Orders + Top Products */}
-        {analytics && (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <RecentOrdersTable orders={analytics.recent_orders} />
-            <TopProductsTable products={analytics.top_products} />
-          </div>
-        )}
-
-        {/* Platform Summary + Quick Actions */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {analytics && (
-                <>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total Revenue</span>
-                    <span className="font-medium tabular-nums">
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: "EUR",
-                      }).format(analytics.total_revenue)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total Orders</span>
-                    <span className="font-medium tabular-nums">{analytics.total_orders}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total Products</span>
-                    <span className="font-medium tabular-nums">{analytics.total_products}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total Customers</span>
-                    <span className="font-medium tabular-nums">{analytics.total_customers}</span>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button asChild className="w-full">
-                <Link href={route("dashboard.shop.products.create")}>
-                  <Package className="mr-2 h-4 w-4" />
-                  Add Product
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link href={route("dashboard.shop.orders.index")}>
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  View Orders
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link href={route("dashboard.shop.reports")}>
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  View Reports
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </AuthenticatedLayout>
   );

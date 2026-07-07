@@ -13,6 +13,7 @@ import {
   Hotel,
   UserRound,
   UserPlus,
+  LayoutDashboard,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -170,6 +171,12 @@ export function NavUser({ isMobile = false, variant = "default" }: NavUserProps)
               </div>
             </div>
           </DropdownMenuLabel>
+          <DropdownMenuItem asChild>
+            <Link href={route("dashboard")} className="flex w-full items-center">
+              <span className="flex items-center flex-1">Dashboard</span>
+              <LayoutDashboard className="h-4 w-4 ml-auto" />
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <Link href={route("dashboard.profile.edit")} className="flex w-full items-center">

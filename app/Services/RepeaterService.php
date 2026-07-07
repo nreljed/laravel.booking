@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\RepeaterData;
-use App\Services\FeatureRegistry;
 
 class RepeaterService
 {

@@ -25,7 +25,7 @@ class WebhooksController extends Controller
             ->paginate(50)
             ->withQueryString();
 
-        return Inertia::render('Modules/Shop/Webhooks/Index', [
+        return Inertia::render('shop/webhooks/index', [
             'webhooks' => $webhooks,
         ]);
     }
@@ -114,7 +114,7 @@ class WebhooksController extends Controller
             ->paginate(50)
             ->withQueryString();
 
-        return Inertia::render('Modules/Shop/Webhooks/Calls', [
+        return Inertia::render('shop/webhooks/calls', [
             'webhook' => $webhook->only('id', 'name'),
             'calls' => $calls,
         ]);

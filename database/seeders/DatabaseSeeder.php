@@ -13,30 +13,41 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(RolesAndPermissionsSeeder::class);
 
-        // Create admin user first so downstream seeders can reference it
-        $admin = User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-        ]);
-        $admin->roles()->attach(Role::where('slug', 'admin')->first()->id);
+        $password = Hash::make('azerty123/*');
 
+        // Admin — full access
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ])->roles()->attach(
-            Role::where('slug', 'crm_user')->first()->id
-        );
-
-        User::factory()->create([
-            'name' => 'Studio Admin',
+            'name' => 'nstudio',
             'email' => 'nstudio.webdesign@gmail.com',
-            'password' => Hash::make('azerty123/*'),
-        ])->roles()->attach(
-            Role::where('slug', 'admin')->first()->id
-        );
+            'username' => 'nstudio',
+            'password' => $password,
+        ])->roles()->attach(Role::where('slug', 'admin')->first()->id);
 
-        $this->call(ModuleSeeder::class);
+        // Shop Owner — full shop + posts control
+        User::factory()->create([
+            'name' => 'shop_owner',
+            'email' => 'shopowner@example.com',
+            'username' => 'shop_owner',
+            'password' => $password,
+        ])->roles()->attach(Role::where('slug', 'shop_owner')->first()->id);
+
+        // Shop Manager — view/edit existing content
+        User::factory()->create([
+            'name' => 'shop_manager',
+            'email' => 'shopmanager@example.com',
+            'username' => 'shop_manager',
+            'password' => $password,
+        ])->roles()->attach(Role::where('slug', 'shop_manager')->first()->id);
+
+        // Customer — account only (default registration role)
+        User::factory()->create([
+            'name' => 'customer',
+            'email' => 'customer@example.com',
+            'username' => 'customer',
+            'password' => $password,
+        ])->roles()->attach(Role::where('slug', 'customer')->first()->id);
+
         $this->call(SettingsSeeder::class);
-        $this->call(PropertyTermSeeder::class);
+        $this->call(CurrencySeeder::class);
     }
 }

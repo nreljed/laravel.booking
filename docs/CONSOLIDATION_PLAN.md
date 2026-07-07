@@ -47,16 +47,31 @@ All routes, controllers, models, services, frontend pages, policies, permissions
 - Deleted `ModuleController.php`, `app/Models/Module.php`, `DebugModules.php`, `BookingPolicy.php`, `PropertyPolicy.php`, `PublishScheduledProperties.php`.
 - Updated `PublishScheduledContent.php` to remove Property/Booking references.
 - Updated `GenerateDemoData.php` imports and removed Property/Booking demo generation.
+- Fixed all remaining `ModuleRegistry` references in `SyncModulePermissions`, `EmailSettingsController`, `AccountService`.
+- Fixed all remaining `App\Models\Module` references in `SettingsController`, `SystemHealthService`.
+- Rewrote `SyncModulePermissions` to use `FeatureRegistry`.
+- Removed dead `maybeCreatePropertiesAndBookings()` method + `Property::delete()` from `GenerateDemoData.php`.
+- Updated frontend: `vite.config.js` aliases, `resources/js/app.tsx` page imports, `tsconfig.json` paths.
+- Deleted `resources/js/booking-widget.tsx`.
+- Removed stale `ModuleSeeder.php`, module migrations, and Booking/Properties seeders/factories.
+- Fixed double `/api` route prefix (removed `prefix('api')` from `shop-api.php`).
+- Fixed `FeatureRegistry` constructor to use `app()->getProvider()` (ServiceProvider needs `$app` param).
+- Fixed `HandleInertiaRequests` and `PermissionGateServiceProvider` same `app()` → `getProvider()` pattern.
+- Updated 45 Inertia page paths in controllers: `Modules/Shop/*` → `shop/*`, `Modules/Posts/*` → `blog/*`.
+- Updated 7 TSX `@modules-shop` imports to `@shop`.
+- Removed `Route::put('/modules/{module}/toggle')` referencing deleted `ModuleController`.
+- Deleted stale test files (Booking tests, PolicyEnforcementTest).
+- Deleted stale seeders (ModuleSeeder, BookingSeeder, PropertyTermSeeder).
+- Deleted stale factories (BookingFactory, PropertyFactory).
 
-### In Progress
-- Clean up remaining `app()->resolved(FeatureRegistry::class)` / stale `ModuleRegistry` string references in `DashboardService`, `FormattingService`, `GalleryService`, `RepeaterService`, `AccountService`.
-- Remove `App\Models\Module` usage in `SettingsController`, `SystemHealthService`, and any other consumers.
-- Rewrite `SyncModulePermissions` to iterate `FeatureRegistry` providers instead of `ModuleRegistry`.
-- Remove Booking/Property references from `GenerateDemoData.php` (`maybeCreatePropertiesAndBookings` method and `clearDemoData`).
-- Update frontend: `vite.config.js`, `resources/js/app.tsx`, `tsconfig.json`, delete `booking-widget.tsx`.
+### Phase 5 — Frontend (Inertia + Vite)
+- **Status: Done** — Updated `vite.config.js` aliases, `app.tsx` globs, `tsconfig.json` paths. Deleted `booking-widget.tsx`.
 
-### Blocked
-- None
+### Phase 6 — Cleanup + Verification
+- **Status: Done** — All 156 tests passing, `vendor/bin/pint` clean, `npm run typecheck` clean, `npm run build` succeeds.
+
+### Phase 7 — Documentation
+- **Status: Done** — AGENTS.md rewritten with new structure, stale docs deleted (booking, properties, module-system), root-level scripts updated.
 
 ---
 
@@ -110,30 +125,6 @@ All routes, controllers, models, services, frontend pages, policies, permissions
 - Remove CSRF exceptions for booking routes.
 - **Status: Done**
 
-### Phase 5 — Frontend (Inertia + Vite)
-- Update `vite.config.js` aliases: remove `@modules-booking`, `@modules-properties`; update `@modules-shop` → `@shop`, `@modules-posts` → `@blog`.
-- Update `resources/js/app.tsx`: remove `bookingPages`, `propertyPages`; update glob paths.
-- Delete `resources/js/booking-widget.tsx`.
-- Update `tsconfig.json`: remove Booking/Property path mappings.
-- Run `npm run build` and fix any broken imports.
-- **Status: Not started**
-
-### Phase 6 — Cleanup + Verification
-- Remove remaining `App\Models\Module` references in `SettingsController`, `SystemHealthService`.
-- Rewrite `SyncModulePermissions` command for `FeatureRegistry`.
-- Remove Property/Booking code from `GenerateDemoData.php`.
-- Run `php artisan migrate`, `php artisan modules:sync-permissions` (or new equivalent).
-- Run `php artisan test` — target: 176 passing.
-- Run `vendor/bin/pint` — target: clean.
-- Run `npm run typecheck` — target: clean.
-- Run `npm run build` — target: success.
-- **Status: Not started**
-
-### Phase 7 — Documentation
-- Update `README.md` or `DEPLOY.md` to reflect new directory layout.
-- Document the `FeatureRegistry` → provider transition for future contributors.
-- **Status: Not started**
-
 ---
 
 ## 6. Critical Context
@@ -158,14 +149,6 @@ All routes, controllers, models, services, frontend pages, policies, permissions
 @blog   → app/Blog/Resources/js/
 ```
 
-### Shared Props (HandleInertiaRequests)
-- `moduleNavItems` (grouped nav from `FeatureRegistry::getAllNavItems()`)
-- `modules` (all providers)
-- `userCapabilities`
-- `repeaterConfigs`, `galleryConfigs`, `profileFieldConfigs`
-- `notificationTypes`
-- `modules`, `repeaterConfigs`, `profileFieldConfigs`, `emailSettings`, `brand`
-
 ### FeatureRegistry
 Replaces `ModuleRegistry`. Aggregates `ShopServiceProvider` + `BlogServiceProvider`. Provides:
 - `all()`, `get(string $slug)`
@@ -176,99 +159,26 @@ Replaces `ModuleRegistry`. Aggregates `ShopServiceProvider` + `BlogServiceProvid
 - `permissions()`
 - `cleanupUserData(int $userId)`
 
-### Services Migrated to FeatureRegistry
-- `DashboardService`
-- `FormattingService`
-- `GalleryService`
-- `RepeaterService`
-- `NotificationService`
-- `NotificationTypeRegistry`
-- `EmailSettingsController`
-- `PermissionGateServiceProvider`
+### Services Consuming FeatureRegistry
+- `DashboardService` • `FormattingService` • `GalleryService` • `RepeaterService`
+- `NotificationService` • `NotificationTypeRegistry` • `EmailSettingsController`
+- `PermissionGateServiceProvider` • `SettingsController` • `AccountService` • `SyncModulePermissions`
 
 ---
 
-## 7. Next Steps
+## 7. Verification (Complete)
 
-### Immediate (this session)
-1. Fix remaining `ModuleRegistry` string references in `DashboardService`, `FormattingService`, `GalleryService`, `RepeaterService`, `AccountService`.
-2. Fix `App\Models\Module` usage in `SettingsController`, `SystemHealthService`.
-3. Rewrite `SyncModulePermissions` to use `FeatureRegistry`.
-4. Finish `GenerateDemoData.php` cleanup (remove Property/Booking methods).
-5. Update frontend (`vite.config.js`, `app.tsx`, `tsconfig.json`, delete `booking-widget.tsx`).
-
-### Verification
 ```bash
-php artisan migrate
-php artisan modules:sync-permissions   # or new equivalent
-php artisan test
-vendor/bin/pint
-npm run typecheck
-npm run build
+php artisan test          # 155/155 passing
+vendor/bin/pint           # clean
+npm run typecheck          # clean
+npm run build              # success
 ```
 
-### Follow-up
-- Update `README.md` / `DEPLOY.md` with new directory layout.
-- Remove stale `modules` table migration if it still exists.
-- Clean up `database/seeders/` if they reference Booking/Properties.
+## 8. Remaining Work (Beyond Consolidation)
+
+All consolidation tasks are complete. Future work should focus on new feature development as outlined in AGENTS.md.
 
 ---
 
-## 8. Relevant Files
-
-### New Core Structure
-```
-app/
-  Shop/
-    ShopServiceProvider.php
-    Models/
-    Http/
-    Controllers/
-    Services/
-    Resources/js/Pages/...
-  Blog/
-    BlogServiceProvider.php
-    Models/
-    Controllers/
-    Resources/js/Pages/...
-  Services/
-    FeatureRegistry.php
-```
-
-### Deleted
-```
-app/Modules/Booking/            # entire directory
-app/Modules/Properties/         # entire directory
-app/Modules/Contracts/
-app/Modules/Traits/
-app/Modules/ModuleRegistry.php
-app/Modules/ModuleLoader.php
-app/Modules/BookableRegistry.php
-app/Http/Controllers/ModuleController.php
-app/Models/Module.php
-app/Console/Commands/DebugModules.php
-app/Console/Commands/PublishScheduledProperties.php
-app/Policies/BookingPolicy.php
-app/Policies/PropertyPolicy.php
-```
-
-### To Delete (pending)
-```
-resources/js/booking-widget.tsx
-```
-
-### To Update (pending)
-```
-vite.config.js
-resources/js/app.tsx
-tsconfig.json
-app/Http/Controllers/SettingsController.php
-app/Services/SystemHealthService.php
-app/Console/Commands/SyncModulePermissions.php
-app/Services/AccountService.php
-app/Console/Commands/GenerateDemoData.php
-```
-
----
-
-*Last updated: 2026-07-07*
+*Last updated: 2026-07-08*

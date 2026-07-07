@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Services\FeatureRegistry;
-
 class NotificationTypeRegistry
 {
     protected FeatureRegistry $registry;

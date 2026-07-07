@@ -19,7 +19,7 @@ class BrandsController extends Controller
 
         $brands = ProductBrand::withCount('products')->orderBy('name')->get();
 
-        return Inertia::render('Modules/Shop/Brands/Index', [
+        return Inertia::render('shop/brands/index', [
             'brands' => $brands,
         ]);
     }

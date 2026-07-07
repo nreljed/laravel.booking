@@ -8,19 +8,19 @@ use App\Shop\Models\AttributeTerm;
 use App\Shop\Models\Product;
 use App\Shop\Models\ProductVariation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\BootsModules;
+use Tests\BootsFeatures;
 use Tests\TestCase;
 
 class VariationMechanismTest extends TestCase
 {
-    use BootsModules, RefreshDatabase;
+    use BootsFeatures, RefreshDatabase;
 
     protected User $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->bootModules();
+        $this->bootFeatures();
         $this->admin = User::factory()->create(['email' => 'admin@test.com']);
         $this->admin->assignRole('admin');
     }

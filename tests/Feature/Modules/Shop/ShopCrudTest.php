@@ -6,24 +6,25 @@ use App\Models\User;
 use App\Shop\Models\Attribute;
 use App\Shop\Models\AttributeTerm;
 use App\Shop\Models\Order;
+use App\Shop\Models\OrderNote;
 use App\Shop\Models\Product;
 use App\Shop\Models\ProductAttribute;
 use App\Shop\Models\ProductCategory;
 use App\Shop\Models\ProductTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\BootsModules;
+use Tests\BootsFeatures;
 use Tests\TestCase;
 
 class ShopCrudTest extends TestCase
 {
-    use BootsModules, RefreshDatabase;
+    use BootsFeatures, RefreshDatabase;
 
     protected User $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->bootModules();
+        $this->bootFeatures();
 
         $this->admin = User::factory()->create(['email' => 'admin@test.com']);
         $this->admin->assignRole('admin');
@@ -751,5 +752,313 @@ class ShopCrudTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('categories.0');
+    }
+
+    public function test_admin_can_refund_order(): void
+    {
+        $this->actingAs($this->admin);
+
+        $order = Order::create([
+            'order_number' => 'ORD-REFUND-001',
+            'user_id' => $this->admin->id,
+            'status' => 'completed',
+            'total' => 199.99,
+            'subtotal' => 199.99,
+            'currency' => 'EUR',
+        ]);
+        $product = Product::create(['name' => 'Refund Product', 'price' => 199.99, 'stock_quantity' => 5, 'track_stock' => true]);
+        $item = $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 1,
+            'unit_price' => 199.99,
+            'subtotal' => 199.99,
+            'total' => 199.99,
+        ]);
+
+        $response = $this->post(route('dashboard.shop.orders.refund', $order->id), [
+            'items' => [['order_item_id' => $item->id, 'quantity' => 1, 'amount' => 199.99]],
+            'reason' => 'Test refund',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertStatus(302);
+        $order->refresh();
+        $this->assertEquals('refunded', $order->status);
+        $product->refresh();
+        $this->assertEquals(6, $product->stock_quantity);
+    }
+
+    public function test_admin_can_add_order_note(): void
+    {
+        $this->actingAs($this->admin);
+
+        $order = Order::create([
+            'order_number' => 'ORD-NOTE-001',
+            'user_id' => $this->admin->id,
+            'status' => 'pending',
+            'total' => 49.99,
+            'currency' => 'EUR',
+        ]);
+
+        $response = $this->post(route('dashboard.shop.orders.notes.store', $order->id), [
+            'content' => 'This is a test note',
+            'is_public' => true,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertStatus(302);
+        $this->assertDatabaseHas('order_notes', [
+            'order_id' => $order->id,
+            'content' => 'This is a test note',
+            'is_public' => true,
+        ]);
+    }
+
+    public function test_admin_can_delete_order_note(): void
+    {
+        $this->actingAs($this->admin);
+
+        $order = Order::create([
+            'order_number' => 'ORD-NOTE-002',
+            'user_id' => $this->admin->id,
+            'status' => 'pending',
+            'total' => 29.99,
+            'currency' => 'EUR',
+        ]);
+        $note = OrderNote::create([
+            'order_id' => $order->id,
+            'user_id' => $this->admin->id,
+            'content' => 'Delete me',
+            'is_public' => false,
+        ]);
+
+        $response = $this->delete(route('dashboard.shop.orders.notes.destroy', [$order->id, $note->id]));
+
+        $response->assertStatus(302);
+        $this->assertDatabaseMissing('order_notes', ['id' => $note->id]);
+    }
+
+    public function test_admin_can_create_draft_order(): void
+    {
+        $this->actingAs($this->admin);
+
+        $product = Product::create(['name' => 'Draft Product', 'price' => 25.00, 'stock_quantity' => 10, 'track_stock' => true]);
+
+        $response = $this->post(route('dashboard.shop.orders.store'), [
+            'is_draft' => true,
+            'customer_type' => 'guest',
+            'customer_name' => 'Draft Customer',
+            'customer_email' => 'draft@test.com',
+            'billing_address' => [
+                'first_name' => 'Draft',
+                'last_name' => 'Customer',
+                'address_line1' => '123 Draft St',
+                'city' => 'Draft City',
+                'country' => 'US',
+            ],
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 25.00],
+            ],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertStatus(302);
+        $this->assertDatabaseHas('orders', ['customer_email' => 'draft@test.com', 'status' => 'draft']);
+    }
+
+    public function test_admin_can_convert_draft_order(): void
+    {
+        $this->actingAs($this->admin);
+
+        $order = Order::create([
+            'order_number' => 'ORD-CONVERT-001',
+            'user_id' => $this->admin->id,
+            'status' => 'draft',
+            'total' => 75.00,
+            'currency' => 'EUR',
+        ]);
+
+        $response = $this->post(route('dashboard.shop.orders.convert-from-draft', $order->id));
+
+        $response->assertSessionHasNoErrors();
+        $order->refresh();
+        $this->assertEquals('pending', $order->status);
+    }
+
+    public function test_admin_can_view_order_invoice(): void
+    {
+        $this->actingAs($this->admin);
+
+        $order = Order::create([
+            'order_number' => 'ORD-INV-001',
+            'user_id' => $this->admin->id,
+            'status' => 'completed',
+            'total' => 149.99,
+            'currency' => 'EUR',
+        ]);
+
+        $response = $this->get(route('dashboard.shop.orders.invoice', $order->id));
+
+        $response->assertStatus(200);
+        $response->assertSee($order->order_number);
+    }
+
+    public function test_admin_can_download_order_invoice_pdf(): void
+    {
+        $this->actingAs($this->admin);
+
+        $order = Order::create([
+            'order_number' => 'ORD-PDF-001',
+            'user_id' => $this->admin->id,
+            'status' => 'completed',
+            'total' => 199.99,
+            'currency' => 'EUR',
+        ]);
+
+        $response = $this->get(route('dashboard.shop.orders.invoice', [$order->id, 'download' => 1]));
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('application/pdf', $response->headers->get('Content-Type'));
+    }
+
+    public function test_admin_can_transition_order_status(): void
+    {
+        $this->actingAs($this->admin);
+
+        $order = Order::create([
+            'order_number' => 'ORD-TRANS-001',
+            'user_id' => $this->admin->id,
+            'status' => 'pending',
+            'total' => 59.99,
+            'currency' => 'EUR',
+        ]);
+
+        $response = $this->patch(route('dashboard.shop.orders.update-status', $order->id), [
+            'status' => 'confirmed',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $order->refresh();
+        $this->assertEquals('confirmed', $order->status);
+    }
+
+    public function test_admin_cannot_make_invalid_status_transition(): void
+    {
+        $this->actingAs($this->admin);
+
+        $order = Order::create([
+            'order_number' => 'ORD-BADTRANS-001',
+            'user_id' => $this->admin->id,
+            'status' => 'pending',
+            'total' => 10.00,
+            'currency' => 'EUR',
+        ]);
+
+        $response = $this->patch(route('dashboard.shop.orders.update-status', $order->id), [
+            'status' => 'completed',
+        ]);
+
+        $response->assertSessionHasErrors('status');
+    }
+
+    public function test_admin_can_edit_order(): void
+    {
+        $this->actingAs($this->admin);
+
+        $product = Product::create(['name' => 'Edit Product', 'price' => 15.00, 'stock_quantity' => 20, 'track_stock' => true]);
+        $order = Order::create([
+            'order_number' => 'ORD-EDIT-001',
+            'user_id' => $this->admin->id,
+            'status' => 'pending',
+            'total' => 15.00,
+            'subtotal' => 15.00,
+            'currency' => 'EUR',
+            'customer_name' => 'Old Name',
+            'customer_email' => 'old@test.com',
+        ]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 1,
+            'unit_price' => 15.00,
+            'subtotal' => 15.00,
+            'total' => 15.00,
+        ]);
+
+        $response = $this->put(route('dashboard.shop.orders.update', $order->id), [
+            'status' => 'pending',
+            'customer_name' => 'Updated Name',
+            'customer_email' => 'updated@test.com',
+            'customer_type' => 'guest',
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 3, 'unit_price' => 15.00],
+            ],
+            'billing_address' => [
+                'first_name' => 'Updated',
+                'last_name' => 'Name',
+                'address_line1' => '123 Test St',
+                'city' => 'Test City',
+                'country' => 'US',
+            ],
+            'notes' => '',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertStatus(302);
+        $order->refresh();
+        $this->assertEquals('Updated Name', $order->customer_name);
+        $this->assertEquals('updated@test.com', $order->customer_email);
+    }
+
+    public function test_order_editing_logs_action_with_notes(): void
+    {
+        $this->actingAs($this->admin);
+
+        $product = Product::create(['name' => 'Action Log Product', 'price' => 20.00, 'stock_quantity' => 10, 'track_stock' => true]);
+        $order = Order::create([
+            'order_number' => 'ORD-ACTLOG-001',
+            'user_id' => $this->admin->id,
+            'status' => 'pending',
+            'total' => 20.00,
+            'subtotal' => 20.00,
+            'currency' => 'EUR',
+            'customer_name' => 'Log Test',
+            'customer_email' => 'log@test.com',
+        ]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 1,
+            'unit_price' => 20.00,
+            'subtotal' => 20.00,
+            'total' => 20.00,
+        ]);
+
+        $response = $this->put(route('dashboard.shop.orders.update', $order->id), [
+            'status' => 'pending',
+            'customer_name' => 'Log Test',
+            'customer_email' => 'log@test.com',
+            'customer_type' => 'guest',
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 20.00],
+            ],
+            'billing_address' => [
+                'first_name' => 'Log',
+                'last_name' => 'Test',
+                'address_line1' => '123 St',
+                'city' => 'Log City',
+                'country' => 'US',
+            ],
+            'notes' => '',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertStatus(302);
+
+        $this->assertDatabaseHas('order_actions', [
+            'order_id' => $order->id,
+            'action_type' => 'edited',
+        ]);
     }
 }

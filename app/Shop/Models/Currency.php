@@ -12,7 +12,7 @@ class Currency extends Model
     ];
 
     protected $casts = [
-        'exchange_rate' => 'decimal:6',
+        'exchange_rate' => 'float',
         'decimal_places' => 'integer',
         'is_default' => 'boolean',
         'is_active' => 'boolean',

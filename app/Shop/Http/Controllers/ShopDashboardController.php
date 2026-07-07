@@ -3,8 +3,8 @@
 namespace App\Shop\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Shop\Models\Product;
 use App\Services\DashboardService;
+use App\Shop\Models\Product;
 use Inertia\Inertia;
 
 class ShopDashboardController extends Controller
@@ -23,7 +23,7 @@ class ShopDashboardController extends Controller
             ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
             ->count();
 
-        return Inertia::render('Modules/Shop/Dashboard', [
+        return Inertia::render('shop/dashboard', [
             'analytics' => $analytics,
             'lowStockCount' => $lowStockCount,
         ]);

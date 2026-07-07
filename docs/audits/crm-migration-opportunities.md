@@ -1,7 +1,7 @@
 # CRM-Dashboard → Laravel: Migration Opportunities
 
 > **Source**: `C:\Users\nrelj\Local Sites\beta\app\public\wp-content\plugins\CRM-dashboard`
-> **Target**: `C:\Users\nrelj\Local Sites\laravel\app`
+> **Target**: `C:\Users\nrelj\Local Sites\shop-laravel\app`
 > **Shared DNA**: ~90% — same UI components, same hooks, same module architecture, same Inertia + React + shadcn/ui stack
 > **Date**: 2026-06-30
 

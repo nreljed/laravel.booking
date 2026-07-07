@@ -1,5 +1,5 @@
 import { Link, router, usePage, Head } from '@inertiajs/react'
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { ArrowLeft, Minus, Plus, ShoppingBag, ShoppingCart, Star, Heart, ExternalLink, FileDown, Package, Expand, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import StoreLayout from '@/Layouts/StoreLayout'
 import { Button } from '@/Components/ui/button'
@@ -8,8 +8,8 @@ import { Badge } from '@/Components/ui/badge'
 import { Separator } from '@/Components/ui/separator'
 import { Dialog, DialogContent, DialogClose } from '@/Components/ui/dialog'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/Components/ui/accordion'
-import { StarRating } from '@modules-shop/components/StarRating'
-import { WishlistButton } from '@modules-shop/components/WishlistButton'
+import { StarRating } from '@shop/components/StarRating'
+import { WishlistButton } from '@shop/components/WishlistButton'
 import { AttributeSelector } from '../../components/AttributeSelector'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -110,18 +110,18 @@ function ProductGallery({ images, thumbnailUrl, productName, variationImageUrl }
                             {hasNav && (
                                 <>
                                     <button type="button" onClick={prev}
-                                        className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-background/70 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-background/90">
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-background/70 backdrop-blur-sm flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-sm hover:bg-background/90">
                                         <ChevronLeft className="h-5 w-5" />
                                     </button>
                                     <button type="button" onClick={next}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-background/70 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-background/90">
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-background/70 backdrop-blur-sm flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-sm hover:bg-background/90">
                                         <ChevronRight className="h-5 w-5" />
                                     </button>
                                 </>
                             )}
                             {/* Expand button */}
                             <button type="button" onClick={() => setLightboxOpen(true)}
-                                className="absolute top-3 right-3 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                                className="absolute top-3 right-3 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-sm">
                                 <Expand className="h-4 w-4" />
                             </button>
                             {/* Dots */}
@@ -332,6 +332,54 @@ export default function StorefrontShow() {
         return raw || `Shop ${product.name} at ${window.location.hostname}`
     }, [product.short_description, product.description, product.name])
 
+    const canonicalUrl = useMemo(() => {
+        if (typeof window === 'undefined') return ''
+        const baseUrl = window.location.origin
+        const slug = product.slug || product.id
+        return `${baseUrl}${route('store.show', slug)}`
+    }, [product.slug, product.id])
+
+    const jsonLd = useMemo(() => {
+        const activePrice = selectedVariation
+            ? Number(selectedVariation.active_price ?? selectedVariation.price ?? 0)
+            : product.active_price
+        const inStockStatus = inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+        const schema: Record<string, unknown> = {
+            '@context': 'https://schema.org/',
+            '@type': 'Product',
+            name: product.name,
+            description: metaDescription,
+            image: product.thumbnail_url || undefined,
+            sku: product.sku || undefined,
+            mpn: product.sku || undefined,
+        }
+        if (product.global_unique_id) {
+            schema.gtin = product.global_unique_id
+        }
+        schema.offers = {
+            '@type': 'Offer',
+            url: canonicalUrl || (typeof window !== 'undefined' ? window.location.href : ''),
+            priceCurrency: 'EUR',
+            price: activePrice.toFixed(2),
+            priceValidUntil: product.sale_to || undefined,
+            itemCondition: 'https://schema.org/NewCondition',
+            availability: inStockStatus,
+        }
+        if (product.reviews_count > 0) {
+            schema.aggregateRating = {
+                '@type': 'AggregateRating',
+                ratingValue: avgRating,
+                reviewCount: product.reviews_count,
+            }
+            schema.review = product.reviews.map((r) => ({
+                '@type': 'Review',
+                reviewRating: { '@type': 'Rating', ratingValue: r.rating },
+                author: { '@type': 'Person', name: r.user?.name || 'Anonymous' },
+            }))
+        }
+        return JSON.stringify(schema, null, 2)
+    }, [product, selectedVariation, metaDescription, canonicalUrl, inStock, avgRating])
+
     async function addToCart() {
         setAddingToCart(true)
         const payload: Record<string, unknown> = {
@@ -370,14 +418,19 @@ export default function StorefrontShow() {
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <Head title={product.name}>
                     <meta name="description" content={metaDescription} />
+                    <link rel="canonical" href={canonicalUrl} />
                     <meta property="og:title" content={product.name} />
                     <meta property="og:description" content={metaDescription} />
                     {product.thumbnail_url && <meta property="og:image" content={product.thumbnail_url} />}
                     <meta property="og:type" content="product" />
-                    <meta property="og:url" content={typeof window !== 'undefined' ? window.location.href : ''} />
+                    <meta property="og:url" content={canonicalUrl} />
+                    <meta property="product:price:amount" content={(selectedVariation ? Number(selectedVariation.active_price ?? selectedVariation.price ?? 0) : product.active_price).toFixed(2)} />
+                    <meta property="product:price:currency" content="EUR" />
+                    <meta property="product:availability" content={inStock ? 'in stock' : 'out of stock'} />
                     <meta name="twitter:card" content="summary_large_image" />
+                    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
                 </Head>
-                <Link href={route('store.index')} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+                <Link href={route('store.index')} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 sm:mb-6">
                     <ArrowLeft className="h-4 w-4" /> Back to store
                 </Link>
 
@@ -569,7 +622,7 @@ export default function StorefrontShow() {
                                 </AccordionItem>
                             )}
                             <AccordionItem value="shipping">
-                                <AccordionTrigger>Shipping &amp; Returns</AccordionTrigger>
+                                <AccordionTrigger>Shipping & Returns</AccordionTrigger>
                                 <AccordionContent>
                                     <div className="text-sm text-muted-foreground space-y-2">
                                         {isVirtual ? (
@@ -610,7 +663,7 @@ export default function StorefrontShow() {
                                 <h3 className="font-semibold text-sm mb-3">This group includes</h3>
                                 <div className="divide-y rounded-lg border">
                                     {product.groupedItems.map((child) => (
-                                        <Link key={child.id} href={route('store.show', child.id)} className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors">
+                                        <Link key={child.id} href={route('store.show', child.slug)} className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors">
                                             <div className="h-12 w-12 rounded bg-muted flex items-center justify-center overflow-hidden shrink-0">
                                                 {child.thumbnail_url ? (
                                                     <img src={child.thumbnail_url} alt={child.name} className="h-full w-full object-cover" />
@@ -669,7 +722,7 @@ export default function StorefrontShow() {
                         <h2 className="text-xl font-bold mb-6">You might also like</h2>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             {related.map((r) => (
-                                <Link key={r.id} href={route('store.show', r.id)} className="group">
+                                <Link key={r.id} href={route('store.show', r.slug)} className="group">
                                     <Card className="overflow-hidden transition-shadow hover:shadow-md">
                                         <div className="aspect-square bg-muted flex items-center justify-center">
                                             {r.thumbnail_url ? (

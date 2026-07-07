@@ -26,7 +26,7 @@ class MyOrderController extends Controller
                 'created_at_relative' => $order->created_at->diffForHumans(),
             ]);
 
-        return Inertia::render('Modules/Shop/My/Orders/Index', [
+        return Inertia::render('shop/my/orders/index', [
             'orders' => $orders,
         ]);
     }
@@ -39,7 +39,7 @@ class MyOrderController extends Controller
 
         $order->load(['items', 'actions' => fn ($q) => $q->latest()]);
 
-        return Inertia::render('Modules/Shop/My/Orders/Show', [
+        return Inertia::render('shop/my/orders/show', [
             'order' => [
                 'id' => $order->id,
                 'order_number' => $order->order_number,

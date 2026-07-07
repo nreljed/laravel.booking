@@ -36,8 +36,8 @@ php artisan key:generate
 php artisan migrate
 php artisan db:seed --class=RolesAndPermissionsSeeder
 
-# 6. Sync module permissions
-php artisan modules:sync-permissions
+# 6. Sync feature permissions
+php artisan permissions:sync
 
 # 7. Create storage link
 php artisan storage:link
@@ -92,7 +92,9 @@ Login uses an application-level `RateLimiter` (per-user + IP, resets on success,
 ## Roles
 
 - **admin** — Full access. Created via scripts only (cannot register as admin).
-- **crm_user** — Default role for new registrations. Configurable in Settings > Registration.
+- **customer** — Default role for new registrations. Configurable in Settings > Registration.
+- **shop_owner** — Full shop control: products, orders, coupons, reviews, shipping, taxes.
+- **shop_manager** — Manage existing shop content: edit products, view and update orders.
 
 ## Host/Guest Mode
 
@@ -101,17 +103,9 @@ Users with the `bookings.view` permission can switch between **Host** and **Gues
 - **Host mode**: Full property booking management (requires applicable permissions).
 - **Guest mode**: Limited browsing view (default for new users).
 
-## Module System
+## Feature Architecture
 
-Pluggable feature modules live in `app/Modules/`. Each module can register routes, permissions, and UI components.
-
-| Module | Description |
-|--------|-------------|
-| Booking | Property booking management |
-| Properties | Property CRUD and management |
-| Shop | Online store functionality |
-
-Enable/disable modules via the admin dashboard (requires admin role).
+Two first-class Laravel domains live in `app/Shop/` and `app/Blog/`, each registered as a service provider (`ShopServiceProvider`, `BlogServiceProvider`). They register routes, nav items, permissions, notification types, email templates, and shared Inertia data. A `FeatureRegistry` aggregates all providers for use by the sidebar, permission system, and dashboard.
 
 ## Development Commands
 
@@ -123,7 +117,7 @@ php artisan test         # Run PHPUnit tests
 npm run typecheck        # TypeScript type checking (tsc --noEmit)
 vendor/bin/pint          # Laravel Pint (PSR-12 linting + auto-fix)
 php artisan db:seed --class=RolesAndPermissionsSeeder  # Reset roles/permissions
-php artisan modules:sync-permissions                   # Sync module permissions
+php artisan permissions:sync                   # Sync feature permissions to DB
 php artisan app:create-admin                           # Bootstrap or update the admin user
 ```
 
@@ -144,7 +138,8 @@ app/
   Http/Middleware/         # HandleInertiaRequests (shares auth, notifications, mode, flash)
   Models/                  # Eloquent models (User, Role, Permission, Setting)
   Services/                # Business logic (AccountService, SettingsService, NotificationService)
-  Modules/                 # Feature modules (Booking, Properties, Shop)
+  Shop/                    # Shop domain (models, controllers, resources)
+  Blog/                    # Blog domain (models, controllers, resources)
 database/
   migrations/              # Standard Laravel migrations
   seeders/                 # Seeders (roles, permissions, settings)
@@ -163,7 +158,7 @@ scripts/                   # CLI utility scripts
 - **Host/Guest mode**: Session-based user mode switching with permission gates
 - **Notification system**: Zero-infrastructure polling (20s intervals), database-only delivery
 - **Settings management**: DB-driven app configuration (name, logo, URL, registration, email)
-- **Module system**: Pluggable feature modules with permission auto-sync
+- **Feature domains**: Shop and Blog service providers with permission auto-sync
 - **Account management**: Profile editing, password change, account deletion with full data cleanup
 - **Email**: SMTP configuration via admin panel with template simulation
 - **Deployment**: CI/CD via GitHub Actions with auto-deploy endpoint

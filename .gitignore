@@ -33,3 +33,8 @@ composer.phar
 /vm_chunk_sample.txt
 /_fix_autoload.php
 /_schema_dump.php
+/storage/debug/playwright-output/*
+/check_users.php
+/*-desktop.png
+/*-mobile.png
+/store-1.png

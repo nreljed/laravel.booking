@@ -40,17 +40,9 @@ type PageMap = Record<string, ImportFn | { default: React.ComponentType<unknown>
 
 const pages = import.meta.glob("./Pages/**/*.tsx") as Record<string, ImportFn>;
 
-const propertyPages = import.meta.glob(
-  "../../app/Modules/Properties/Resources/js/Pages/**/*.tsx",
-) as Record<string, ImportFn>;
+const shopPages = import.meta.glob("@shop/Pages/**/*.tsx") as Record<string, ImportFn>;
 
-const bookingPages = import.meta.glob(
-  "../../app/Modules/Booking/Resources/js/Pages/**/*.tsx",
-) as Record<string, ImportFn>;
-
-const shopPages = import.meta.glob("@modules-shop/Pages/**/*.tsx") as Record<string, ImportFn>;
-
-const postsPages = import.meta.glob("@modules-posts/Pages/**/*.tsx") as Record<string, ImportFn>;
+const blogPages = import.meta.glob("@blog/Pages/**/*.tsx") as Record<string, ImportFn>;
 
 const pageMap: PageMap = {};
 
@@ -62,60 +54,36 @@ for (const [path, importFn] of Object.entries(pages)) {
   }
 }
 
-function extractComponentPath(fullPath: string, moduleName: string): string | null {
+function extractComponentPath(fullPath: string, aliasPrefix: string): string | null {
   const normalized = fullPath.replaceAll("\\", "/");
 
-  const fsMarker = `app/Modules/${moduleName}/Resources/js/Pages/`;
-  const fsIdx = normalized.indexOf(fsMarker);
-  if (fsIdx !== -1) {
-    const relative = normalized.slice(fsIdx + fsMarker.length);
-    return relative.replace(/\.tsx$/, "");
+  const aliasMarker = `${aliasPrefix}/Pages/`;
+  const aliasIdx = normalized.indexOf(aliasMarker);
+  if (aliasIdx !== -1) {
+    return normalized.slice(aliasIdx + aliasMarker.length).replace(/\.tsx$/, "");
   }
 
-  const aliasPrefixMap: Record<string, string> = {
-    Properties: "@modules-properties",
-    Booking: "@modules-booking",
-    Shop: "@modules-shop",
-    Posts: "@modules-posts",
-  };
-  const alias = aliasPrefixMap[moduleName];
-  if (alias) {
-    const aliasMarker = `${alias}/Pages/`;
-    const aliasIdx = normalized.indexOf(aliasMarker);
-    if (aliasIdx !== -1) {
-      const relative = normalized.slice(aliasIdx + aliasMarker.length);
-      return relative.replace(/\.tsx$/, "");
-    }
+  const resolvedDir = aliasPrefix === "@shop" ? "Shop" : "Blog";
+  const resolvedMarker = `/${resolvedDir}/Resources/js/Pages/`;
+  const resolvedIdx = normalized.indexOf(resolvedMarker);
+  if (resolvedIdx !== -1) {
+    return normalized.slice(resolvedIdx + resolvedMarker.length).replace(/\.tsx$/, "");
   }
 
   return null;
 }
 
-for (const [path, importFn] of Object.entries(propertyPages)) {
-  const componentPath = extractComponentPath(path, "Properties");
-  if (componentPath) {
-    pageMap[`Modules/Properties/${componentPath}`.toLowerCase()] = importFn;
-  }
-}
-
-for (const [path, importFn] of Object.entries(bookingPages)) {
-  const componentPath = extractComponentPath(path, "Booking");
-  if (componentPath) {
-    pageMap[`Modules/Bookings/${componentPath}`.toLowerCase()] = importFn;
-  }
-}
-
 for (const [path, importFn] of Object.entries(shopPages)) {
-  const componentPath = extractComponentPath(path, "Shop");
+  const componentPath = extractComponentPath(path, "@shop");
   if (componentPath) {
-    pageMap[`Modules/Shop/${componentPath}`.toLowerCase()] = importFn;
+    pageMap[`shop/${componentPath}`.toLowerCase()] = importFn;
   }
 }
 
-for (const [path, importFn] of Object.entries(postsPages)) {
-  const componentPath = extractComponentPath(path, "Posts");
+for (const [path, importFn] of Object.entries(blogPages)) {
+  const componentPath = extractComponentPath(path, "@blog");
   if (componentPath) {
-    pageMap[`Modules/Posts/${componentPath}`.toLowerCase()] = importFn;
+    pageMap[`blog/${componentPath}`.toLowerCase()] = importFn;
   }
 }
 

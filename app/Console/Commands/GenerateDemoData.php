@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User;
 use App\Blog\Models\Post;
 use App\Blog\Models\PostCategory;
 use App\Blog\Models\PostTag;
+use App\Models\User;
 use App\Shop\Models\Coupon;
 use App\Shop\Models\CouponUsage;
 use App\Shop\Models\Order;
@@ -120,14 +120,14 @@ class GenerateDemoData extends Command
         $this->line("Admin: {$this->adminUser->name} <{$this->adminUser->email}>");
         $this->newLine();
 
-$this->createCustomers();
-         $this->createShippingMethods();
-         $this->createTaxRates();
-         $this->createCoupons();
-         $this->createOrders();
-         $this->createProductReviews();
-         $this->createStockHistory();
-         $this->createBlogPosts();
+        $this->createCustomers();
+        $this->createShippingMethods();
+        $this->createTaxRates();
+        $this->createCoupons();
+        $this->createOrders();
+        $this->createProductReviews();
+        $this->createStockHistory();
+        // $this->createBlogPosts();
 
         $this->newLine();
         $this->info('=== Demo data generation complete! ===');
@@ -1012,120 +1012,6 @@ $this->createCustomers();
         $this->newLine();
     }
 
-    private function maybeCreatePropertiesAndBookings(): void
-    {
-        if (! class_exists('App\Modules\Properties\Models\Property')) {
-            $this->line('[SKIP] Properties module not available');
-
-            return;
-        }
-
-        if (! class_exists('App\Modules\Booking\Models\Booking')) {
-            $this->line('[SKIP] Bookings module not available');
-
-            return;
-        }
-
-        $this->info('Creating properties and bookings...');
-
-        // Seed property terms if needed
-        if (City::count() === 0) {
-            $this->line('Seeding property terms (types, cities, features, statuses)...');
-            $this->callSilent('db:seed', ['--class' => 'PropertyTermSeeder']);
-        }
-
-        $propertyTypes = PropertyType::pluck('id', 'name')->all();
-        $cities = City::inRandomOrder()->take(5)->get();
-
-        if ($cities->isEmpty()) {
-            $this->warn('[SKIP] No cities found in properties module.');
-
-            return;
-        }
-
-        $propertyData = [
-            [
-                'name' => 'Modern Apartment in Tunis Centre',
-                'description' => 'Beautiful modern apartment in the heart of Tunis. Walking distance to all major attractions.',
-                'price' => 120,
-                'surface' => 85,
-                'city' => $cities[0],
-                'type' => 'Apartment',
-            ],
-            [
-                'name' => 'Villa with Pool in Sidi Bou Said',
-                'description' => 'Stunning villa with panoramic sea views and private swimming pool.',
-                'price' => 350,
-                'surface' => 250,
-                'city' => $cities[1] ?? $cities[0],
-                'type' => 'Villa',
-            ],
-            [
-                'name' => 'Cozy Studio Near Beach',
-                'description' => 'Perfect for couples. Fully equipped studio steps from the beach.',
-                'price' => 65,
-                'surface' => 35,
-                'city' => $cities[2] ?? $cities[0],
-                'type' => 'Studio',
-            ],
-        ];
-
-        $bar = $this->output->createProgressBar(count($propertyData));
-        $bar->start();
-
-        foreach ($propertyData as $data) {
-            $property = Property::firstOrCreate(
-                ['slug' => Str::slug($data['name'])],
-                [
-                    'user_id' => $this->adminUser->id,
-                    'name' => $data['name'],
-                    'description' => $data['description'],
-                    'price' => $data['price'],
-                    'surface' => $data['surface'],
-                    'surface_unit' => 'sqm',
-                    'city' => $data['city']->name,
-                    'state' => $data['city']->governorate ?? 'Tunis',
-                    'country' => 'TN',
-                    'address' => $data['city']->name.', Tunisia',
-                    'status' => 'published',
-                    'published_at' => now()->subDays(rand(10, 30)),
-                ]
-            );
-
-            // Attach type
-            if ($typeId = $propertyTypes[$data['type']] ?? null) {
-                $property->types()->syncWithoutDetaching([$typeId]);
-            }
-
-            // Create a booking if in the past
-            if (rand(0, 1)) {
-                $start = now()->subDays(rand(5, 20));
-                $end = $start->copy()->addDays(rand(2, 5));
-                try {
-                    Booking::create([
-                        'property_id' => $property->id,
-                        'user_id' => $this->customerUsers[array_rand($this->customerUsers)]->id,
-                        'start_date' => $start,
-                        'end_date' => $end,
-                        'status' => 'completed',
-                        'total_amount' => $data['price'] * $start->diffInDays($end),
-                        'guest_count' => rand(1, 4),
-                        'guest_name' => $this->customerUsers[array_rand($this->customerUsers)]->name,
-                        'guest_email' => $this->customerUsers[array_rand($this->customerUsers)]->email,
-                        'nightly_rate' => $data['price'],
-                    ]);
-                } catch (\Exception $e) {
-                    // Skip if booking fails (duplicate, validation, etc)
-                }
-            }
-
-            $bar->advance();
-        }
-
-        $bar->finish();
-        $this->newLine();
-    }
-
     private function randomAddress(): array
     {
         $addr = $this->addresses[array_rand($this->addresses)];
@@ -1174,9 +1060,6 @@ $this->createCustomers();
         // Delete demo shipping methods and tax rates
         ShippingMethod::whereIn('name', ['Standard Shipping', 'Express Shipping', 'Next Day Delivery', 'Free Pickup'])->delete();
         TaxRate::whereIn('name', ['TVA Standard (TN)', 'TVA Réduit (TN)', 'TVA Super Réduit (TN)', 'VAT Standard (FR)', 'VAT Reduced (DE)'])->delete();
-
-        // Delete demo properties
-        Property::where('user_id', $this->adminUser?->id)->delete();
 
         // Delete demo users
         User::whereIn('id', $demoUsers)->delete();

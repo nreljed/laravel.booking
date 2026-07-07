@@ -13,13 +13,12 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/js/app.tsx',
-                'resources/js/booking-widget.tsx',
             ],
-            refresh: [
-                ...(typeof globalThis !== 'undefined' && globalThis.process?.env?.APP_ENV !== 'production'
-                    ? [{ server: false, paths: ['app/Modules/Booking/Resources/js/**'] }]
-                    : []),
-            ],
+        refresh: [
+            ...(typeof globalThis !== 'undefined' && globalThis.process?.env?.APP_ENV !== 'production'
+                ? [{ server: false, paths: ['app/Shop/Resources/js/**', 'app/Blog/Resources/js/**'] }]
+                : []),
+        ],
         }),
         react(),
         inertia(),
@@ -27,10 +26,8 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            '@modules-properties': path.resolve(__dirname, './app/Modules/Properties/Resources/js'),
-            '@modules-booking': path.resolve(__dirname, './app/Modules/Booking/Resources/js'),
-            '@modules-shop': path.resolve(__dirname, './app/Modules/Shop/Resources/js'),
-            '@modules-posts': path.resolve(__dirname, './app/Modules/Posts/Resources/js'),
+            '@shop': path.resolve(__dirname, './app/Shop/Resources/js'),
+            '@blog': path.resolve(__dirname, './app/Blog/Resources/js'),
         },
     },
     build: {

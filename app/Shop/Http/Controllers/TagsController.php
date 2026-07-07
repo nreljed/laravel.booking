@@ -19,7 +19,7 @@ class TagsController extends Controller
 
         $tags = ProductTag::withCount('products')->orderBy('name')->get();
 
-        return Inertia::render('Modules/Shop/Tags/Index', [
+        return Inertia::render('shop/tags/index', [
             'tags' => $tags,
         ]);
     }

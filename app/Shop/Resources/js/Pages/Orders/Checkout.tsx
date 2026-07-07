@@ -16,6 +16,46 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/Components/ui/dialog";
 
+const COUNTRIES = [
+  { code: "AF", name: "Afghanistan" }, { code: "AL", name: "Albania" },
+  { code: "DZ", name: "Algeria" }, { code: "AR", name: "Argentina" },
+  { code: "AU", name: "Australia" }, { code: "AT", name: "Austria" },
+  { code: "BH", name: "Bahrain" }, { code: "BD", name: "Bangladesh" },
+  { code: "BE", name: "Belgium" }, { code: "BR", name: "Brazil" },
+  { code: "BG", name: "Bulgaria" }, { code: "CA", name: "Canada" },
+  { code: "CL", name: "Chile" }, { code: "CN", name: "China" },
+  { code: "CO", name: "Colombia" }, { code: "HR", name: "Croatia" },
+  { code: "CY", name: "Cyprus" }, { code: "CZ", name: "Czech Republic" },
+  { code: "DK", name: "Denmark" }, { code: "EG", name: "Egypt" },
+  { code: "FI", name: "Finland" }, { code: "FR", name: "France" },
+  { code: "DE", name: "Germany" }, { code: "GR", name: "Greece" },
+  { code: "HK", name: "Hong Kong" }, { code: "HU", name: "Hungary" },
+  { code: "IS", name: "Iceland" }, { code: "IN", name: "India" },
+  { code: "ID", name: "Indonesia" }, { code: "IE", name: "Ireland" },
+  { code: "IL", name: "Israel" }, { code: "IT", name: "Italy" },
+  { code: "JP", name: "Japan" }, { code: "KE", name: "Kenya" },
+  { code: "KW", name: "Kuwait" }, { code: "LV", name: "Latvia" },
+  { code: "LT", name: "Lithuania" }, { code: "LU", name: "Luxembourg" },
+  { code: "MY", name: "Malaysia" }, { code: "MT", name: "Malta" },
+  { code: "MX", name: "Mexico" }, { code: "MA", name: "Morocco" },
+  { code: "NL", name: "Netherlands" }, { code: "NZ", name: "New Zealand" },
+  { code: "NG", name: "Nigeria" }, { code: "NO", name: "Norway" },
+  { code: "OM", name: "Oman" }, { code: "PK", name: "Pakistan" },
+  { code: "PE", name: "Peru" }, { code: "PH", name: "Philippines" },
+  { code: "PL", name: "Poland" }, { code: "PT", name: "Portugal" },
+  { code: "QA", name: "Qatar" }, { code: "RO", name: "Romania" },
+  { code: "RU", name: "Russia" }, { code: "SA", name: "Saudi Arabia" },
+  { code: "RS", name: "Serbia" }, { code: "SG", name: "Singapore" },
+  { code: "SK", name: "Slovakia" }, { code: "SI", name: "Slovenia" },
+  { code: "ZA", name: "South Africa" }, { code: "KR", name: "South Korea" },
+  { code: "ES", name: "Spain" }, { code: "SE", name: "Sweden" },
+  { code: "CH", name: "Switzerland" }, { code: "TW", name: "Taiwan" },
+  { code: "TN", name: "Tunisia" }, { code: "TR", name: "Turkey" },
+  { code: "UA", name: "Ukraine" }, { code: "AE", name: "United Arab Emirates" },
+  { code: "GB", name: "United Kingdom" }, { code: "US", name: "United States" },
+  { code: "VN", name: "Vietnam" },
+];
+
 interface CartItem {
   id: number;
   product_id: number;
@@ -204,7 +244,7 @@ export default function Checkout({ cart, shippingMethods, userBillingAddress, us
     if (data.payment_method === "stripe") {
       fetch(route("store.checkout.payment-intent"), {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": (window as any).csrfToken },
+        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "" },
         body: JSON.stringify({}),
       })
         .then((r) => r.json())
@@ -231,11 +271,11 @@ export default function Checkout({ cart, shippingMethods, userBillingAddress, us
           const active = i === step;
           const done = i < step;
           return (
-            <div key={s.key} className="flex items-center">
+              <div key={s.key} className="flex items-center">
               <button
                 type="button"
                 onClick={() => done && setStep(i)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   active ? "bg-primary text-primary-foreground" :
                   done ? "bg-primary/10 text-primary cursor-pointer hover:bg-primary/20" :
                   "text-muted-foreground"
@@ -251,7 +291,7 @@ export default function Checkout({ cart, shippingMethods, userBillingAddress, us
                 <span className="hidden sm:inline">{s.label}</span>
               </button>
               {i < STEPS.length - 1 && (
-                <div className={`w-8 h-px mx-1 ${i < step ? "bg-primary" : "bg-border"}`} />
+                <div className={`w-4 sm:w-8 h-px mx-0.5 sm:mx-1 ${i < step ? "bg-primary" : "bg-border"}`} />
               )}
             </div>
           );
@@ -352,7 +392,16 @@ export default function Checkout({ cart, shippingMethods, userBillingAddress, us
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="billing_country">Country</Label>
-            <Input id="billing_country" maxLength={2} placeholder="US" value={data.billing_address.country} onChange={(e) => setData("billing_address", { ...data.billing_address, country: e.target.value })} />
+            <Select value={data.billing_address.country} onValueChange={(v) => setData("billing_address", { ...data.billing_address, country: v })}>
+              <SelectTrigger id="billing_country">
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {COUNTRIES.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>{c.name} ({c.code})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="space-y-1.5 mt-3">
@@ -416,7 +465,16 @@ export default function Checkout({ cart, shippingMethods, userBillingAddress, us
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="shipping_country">Country</Label>
-            <Input id="shipping_country" maxLength={2} placeholder="US" value={data.shipping_address.country} onChange={(e) => setData("shipping_address", { ...data.shipping_address, country: e.target.value })} />
+            <Select value={data.shipping_address.country} onValueChange={(v) => setData("shipping_address", { ...data.shipping_address, country: v })}>
+              <SelectTrigger id="shipping_country">
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {COUNTRIES.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>{c.name} ({c.code})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="space-y-1.5 mt-3">
@@ -647,7 +705,9 @@ export default function Checkout({ cart, shippingMethods, userBillingAddress, us
       )}
 
       <StoreLayout>
-        <Head title="Checkout" />
+        <Head title="Checkout">
+          <meta name="robots" content="noindex, nofollow" />
+        </Head>
         <div className="min-h-screen bg-background p-4 md:p-8">
           <div className="mx-auto max-w-6xl">
             {content}

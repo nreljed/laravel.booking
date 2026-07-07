@@ -50,9 +50,9 @@ class OrderActionService
         return $this->log($order, 'created', null, $order->order_number, $userId);
     }
 
-    public function edited(Order $order, ?int $userId = null): OrderAction
+    public function edited(Order $order, ?int $userId = null, ?string $notes = null): OrderAction
     {
-        return $this->log($order, 'edited', null, null, $userId);
+        return $this->log($order, 'edited', null, null, $userId, $notes);
     }
 
     public function noteAdded(Order $order, string $note, ?int $userId = null): OrderAction

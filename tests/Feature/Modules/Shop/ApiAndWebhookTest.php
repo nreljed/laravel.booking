@@ -7,19 +7,19 @@ use App\Shop\Models\Product;
 use App\Shop\Models\Webhook;
 use App\Shop\Services\WebhookService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\BootsModules;
+use Tests\BootsFeatures;
 use Tests\TestCase;
 
 class ApiAndWebhookTest extends TestCase
 {
-    use BootsModules, RefreshDatabase;
+    use BootsFeatures, RefreshDatabase;
 
     protected User $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->bootModules();
+        $this->bootFeatures();
 
         $this->admin = User::factory()->create(['email' => 'admin@test.com']);
         $this->admin->assignRole('admin');

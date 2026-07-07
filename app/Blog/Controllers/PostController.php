@@ -2,11 +2,11 @@
 
 namespace App\Blog\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Blog\Models\ContentBlock;
 use App\Blog\Models\Post;
 use App\Blog\Models\PostCategory;
 use App\Blog\Models\PostTag;
+use App\Http\Controllers\Controller;
 use App\Services\MediaService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -36,7 +36,7 @@ class PostController extends Controller
 
         $posts = $query->latest()->paginate(12)->withQueryString();
 
-        return Inertia::render('Modules/Posts/Index', [
+        return Inertia::render('blog/index', [
             'posts' => $posts,
             'categories' => PostCategory::orderBy('name')->get(['id', 'name']),
             'filters' => $request->only(['search', 'status', 'category_id']),
@@ -47,7 +47,7 @@ class PostController extends Controller
     {
         $this->authorize('create', Post::class);
 
-        return Inertia::render('Modules/Posts/Form', [
+        return Inertia::render('blog/form', [
             'post' => null,
             'categories' => PostCategory::orderBy('name')->get(['id', 'name']),
             'tags' => PostTag::orderBy('name')->get(['id', 'name']),
@@ -109,7 +109,7 @@ class PostController extends Controller
 
         $post->load('contentBlocks', 'tags', 'category');
 
-        return Inertia::render('Modules/Posts/Form', [
+        return Inertia::render('blog/form', [
             'post' => $post,
             'categories' => PostCategory::orderBy('name')->get(['id', 'name']),
             'tags' => PostTag::orderBy('name')->get(['id', 'name']),
@@ -247,7 +247,7 @@ class PostController extends Controller
     {
         $this->authorize('viewAny', Post::class);
 
-        return Inertia::render('Modules/Posts/Dashboard', [
+        return Inertia::render('blog/dashboard', [
             'stats' => [
                 'total' => Post::count(),
                 'published' => Post::where('status', 'published')->count(),

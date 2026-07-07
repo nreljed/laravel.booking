@@ -14,7 +14,7 @@ class CategoriesController extends Controller
     {
         $categories = ProductCategory::with('children')->orderBy('sort_order')->get();
 
-        return Inertia::render('Modules/Shop/Categories/Index', [
+        return Inertia::render('shop/categories/index', [
             'categories' => $categories,
         ]);
     }

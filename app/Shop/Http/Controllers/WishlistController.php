@@ -21,7 +21,7 @@ class WishlistController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        return Inertia::render('Modules/Shop/Wishlist/Index', [
+        return Inertia::render('shop/wishlist/index', [
             'products' => $products,
         ]);
     }

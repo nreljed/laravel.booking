@@ -77,7 +77,7 @@ class DeployController extends Controller
         ]);
         $output['admin'] = strtok(trim(Artisan::output()), "\n");
 
-        Artisan::call('modules:sync-permissions');
+        Artisan::call('permissions:sync');
         $output['permissions'] = strtok(trim(Artisan::output()), "\n");
 
         // Re-cache for production
@@ -209,7 +209,7 @@ class DeployController extends Controller
                 '--password' => $request->header('X-Admin-Password', env('ADMIN_PASSWORD', '')),
                 '--name' => $request->header('X-Admin-Name', env('ADMIN_NAME', 'Admin')),
             ]],
-            'modules:sync-permissions' => [[]],
+            'permissions:sync' => [[]],
             'config:cache' => [[]],
             'route:cache' => [[]],
             'view:cache' => [[]],
@@ -410,7 +410,7 @@ class DeployController extends Controller
                     '--password' => $request->header('X-Admin-Password', env('ADMIN_PASSWORD', '')),
                     '--name' => $request->header('X-Admin-Name', env('ADMIN_NAME', 'Admin')),
                 ]],
-                'modules:sync-permissions' => [[]],
+                'permissions:sync' => [[]],
                 'config:cache' => [[]],
                 'route:cache' => [[]],
                 'view:cache' => [[]],

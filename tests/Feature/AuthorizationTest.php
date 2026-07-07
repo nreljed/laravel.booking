@@ -30,36 +30,36 @@ class AuthorizationTest extends TestCase
         return $user;
     }
 
-    public function test_crm_user_cannot_access_admin_dashboard(): void
+    public function test_customer_cannot_access_admin_dashboard(): void
     {
-        $user = $this->createUserWithRole('crm_user');
+        $user = $this->createUserWithRole('customer');
 
         $response = $this->actingAs($user)->get('/dashboard/admin/settings');
 
         $response->assertStatus(403);
     }
 
-    public function test_crm_user_cannot_access_admin_users_page(): void
+    public function test_customer_cannot_access_admin_users_page(): void
     {
-        $user = $this->createUserWithRole('crm_user');
+        $user = $this->createUserWithRole('customer');
 
         $response = $this->actingAs($user)->get('/dashboard/admin/users');
 
         $response->assertStatus(403);
     }
 
-    public function test_crm_user_cannot_access_admin_roles_page(): void
+    public function test_customer_cannot_access_admin_roles_page(): void
     {
-        $user = $this->createUserWithRole('crm_user');
+        $user = $this->createUserWithRole('customer');
 
         $response = $this->actingAs($user)->get('/dashboard/admin/roles');
 
         $response->assertStatus(403);
     }
 
-    public function test_crm_user_cannot_access_system_health(): void
+    public function test_customer_cannot_access_system_health(): void
     {
-        $user = $this->createUserWithRole('crm_user');
+        $user = $this->createUserWithRole('customer');
 
         $response = $this->actingAs($user)->get('/dashboard/admin/system-health');
 
@@ -105,16 +105,16 @@ class AuthorizationTest extends TestCase
     public function test_unverified_user_can_access_dashboard(): void
     {
         $user = User::factory()->unverified()->create();
-        $role = Role::where('slug', 'crm_user')->first();
+        $role = Role::where('slug', 'customer')->first();
         $user->roles()->attach($role);
 
         $response = $this->actingAs($user)->get('/dashboard');
         $response->assertStatus(200);
     }
 
-    public function test_crm_user_cannot_create_users(): void
+    public function test_customer_cannot_create_users(): void
     {
-        $user = $this->createUserWithRole('crm_user');
+        $user = $this->createUserWithRole('customer');
 
         $response = $this->actingAs($user)->post('/dashboard/admin/users', [
             'username' => 'newuser',

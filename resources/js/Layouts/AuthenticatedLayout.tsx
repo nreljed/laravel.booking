@@ -13,7 +13,6 @@ import { CommandSearch } from "@/Components/command-search";
 import ImpersonationBanner from "@/Components/ImpersonationBanner";
 import NotificationBell from "@/Components/NotificationBell";
 import { NavUser } from "@/Components/nav-user";
-
 export default function AuthenticatedLayout({
   header,
   children,

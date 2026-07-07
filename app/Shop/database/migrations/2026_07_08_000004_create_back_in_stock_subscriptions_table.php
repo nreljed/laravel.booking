@@ -17,7 +17,7 @@ return new class extends Migration
             $table->timestamp('notified_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['email', 'product_id', 'product_variation_id']);
+            $table->unique(['email', 'product_id', 'product_variation_id'], 'back_in_stock_unique');
         });
     }
 

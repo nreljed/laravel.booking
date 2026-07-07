@@ -9,4 +9,4 @@ jobs:
     steps:
       - name: Trigger deploy check on server
         run: |
-          curl -s --max-time 180 "https://laravel.tunispromo.tn/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}"
+          curl -s --max-time 180 "https://shop.laravel.tunispromo.tn/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}"

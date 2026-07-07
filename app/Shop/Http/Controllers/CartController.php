@@ -40,7 +40,7 @@ class CartController extends Controller
 
         $appliedCodes = collect($cart->applied_coupons ?? [])->pluck('code')->filter()->values()->all();
 
-        return Inertia::render('Modules/Shop/Storefront/ShoppingCart', [
+        return Inertia::render('shop/storefront/shoppingcart', [
             'cart' => $cart,
             'autoDiscounts' => $autoDiscounts->map(fn ($c) => [
                 'id' => $c->id,

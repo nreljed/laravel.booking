@@ -19,8 +19,8 @@ $kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
 use App\Models\User;
-use App\Modules\Shop\Models\Order;
-use App\Modules\Shop\Models\Product;
+use App\Shop\Models\Order;
+use App\Shop\Models\Product;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;

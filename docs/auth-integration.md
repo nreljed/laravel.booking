@@ -54,7 +54,7 @@ Laravel Breeze (Inertia + React) with custom modifications for dual login (usern
 
 ## Registration
 
-- New users auto-assigned `crm_user` role (has all module permissions)
+- New users auto-assigned `customer` role (configurable in Settings)
 - `name` auto-populated from `username` on creation
 - Email verification via Laravel's `MustVerifyEmail` trait
 - Rate limited to 5 attempts per minute

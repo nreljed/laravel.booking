@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Shop\Models\Order;
 use App\Services\PermissionCacheService;
+use App\Shop\Models\Order;
 use App\Traits\UserDataTrait;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\MustVerifyEmail;
@@ -152,6 +152,17 @@ class User extends Authenticatable implements MustVerifyEmailContract
         }
 
         return $this;
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (User $user) {
+            if (empty($user->username) && ! empty($user->name)) {
+                $user->username = str($user->name)->slug('_')->toString();
+            }
+        });
     }
 
     protected function getPermissionCache(): PermissionCacheService

@@ -25,7 +25,7 @@ interface CartItem {
     thumbnail_url: string | null;
     stock_quantity: number | null;
     track_stock: boolean;
-    isInStock: boolean;
+    is_in_stock: boolean;
   };
 }
 
@@ -132,9 +132,18 @@ export default function StorefrontCart({ cart }: Props) {
 
   return (
     <StoreLayout>
-      <Head title="Shopping Cart" />
+      <Head title="Shopping Cart">
+        <meta name="robots" content="noindex, nofollow" />
+      </Head>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold tracking-tight mb-6">Shopping Cart</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold tracking-tight">Shopping Cart</h1>
+          {cart.items.length > 0 && (
+            <Link href={route("store.index")} className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">
+              Continue Shopping
+            </Link>
+          )}
+        </div>
 
         {cart.items.length === 0 ? (
           <Card>
@@ -160,7 +169,7 @@ export default function StorefrontCart({ cart }: Props) {
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-4">
               {cart.items.map((item) => (
-                <Card key={item.id}>
+                <Card key={item.id} className="hover:bg-muted/50 transition-colors">
                   <CardContent className="flex items-start gap-4 p-4">
                     {item.product.thumbnail_url && (
                       <img
@@ -176,7 +185,7 @@ export default function StorefrontCart({ cart }: Props) {
                       )}
                       <div className="flex items-center gap-2 mt-1">
                         {item.product.track_stock && (
-                          item.product.isInStock ? (
+                          item.product.is_in_stock ? (
                             item.product.stock_quantity !== null && item.product.stock_quantity <= 5 ? (
                               <span className="inline-flex items-center gap-1 text-xs text-amber-600">
                                 <AlertTriangle className="h-3 w-3" />
@@ -216,7 +225,7 @@ export default function StorefrontCart({ cart }: Props) {
                       </Button>
                       <Input
                         type="number"
-                        min={0}
+                        min={1}
                         value={item.quantity}
                         onChange={(e) => {
                           const val = parseInt(e.target.value, 10);

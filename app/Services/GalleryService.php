@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Services\FeatureRegistry;
-
 class GalleryService
 {
     public static function getConfig(string $module): ?array

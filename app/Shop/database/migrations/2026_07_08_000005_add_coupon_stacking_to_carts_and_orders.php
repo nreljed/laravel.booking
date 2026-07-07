@@ -13,7 +13,7 @@ return new class extends Migration
         });
 
         Schema::table('orders', function (Blueprint $table) {
-            $table->json('applied_coupons')->nullable()->after('coupon_id');
+            $table->json('applied_coupons')->nullable()->after('id');
         });
     }
 

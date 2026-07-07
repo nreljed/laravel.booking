@@ -7,19 +7,19 @@ use App\Shop\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Tests\BootsModules;
+use Tests\BootsFeatures;
 use Tests\TestCase;
 
 class GalleryUploadTest extends TestCase
 {
-    use BootsModules, RefreshDatabase;
+    use BootsFeatures, RefreshDatabase;
 
     protected User $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->bootModules();
+        $this->bootFeatures();
 
         $this->admin = User::factory()->create(['email' => 'admin@gallery-test.com']);
         $this->admin->assignRole('admin');
