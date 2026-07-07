@@ -2,16 +2,20 @@ name: CI Validation
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, develop]
     paths-ignore: ['docs/**', '**.md', '.gitignore']
   pull_request:
-    branches: [main]
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  validate:
+  lint-typecheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -23,12 +27,16 @@ jobs:
           node-version: 22
           cache: 'npm'
 
+      - name: Cache Composer
+        uses: actions/cache@v5
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
       - run: cp .env.example .env
       - run: touch database/database.sqlite
-      - run: composer install
-
+      - run: composer install --prefer-dist --no-interaction
       - run: npm ci --legacy-peer-deps
-
       - run: php artisan key:generate
       - run: php artisan migrate --force
 
@@ -36,6 +44,36 @@ jobs:
       - run: npm run typecheck
       - run: npm run format:check
       - run: vendor/bin/pint --test
+
+  test:
+    needs: lint-typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Cache Composer
+        uses: actions/cache@v5
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: cp .env.example .env
+      - run: touch database/database.sqlite
+      - run: composer install --prefer-dist --no-interaction
+      - run: npm ci --legacy-peer-deps
+      - run: php artisan key:generate
+      - run: php artisan migrate --force
+
       - run: npm run test
       - run: npm run build
       - run: php artisan test

@@ -5,33 +5,73 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
+      timezone: "Africa/Tunis"
     open-pull-requests-limit: 10
+    versioning-strategy: increase
     labels:
       - "dependencies"
       - "npm"
     commit-message:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
+    groups:
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "@typescript-eslint/*"
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+      vite:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
 
   - package-ecosystem: "composer"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
+      timezone: "Africa/Tunis"
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "composer"
     commit-message:
       prefix: "chore(deps)"
+    groups:
+      laravel:
+        patterns:
+          - "laravel/*"
+      phpunit:
+        patterns:
+          - "phpunit/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Africa/Tunis"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "ci"
     commit-message:
       prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns:
+          - "*"
