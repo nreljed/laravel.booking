@@ -1,5 +1,4 @@
-import { router } from "@inertiajs/react";
-import { Link } from "@inertiajs/react";
+import { router, Link } from "@inertiajs/react";
 import { MessageSquare, Star, Check, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Button } from "@/Components/ui/button";

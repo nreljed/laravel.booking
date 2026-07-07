@@ -115,7 +115,7 @@ export default function DashboardIndex({ analytics }: DashboardIndexProps) {
   const [period, setPeriod] = useState(analytics?.days ?? 14);
 
   const analyticsKpis = analytics?.kpis ?? [];
-  const revenueData = analytics?.revenue_over_time ?? [];
+  const revenueData = useMemo(() => analytics?.revenue_over_time ?? [], [analytics]);
 
   const sparklineData = useMemo(() => {
     if (revenueData.length < 2) return;
