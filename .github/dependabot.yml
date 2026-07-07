@@ -16,26 +16,16 @@ updates:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
     groups:
-      react:
-        patterns:
-          - "react*"
-          - "@types/react*"
-      radix-ui:
-        patterns:
-          - "@radix-ui/*"
-      eslint:
-        patterns:
-          - "eslint*"
-          - "@eslint/*"
-          - "@typescript-eslint/*"
-      typescript:
-        patterns:
-          - "typescript"
-          - "@types/*"
-      vite:
-        patterns:
-          - "vite*"
-          - "@vitejs/*"
+      production-minor-patch:
+        dependency-type: "production"
+        update-types:
+          - "patch"
+          - "minor"
+      dev-minor-patch:
+        dependency-type: "development"
+        update-types:
+          - "patch"
+          - "minor"
 
   - package-ecosystem: "composer"
     directory: "/"
@@ -51,12 +41,12 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     groups:
-      laravel:
+      composer-minor-patch:
         patterns:
-          - "laravel/*"
-      phpunit:
-        patterns:
-          - "phpunit/*"
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
 
   - package-ecosystem: "github-actions"
     directory: "/"
