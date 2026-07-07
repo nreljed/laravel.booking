@@ -1,13 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, Head, router } from "@inertiajs/react";
-import {
-  Users,
-  TrendingUp,
-  DollarSign,
-  ShoppingCart,
-  BarChart3,
-  Package,
-} from "lucide-react";
+import { Users, TrendingUp, DollarSign, ShoppingCart, BarChart3, Package } from "lucide-react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Button } from "@/Components/ui/button";
@@ -125,13 +118,17 @@ export default function DashboardIndex({ analytics }: DashboardIndexProps) {
   const revenueData = analytics?.revenue_over_time ?? [];
 
   const sparklineData = useMemo(() => {
-    if (revenueData.length < 2) return undefined;
+    if (revenueData.length < 2) return;
     return revenueData.map((d) => d.revenue);
   }, [revenueData]);
 
   const formatKpiValue = (val: number, fmt?: string) => {
     if (fmt === "currency")
-      return new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(val);
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "EUR",
+        maximumFractionDigits: 0,
+      }).format(val);
     if (fmt === "percent") return `${val}%`;
     return val.toLocaleString();
   };
@@ -157,14 +154,17 @@ export default function DashboardIndex({ analytics }: DashboardIndexProps) {
               Welcome back, {user?.name || "User"}!
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {analytics?.total_orders ?? 0} total orders · €{((analytics?.total_revenue ?? 0) / 1000).toFixed(0)}k revenue
+              {analytics?.total_orders ?? 0} total orders · €
+              {((analytics?.total_revenue ?? 0) / 1000).toFixed(0)}k revenue
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Tabs value={String(period)} onValueChange={(v) => handlePeriodChange(Number(v))}>
               <TabsList>
                 {PERIODS.map((p) => (
-                  <TabsTrigger key={p.days} value={String(p.days)}>{p.label}</TabsTrigger>
+                  <TabsTrigger key={p.days} value={String(p.days)}>
+                    {p.label}
+                  </TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
@@ -204,9 +204,7 @@ export default function DashboardIndex({ analytics }: DashboardIndexProps) {
         )}
 
         {/* Hero Area Chart — full width */}
-        {revenueData.length > 0 && (
-          <RevenueAreaChart data={revenueData} />
-        )}
+        {revenueData.length > 0 && <RevenueAreaChart data={revenueData} />}
 
         {/* Charts row: Order Status + Revenue Breakdown side by side */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -234,42 +232,54 @@ export default function DashboardIndex({ analytics }: DashboardIndexProps) {
         </div>
 
         {/* Bottom widgets row */}
-        {(analytics && (analytics.low_stock_products?.length ?? 0) + (analytics.pending_reviews?.length ?? 0) > 0) && (
-          <div className="grid gap-6 lg:grid-cols-2">
-            {(analytics.low_stock_products?.length ?? 0) > 0 && (
-              <LowStockAlerts products={analytics.low_stock_products ?? []} />
-            )}
-            {(analytics.pending_reviews?.length ?? 0) > 0 && (
-              <PendingReviews reviews={analytics.pending_reviews ?? []} />
-            )}
-          </div>
-        )}
+        {analytics &&
+          (analytics.low_stock_products?.length ?? 0) + (analytics.pending_reviews?.length ?? 0) >
+            0 && (
+            <div className="grid gap-6 lg:grid-cols-2">
+              {(analytics.low_stock_products?.length ?? 0) > 0 && (
+                <LowStockAlerts products={analytics.low_stock_products ?? []} />
+              )}
+              {(analytics.pending_reviews?.length ?? 0) > 0 && (
+                <PendingReviews reviews={analytics.pending_reviews ?? []} />
+              )}
+            </div>
+          )}
 
         {/* Footer stats — compact row */}
         {analytics && (
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
             <Card>
               <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Abandoned Carts</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">
+                  Abandoned Carts
+                </CardTitle>
                 <ShoppingCart className="h-3.5 w-3.5 text-muted-foreground" />
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="text-lg font-bold">{analytics.abandoned_carts}</div>
-                <p className="text-xs text-muted-foreground">Recovered: {analytics.recovered_carts}</p>
+                <p className="text-xs text-muted-foreground">
+                  Recovered: {analytics.recovered_carts}
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Total Revenue</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">
+                  Total Revenue
+                </CardTitle>
                 <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-lg font-bold">{formatKpiValue(analytics.total_revenue, "currency")}</div>
+                <div className="text-lg font-bold">
+                  {formatKpiValue(analytics.total_revenue, "currency")}
+                </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Total Orders</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">
+                  Total Orders
+                </CardTitle>
                 <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
               </CardHeader>
               <CardContent className="p-4 pt-0">
@@ -278,12 +288,18 @@ export default function DashboardIndex({ analytics }: DashboardIndexProps) {
             </Card>
             <Card>
               <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Products</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">
+                  Products
+                </CardTitle>
                 <Package className="h-3.5 w-3.5 text-muted-foreground" />
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-lg font-bold">{analytics.active_products.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">Active / {analytics.total_products} total</p>
+                <div className="text-lg font-bold">
+                  {analytics.active_products.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Active / {analytics.total_products} total
+                </p>
               </CardContent>
             </Card>
           </div>

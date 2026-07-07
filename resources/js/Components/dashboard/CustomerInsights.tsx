@@ -1,8 +1,5 @@
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import {
-  ChartContainer,
-  ChartTooltipContent,
-} from "@/Components/ui/chart";
+import { ChartContainer, ChartTooltipContent } from "@/Components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Users } from "lucide-react";
 import type { ChartConfig } from "@/Components/ui/chart";
@@ -67,8 +64,11 @@ export default function CustomerInsights({
             <div>
               <p className="text-xs text-muted-foreground">Retention Rate</p>
               <p className="text-2xl font-bold">{retentionRate}%</p>
-              <p className={`text-xs mt-0.5 ${retentionChange > 0 ? "text-emerald-600" : retentionChange < 0 ? "text-red-600" : "text-muted-foreground"}`}>
-                {retentionChange > 0 ? "+" : ""}{retentionChange.toFixed(1)}% vs last period
+              <p
+                className={`text-xs mt-0.5 ${retentionChange > 0 ? "text-emerald-600" : retentionChange < 0 ? "text-red-600" : "text-muted-foreground"}`}
+              >
+                {retentionChange > 0 ? "+" : ""}
+                {retentionChange.toFixed(1)}% vs last period
               </p>
             </div>
             <div>
@@ -89,14 +89,8 @@ export default function CustomerInsights({
                   axisLine={false}
                   fontSize={11}
                 />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={11}
-                />
-                <ChartTooltipContent
-                  indicator="dot"
-                />
+                <YAxis tickLine={false} axisLine={false} fontSize={11} />
+                <ChartTooltipContent indicator="dot" />
                 <Area
                   type="monotone"
                   dataKey="customers"

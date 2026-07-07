@@ -1,8 +1,5 @@
 import { Pie, PieChart, Cell } from "recharts";
-import {
-  ChartContainer,
-  ChartTooltipContent,
-} from "@/Components/ui/chart";
+import { ChartContainer, ChartTooltipContent } from "@/Components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { BarChart3 } from "lucide-react";
 import type { ChartConfig } from "@/Components/ui/chart";
@@ -27,7 +24,7 @@ export default function OrderStatusChart({ data }: OrderStatusChartProps) {
 
   const items = Object.entries(data)
     .filter(([, count]) => count > 0)
-    .sort(([a], [b]) => STATUS_ORDER.indexOf(a) - STATUS_ORDER.indexOf(b))
+    .toSorted(([a], [b]) => STATUS_ORDER.indexOf(a) - STATUS_ORDER.indexOf(b))
     .map(([status, count]) => ({
       name: status.charAt(0).toUpperCase() + status.slice(1),
       value: count,
@@ -73,7 +70,10 @@ export default function OrderStatusChart({ data }: OrderStatusChartProps) {
               strokeWidth={0}
             >
               {items.map((item, i) => (
-                <Cell key={i} fill={STATUS_COLORS[item.name.toLowerCase()] ?? "var(--muted-foreground)"} />
+                <Cell
+                  key={i}
+                  fill={STATUS_COLORS[item.name.toLowerCase()] ?? "var(--muted-foreground)"}
+                />
               ))}
             </Pie>
             <ChartTooltipContent

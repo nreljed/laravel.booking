@@ -38,7 +38,7 @@ function ChartContainer({
   children: React.ReactElement;
 }) {
   const uniqueId = React.useId();
-  const chartId = `chart-${id ?? uniqueId.replace(/:/g, "")}`;
+  const chartId = `chart-${id ?? uniqueId.replaceAll(":", "")}`;
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -61,11 +61,9 @@ function ChartContainer({
 }
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-  const colorConfig = Object.entries(config).filter(
-    ([, config]) => config.theme ?? config.color,
-  );
+  const colorConfig = Object.entries(config).filter(([, config]) => config.theme ?? config.color);
 
-  if (!colorConfig.length) return null;
+  if (colorConfig.length === 0) return null;
 
   return (
     <style
@@ -76,8 +74,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ?? itemConfig.color;
+    const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ?? itemConfig.color;
     return color ? `  --color-${key}: ${color};` : null;
   })
   .join("\n")}
@@ -130,11 +127,11 @@ const ChartTooltipContent = React.forwardRef<
       if (hideLabel || !payload?.length) return null;
 
       const [item] = payload;
-      const key = `${labelKey ?? (item as any)?.dataKey ?? (item as any)?.name ?? "value"}`;
+      const key = labelKey ?? (item as any)?.dataKey ?? (item as any)?.name ?? "value";
       const itemConfig = getPayloadConfigFromPayload(config, item, key);
       const value =
         !labelKey && typeof label === "string"
-          ? config[label as keyof typeof config]?.label ?? label
+          ? (config[label as keyof typeof config]?.label ?? label)
           : itemConfig?.label;
 
       if (labelFormatter) {
@@ -164,8 +161,8 @@ const ChartTooltipContent = React.forwardRef<
       >
         {!nestLabel ? tooltipLabel : null}
         <div className="grid gap-1.5">
-            {payload.map((item: any) => {
-            const key = `${nameKey ?? item.name ?? item.dataKey ?? "value"}`;
+          {payload.map((item: any) => {
+            const key = nameKey ?? item.name ?? item.dataKey ?? "value";
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
             const indicatorColor = color ?? item.payload?.fill ?? item.color;
 
@@ -257,7 +254,7 @@ const ChartLegendContent = React.forwardRef<
       )}
     >
       {payload.map((item: any) => {
-        const key = `${nameKey ?? item.dataKey ?? "value"}`;
+        const key = nameKey ?? item.dataKey ?? "value";
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
         return (
@@ -283,33 +280,28 @@ const ChartLegendContent = React.forwardRef<
 ChartLegendContent.displayName = "ChartLegendContent";
 
 function getPayloadConfigFromPayload(config: ChartConfig, payload: any, key: string) {
-  if (typeof payload !== "object" || payload === null) return undefined;
+  if (typeof payload !== "object" || payload === null) return;
 
   const payloadPayload =
-    "payload" in payload &&
-    typeof payload.payload === "object" &&
-    payload.payload !== null
+    "payload" in payload && typeof payload.payload === "object" && payload.payload !== null
       ? (payload.payload as Record<string, unknown>)
       : undefined;
 
   let configLabelKey: string = key;
 
-  if (key in payload && typeof payload[key as keyof typeof payload] === "string") {
+  if (Object.hasOwn(payload, key) && typeof payload[key as keyof typeof payload] === "string") {
     configLabelKey = payload[key as keyof typeof payload] as string;
   } else if (
     payloadPayload &&
-    key in payloadPayload &&
+    Object.hasOwn(payloadPayload, key) &&
     typeof payloadPayload[key] === "string"
   ) {
     configLabelKey = payloadPayload[key] as string;
   }
 
-  return configLabelKey in config ? config[configLabelKey] : config[key as keyof typeof config];
+  return config[
+    Object.hasOwn(config, configLabelKey) ? configLabelKey : (key as keyof typeof config)
+  ];
 }
 
-export {
-  ChartContainer,
-  ChartTooltipContent,
-  ChartLegendContent,
-  ChartStyle,
-};
+export { ChartContainer, ChartTooltipContent, ChartLegendContent, ChartStyle };

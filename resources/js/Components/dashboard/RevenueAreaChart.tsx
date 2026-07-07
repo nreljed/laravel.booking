@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/Components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 
@@ -14,7 +22,11 @@ interface RevenueAreaChartProps {
 }
 
 function formatCurrency(val: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(val);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(val);
 }
 
 export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
@@ -75,7 +87,9 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
                 axisLine={false}
                 tickMargin={8}
                 className="text-xs text-muted-foreground"
-                tickFormatter={(v) => activeMetric === "revenue" ? `€${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}` : `${v}`}
+                tickFormatter={(v) =>
+                  activeMetric === "revenue" ? `€${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}` : v
+                }
                 width={45}
               />
               <Tooltip

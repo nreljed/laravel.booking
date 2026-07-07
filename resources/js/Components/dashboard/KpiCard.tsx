@@ -13,7 +13,13 @@ interface KpiCardProps {
 }
 
 export default function KpiCard({
-  title, subtitle, value, change, icon: Icon, sparklineData, description,
+  title,
+  subtitle,
+  value,
+  change,
+  icon: Icon,
+  sparklineData,
+  description,
 }: KpiCardProps) {
   const isPositive = change !== undefined && change > 0;
   const isNegative = change !== undefined && change < 0;
@@ -24,9 +30,7 @@ export default function KpiCard({
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="min-w-0">
           <CardTitle className="text-sm font-medium truncate">{title}</CardTitle>
-          {subtitle && (
-            <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
         <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       </CardHeader>
@@ -52,9 +56,7 @@ export default function KpiCard({
             </span>
           )}
         </div>
-        {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </CardContent>
     </Card>
   );

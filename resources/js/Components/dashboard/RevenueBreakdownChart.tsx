@@ -1,8 +1,5 @@
 import { Pie, PieChart, Cell } from "recharts";
-import {
-  ChartContainer,
-  ChartTooltipContent,
-} from "@/Components/ui/chart";
+import { ChartContainer, ChartTooltipContent } from "@/Components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { PieChart as PieIcon } from "lucide-react";
 import type { ChartConfig } from "@/Components/ui/chart";
@@ -34,8 +31,6 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 
 export default function RevenueBreakdownChart({ data }: RevenueBreakdownChartProps) {
-  const chartConfig = {} satisfies ChartConfig;
-
   if (data.length === 0) {
     return (
       <Card>
@@ -51,6 +46,8 @@ export default function RevenueBreakdownChart({ data }: RevenueBreakdownChartPro
       </Card>
     );
   }
+
+  const chartConfig = {} satisfies ChartConfig;
 
   return (
     <Card>
@@ -97,9 +94,7 @@ export default function RevenueBreakdownChart({ data }: RevenueBreakdownChartPro
                 />
                 {item.name}
               </span>
-              <span className="font-medium tabular-nums">
-                {item.percentage}%
-              </span>
+              <span className="font-medium tabular-nums">{item.percentage}%</span>
             </div>
           ))}
         </div>

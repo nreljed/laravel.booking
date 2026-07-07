@@ -29,13 +29,16 @@ export default function LowStockAlerts({ products }: LowStockAlertsProps) {
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
         </div>
-        <Badge variant="destructive" className="text-xs">{products.length}</Badge>
+        <Badge variant="destructive" className="text-xs">
+          {products.length}
+        </Badge>
       </CardHeader>
       <CardContent className="space-y-3">
         {products.map((product) => {
-          const ratio = product.low_stock_threshold > 0
-            ? Math.min(product.stock_quantity / product.low_stock_threshold, 1)
-            : 0;
+          const ratio =
+            product.low_stock_threshold > 0
+              ? Math.min(product.stock_quantity / product.low_stock_threshold, 1)
+              : 0;
           const isCritial = product.stock_quantity === 0;
           return (
             <div key={product.id} className="flex items-center gap-3">
@@ -57,23 +60,27 @@ export default function LowStockAlerts({ products }: LowStockAlertsProps) {
                     <div
                       className={cn(
                         "h-full rounded-full transition-all",
-                        isCritial ? "bg-destructive" : ratio < 0.5 ? "bg-amber-500" : "bg-green-500",
+                        isCritial
+                          ? "bg-destructive"
+                          : ratio < 0.5
+                            ? "bg-amber-500"
+                            : "bg-green-500",
                       )}
                       style={{ width: `${ratio * 100}%` }}
                     />
                   </div>
-                  <span className={cn(
-                    "text-xs tabular-nums shrink-0",
-                    isCritial ? "text-destructive font-semibold" : "text-muted-foreground",
-                  )}>
+                  <span
+                    className={cn(
+                      "text-xs tabular-nums shrink-0",
+                      isCritial ? "text-destructive font-semibold" : "text-muted-foreground",
+                    )}
+                  >
                     {product.stock_quantity} / {product.low_stock_threshold}
                   </span>
                 </div>
               </div>
               <Button asChild variant="ghost" size="sm" className="shrink-0 h-7 px-2">
-                <Link href={route("dashboard.shop.products.edit", product.id)}>
-                  Edit
-                </Link>
+                <Link href={route("dashboard.shop.products.edit", product.id)}>Edit</Link>
               </Button>
             </div>
           );

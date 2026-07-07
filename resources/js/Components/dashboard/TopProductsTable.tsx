@@ -45,10 +45,7 @@ export default function TopProductsTable({ products }: TopProductsTableProps) {
             {products.map((product, i) => {
               const rating = product.rating ?? 0;
               return (
-                <div
-                  key={product.product_id}
-                  className="flex items-center gap-3 px-6 py-3 text-sm"
-                >
+                <div key={product.product_id} className="flex items-center gap-3 px-6 py-3 text-sm">
                   <span className="text-xs text-muted-foreground w-4 shrink-0 font-medium">
                     #{i + 1}
                   </span>
@@ -87,11 +84,17 @@ export default function TopProductsTable({ products }: TopProductsTableProps) {
                         <div className="h-1.5 w-16 bg-muted rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full ${
-                              product.stock < 10 ? "bg-red-500" : product.stock < 50 ? "bg-amber-500" : "bg-emerald-500"
+                              product.stock < 10
+                                ? "bg-red-500"
+                                : product.stock < 50
+                                  ? "bg-amber-500"
+                                  : "bg-emerald-500"
                             }`}
                             style={{
                               width: `${Math.min(
-                                ((product.stock ?? 0) / (product.max_stock ?? product.stock ?? 100)) * 100,
+                                ((product.stock ?? 0) /
+                                  (product.max_stock ?? product.stock ?? 100)) *
+                                  100,
                                 100,
                               )}%`,
                             }}

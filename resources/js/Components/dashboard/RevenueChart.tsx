@@ -1,14 +1,5 @@
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  ChartContainer,
-  ChartTooltipContent,
-} from "@/Components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltipContent } from "@/Components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { BarChart3 } from "lucide-react";
 import type { ChartConfig } from "@/Components/ui/chart";
@@ -31,17 +22,6 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 
 export default function RevenueChart({ data }: RevenueChartProps) {
-  const chartConfig = {
-    revenue: {
-      label: "Revenue",
-      color: "var(--chart-1)",
-    },
-    orders: {
-      label: "Orders",
-      color: "var(--chart-2)",
-    },
-  } satisfies ChartConfig;
-
   if (data.length === 0) {
     return (
       <Card>
@@ -58,6 +38,17 @@ export default function RevenueChart({ data }: RevenueChartProps) {
     );
   }
 
+  const chartConfig = {
+    revenue: {
+      label: "Revenue",
+      color: "var(--chart-1)",
+    },
+    orders: {
+      label: "Orders",
+      color: "var(--chart-2)",
+    },
+  } satisfies ChartConfig;
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -68,15 +59,13 @@ export default function RevenueChart({ data }: RevenueChartProps) {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[280px] w-full">
-          <BarChart accessibilityLayer data={data} margin={{ top: 8, right: 8, left: -16, bottom: 4 }}>
+          <BarChart
+            accessibilityLayer
+            data={data}
+            margin={{ top: 8, right: 8, left: -16, bottom: 4 }}
+          >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              fontSize={11}
-            />
+            <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} fontSize={11} />
             <YAxis
               tickLine={false}
               axisLine={false}
@@ -89,7 +78,9 @@ export default function RevenueChart({ data }: RevenueChartProps) {
                 const v = typeof value === "number" ? value : Number(value);
                 return (
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">{typeof name === "string" && name === "revenue" ? "Revenue" : "Orders"}</span>
+                    <span className="text-muted-foreground">
+                      {typeof name === "string" && name === "revenue" ? "Revenue" : "Orders"}
+                    </span>
                     <span className="font-mono font-medium tabular-nums text-foreground">
                       {typeof name === "string" && name === "revenue" ? currency.format(v) : v}
                     </span>

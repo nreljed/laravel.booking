@@ -66,7 +66,9 @@ export default function PendingReviews({ reviews }: PendingReviewsProps) {
           <MessageSquare className="h-4 w-4 text-sky-500" />
           <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
         </div>
-        <Badge variant="secondary" className="text-xs">{reviews.length}</Badge>
+        <Badge variant="secondary" className="text-xs">
+          {reviews.length}
+        </Badge>
       </CardHeader>
       <CardContent className="space-y-3">
         {reviews.map((review) => (
