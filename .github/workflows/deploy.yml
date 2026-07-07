@@ -231,3 +231,4 @@ jobs:
             Write-Output "2. Upload via DirectAdmin File Manager to public_html/"
             Write-Output "3. Extract, then visit:"
             Write-Output "   https://shop.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
+          }
