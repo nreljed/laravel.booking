@@ -19,7 +19,8 @@
     "playwright:clean-profiles": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/playwright-clean.ps1 -Target profiles",
     "playwright:clean-npx": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/playwright-clean.ps1 -Target npx",
     "playwright:clean-all": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/playwright-clean.ps1 -Target all",
-    "playwright:doctor": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/playwright-doctor.ps1"
+    "playwright:doctor": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/playwright-doctor.ps1",
+    "build:deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-deploy-zip.ps1 -Force"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
