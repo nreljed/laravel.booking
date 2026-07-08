@@ -290,10 +290,11 @@ if ($authenticated && \file_exists($autoloadPath)) {
         $app = require_once $appRoot.'/bootstrap/app.php';
         if ($app instanceof Application) {
             check('laravel', 'Application creation', true, 'Laravel '.$app::VERSION);
-            check('laravel', 'Environment', true, $app->environment());
-            check('laravel', 'Debug Mode', true, $app->hasDebugModeEnabled() ? 'ENABLED' : 'DISABLED');
 
             // Part B: Full Kernel handle() test — same flow as index.php
+            // NOTE: $app->environment() and $app->hasDebugModeEnabled() are
+            // placed AFTER handle() because they access $this['env'], which
+            // triggers container resolution of 'env' before the app bootstraps.
             try {
                 // Capture output buffering state
                 $obLevel = \ob_get_level();
@@ -306,6 +307,9 @@ if ($authenticated && \file_exists($autoloadPath)) {
 
                 // This is the same code path as index.php's $app->handleRequest()
                 $response = $kernel->handle($testRequest);
+
+                check('laravel', 'Environment', true, $app->environment());
+                check('laravel', 'Debug Mode', true, $app->hasDebugModeEnabled() ? 'ENABLED' : 'DISABLED');
 
                 $statusCode = $response->getStatusCode();
                 $content = $response->getContent();
@@ -345,6 +349,18 @@ if ($authenticated && \file_exists($autoloadPath)) {
             } catch (Throwable $e) {
                 check('laravel', 'Kernel handle()', false,
                     \get_class($e).': '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
+
+                // Try to get environment info even on failure (bootstrap may have partially run)
+                try {
+                    check('laravel', 'Environment', true, $app->environment());
+                } catch (Throwable) {
+                    check('laravel', 'Environment', false, 'Not available (pre-bootstrap)');
+                }
+                try {
+                    check('laravel', 'Debug Mode', true, $app->hasDebugModeEnabled() ? 'ENABLED' : 'DISABLED');
+                } catch (Throwable) {
+                    check('laravel', 'Debug Mode', false, 'Not available (pre-bootstrap)');
+                }
 
                 if (\str_contains($e->getMessage(), 'Base table or view not found') ||
                     \str_contains($e->getMessage(), 'SQLSTATE') ||
