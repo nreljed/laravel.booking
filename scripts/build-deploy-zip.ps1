@@ -112,6 +112,9 @@ $cacheDir = Join-Path $root "bootstrap\cache"
 $cacheBak = Join-Path $root "bootstrap\cache.bak"
 if (Test-Path $cacheBak) { Remove-Item $cacheBak -Recurse -Force -ErrorAction SilentlyContinue }
 if (Test-Path $cacheDir) { Move-Item $cacheDir $cacheBak -Force }
+# Ensure empty cache dir exists in zip for fresh deployments
+New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
+Set-Content -Path (Join-Path $cacheDir ".gitkeep") -Value "" -NoNewLine
 
 # Ensure CHANGELOG.md exists
 if (-not (Test-Path (Join-Path $root "CHANGELOG.md"))) {
@@ -130,7 +133,9 @@ if ($missing) { Write-Warning "Missing from filesystem: $($missing -join ', ')" 
 
 Compress-Archive -Path $fullPaths -DestinationPath $zip -CompressionLevel Optimal
 
-# Restore bootstrap/cache
+# Remove the .gitkeep we added for the zip
+Remove-Item (Join-Path $cacheDir ".gitkeep") -Force -ErrorAction SilentlyContinue
+# Restore original bootstrap/cache
 if (Test-Path $cacheBak) {
     if (Test-Path $cacheDir) { Remove-Item $cacheDir -Recurse -Force -ErrorAction SilentlyContinue }
     Move-Item $cacheBak $cacheDir -Force
@@ -160,6 +165,7 @@ $critical = @(
     "public\build\manifest.json",
     "public\debug.php",
     "public\.htaccess",
+    "bootstrap\cache\.gitkeep",
     "artisan",
     ".env",
     "deploy.php"

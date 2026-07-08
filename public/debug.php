@@ -217,6 +217,8 @@ if ($authenticated && \file_exists($autoloadPath)) {
         $dbName = \trim($m[1] ?? '');
         \preg_match('/DB_USERNAME=(.+)/', $envContent, $m);
         $dbUser = \trim($m[1] ?? '');
+        \preg_match('/DB_PASSWORD=(.+)/', $envContent, $m);
+        $dbPass = \trim($m[1] ?? '');
 
         if ($dbDriver === 'sqlite') {
             check('database', 'DB Driver', true, 'SQLite');
@@ -229,7 +231,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
             if (\extension_loaded('pdo_mysql')) {
                 try {
                     $dsn = "mysql:host=$dbHost;port=$dbPort;dbname=$dbName";
-                    $pdo = new PDO($dsn, $dbUser, '', [
+                    $pdo = new PDO($dsn, $dbUser, $dbPass, [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_TIMEOUT => 3,
                     ]);
