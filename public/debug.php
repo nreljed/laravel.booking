@@ -33,7 +33,8 @@ $results = [
     'checks' => [],
 ];
 
-function check(string $group, string $label, bool $passed, ?string $detail = null): bool {
+function check(string $group, string $label, bool $passed, ?string $detail = null): bool
+{
     global $results;
     $results['checks'][] = [
         'group' => $group,
@@ -41,6 +42,7 @@ function check(string $group, string $label, bool $passed, ?string $detail = nul
         'passed' => $passed,
         'detail' => $detail,
     ];
+
     return $passed;
 }
 
@@ -55,7 +57,7 @@ check('system', 'Document Root', true, $_SERVER['DOCUMENT_ROOT'] ?? 'unknown');
 check('system', 'PHP SAPI', true, PHP_SAPI);
 check('system', 'PHP OS', true, PHP_OS);
 check('system', 'Memory Limit', true, \ini_get('memory_limit'));
-check('system', 'Max Execution Time', true, \ini_get('max_execution_time') . 's');
+check('system', 'Max Execution Time', true, \ini_get('max_execution_time').'s');
 check('system', 'Upload Max Filesize', true, \ini_get('upload_max_filesize'));
 check('system', 'Post Max Size', true, \ini_get('post_max_size'));
 
@@ -76,7 +78,7 @@ if ($authenticated) {
         $validateTimestamps = $opcacheConfig['directives']['opcache.validate_timestamps'] ?? 'unknown';
         $revalidateFreq = $opcacheConfig['directives']['opcache.revalidate_freq'] ?? 'unknown';
         check('php_config', 'Opcache validate_timestamps', true, (string) $validateTimestamps);
-        check('php_config', 'Opcache revalidate_freq', true, (string) $revalidateFreq . 's');
+        check('php_config', 'Opcache revalidate_freq', true, (string) $revalidateFreq.'s');
     }
 }
 
@@ -124,14 +126,14 @@ $paths = [
 ];
 
 foreach ($paths as $relPath => $type) {
-    $fullPath = $appRoot . '/' . $relPath;
+    $fullPath = $appRoot.'/'.$relPath;
     $exists = $type === 'dir' ? \is_dir($fullPath) : \file_exists($fullPath);
     $label = $type === 'dir' ? "Directory: $relPath" : "File: $relPath";
     $detail = null;
     if ($authenticated && $exists) {
         $detail = \realpath($fullPath);
         if ($type === 'file') {
-            $detail .= ' (' . \round(\filesize($fullPath) / 1024, 1) . ' KB)';
+            $detail .= ' ('.\round(\filesize($fullPath) / 1024, 1).' KB)';
         }
     }
     check('filesystem', $label, $exists, $detail);
@@ -152,22 +154,24 @@ if ($authenticated) {
     ];
 
     foreach ($criticalClasses as $className => $relPath) {
-        $fullPath = $appRoot . '/vendor/' . $relPath;
+        $fullPath = $appRoot.'/vendor/'.$relPath;
         $exists = \file_exists($fullPath);
-        check('vendor', "Class: $className", $exists, $exists ? \realpath($fullPath) : 'MISSING: vendor/' . $relPath);
+        check('vendor', "Class: $className", $exists, $exists ? \realpath($fullPath) : 'MISSING: vendor/'.$relPath);
     }
 
     // Check for orphaned autoload entries in classmap
-    $classmapPath = $appRoot . '/vendor/composer/autoload_classmap.php';
+    $classmapPath = $appRoot.'/vendor/composer/autoload_classmap.php';
     if (\file_exists($classmapPath)) {
         $classmap = require $classmapPath;
         $checked = 0;
         $missing = 0;
         $sampleMissing = [];
         foreach ($classmap as $class => $path) {
-            if ($checked >= 2000) break;
+            if ($checked >= 2000) {
+                break;
+            }
             $checked++;
-            if (!\file_exists($path)) {
+            if (! \file_exists($path)) {
                 $missing++;
                 if (\count($sampleMissing) < 5) {
                     $sampleMissing[] = "$class => $path";
@@ -176,7 +180,7 @@ if ($authenticated) {
         }
         if ($missing > 0) {
             check('vendor', "Classmap missing files ($missing of $checked checked)", false,
-                'Sample: ' . \implode('; ', $sampleMissing));
+                'Sample: '.\implode('; ', $sampleMissing));
         } else {
             check('vendor', "Classmap integrity ($checked checked)", true, 'All files present');
         }
@@ -200,11 +204,11 @@ if ($authenticated) {
         'bootstrap/cache',
     ];
     foreach ($permPaths as $relPath) {
-        $fullPath = $appRoot . '/' . $relPath;
+        $fullPath = $appRoot.'/'.$relPath;
         if (\is_dir($fullPath)) {
             $perms = \substr(\sprintf('%o', \fileperms($fullPath)), -4);
             $writable = \is_writable($fullPath);
-            check('permissions', "Permissions: $relPath", $writable, "mode=$perms writable=" . ($writable ? 'yes' : 'no'));
+            check('permissions', "Permissions: $relPath", $writable, "mode=$perms writable=".($writable ? 'yes' : 'no'));
         } else {
             check('permissions', "Permissions: $relPath", false, 'Directory does not exist');
         }
@@ -215,20 +219,22 @@ if ($authenticated) {
 // 7. .env File (authenticated only)
 // ===================================================================
 if ($authenticated) {
-    $envPath = $appRoot . '/.env';
+    $envPath = $appRoot.'/.env';
     if (\file_exists($envPath)) {
-        check('env', '.env exists', true, 'Found at ' . \realpath($envPath));
+        check('env', '.env exists', true, 'Found at '.\realpath($envPath));
         $envContent = \file_get_contents($envPath);
         $envVars = [];
         foreach (\explode("\n", $envContent) as $line) {
             $line = \trim($line);
-            if ($line === '' || \str_starts_with($line, '#')) continue;
+            if ($line === '' || \str_starts_with($line, '#')) {
+                continue;
+            }
             if (\str_contains($line, '=')) {
                 [$key, $val] = \explode('=', $line, 2);
                 $key = \trim($key);
                 $val = \trim($val);
                 if (\in_array($key, ['APP_KEY', 'DB_PASSWORD', 'DEPLOY_TOKEN', 'GITHUB_TOKEN'])) {
-                    $val = \strlen($val) > 8 ? \substr($val, 0, 4) . '****' . \substr($val, -4) : '****';
+                    $val = \strlen($val) > 8 ? \substr($val, 0, 4).'****'.\substr($val, -4) : '****';
                 }
                 $envVars[$key] = $val;
             }
@@ -239,18 +245,18 @@ if ($authenticated) {
             check('env', "ENV: $key", $present, $present ? $envVars[$key] : 'MISSING');
         }
         check('env', 'ENV: DB_PASSWORD', isset($envVars['DB_PASSWORD']), 'present');
-        check('env', 'ENV: APP_KEY has valid format', 
+        check('env', 'ENV: APP_KEY has valid format',
             isset($envVars['APP_KEY']) && \str_starts_with($envVars['APP_KEY'], 'base64:'),
             $envVars['APP_KEY'] ?? 'MISSING');
     } else {
-        check('env', '.env file', false, 'NOT FOUND at ' . $envPath);
+        check('env', '.env file', false, 'NOT FOUND at '.$envPath);
     }
 }
 
 // ===================================================================
 // 8. Vendor Autoload Test
 // ===================================================================
-$autoloadPath = $appRoot . '/vendor/autoload.php';
+$autoloadPath = $appRoot.'/vendor/autoload.php';
 if (\file_exists($autoloadPath)) {
     try {
         $loader = require $autoloadPath;
@@ -263,13 +269,13 @@ if (\file_exists($autoloadPath)) {
         ];
         foreach ($classesToCheck as $cls) {
             if (\class_exists($cls)) {
-                check('autoload', 'Class autoload: ' . $cls, true);
+                check('autoload', 'Class autoload: '.$cls, true);
             } else {
-                check('autoload', 'Class autoload: ' . $cls, false, 'Class not found by autoloader');
+                check('autoload', 'Class autoload: '.$cls, false, 'Class not found by autoloader');
             }
         }
     } catch (Throwable $e) {
-        check('autoload', 'vendor/autoload.php', false, 'Error: ' . $e->getMessage());
+        check('autoload', 'vendor/autoload.php', false, 'Error: '.$e->getMessage());
     }
 } else {
     check('autoload', 'vendor/autoload.php', false, 'File does not exist');
@@ -281,9 +287,9 @@ if (\file_exists($autoloadPath)) {
 if ($authenticated && \file_exists($autoloadPath)) {
     // Part A: Create Application (proves bootstrap/app.php loads)
     try {
-        $app = require_once $appRoot . '/bootstrap/app.php';
+        $app = require_once $appRoot.'/bootstrap/app.php';
         if ($app instanceof Application) {
-            check('laravel', 'Application creation', true, 'Laravel ' . $app::VERSION);
+            check('laravel', 'Application creation', true, 'Laravel '.$app::VERSION);
             check('laravel', 'Environment', true, $app->environment());
             check('laravel', 'Debug Mode', true, $app->hasDebugModeEnabled() ? 'ENABLED' : 'DISABLED');
 
@@ -311,8 +317,8 @@ if ($authenticated && \file_exists($autoloadPath)) {
                 $detail = "Content-Length: $contentLength bytes";
                 if ($contentLength > 0) {
                     $preview = \strip_tags($content);
-                    $preview = \strlen($preview) > 300 ? \substr($preview, 0, 300) . '...' : $preview;
-                    $detail .= ' — Preview: ' . $preview;
+                    $preview = \strlen($preview) > 300 ? \substr($preview, 0, 300).'...' : $preview;
+                    $detail .= ' — Preview: '.$preview;
                 } else {
                     $detail .= ' — EMPTY RESPONSE BODY';
                 }
@@ -320,10 +326,10 @@ if ($authenticated && \file_exists($autoloadPath)) {
 
                 // Check for session/db error pattern in response
                 if ($contentLength > 0 && $statusCode >= 400) {
-                    if (\str_contains($content, 'Base table or view not found') || 
+                    if (\str_contains($content, 'Base table or view not found') ||
                         \str_contains($content, 'SQLSTATE') ||
                         \str_contains($content, 'sessions')) {
-                        check('laravel', '→ Likely session/database issue', false, 
+                        check('laravel', '→ Likely session/database issue', false,
                             'Session table or database not configured. Run: php artisan sessions:table && php artisan migrate');
                     }
                 }
@@ -338,7 +344,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
 
             } catch (Throwable $e) {
                 check('laravel', 'Kernel handle()', false,
-                    \get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+                    \get_class($e).': '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
 
                 if (\str_contains($e->getMessage(), 'Base table or view not found') ||
                     \str_contains($e->getMessage(), 'SQLSTATE') ||
@@ -357,7 +363,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
                 $providers = $app->getLoadedProviders();
                 $totalProviders = \count($providers);
                 $bootedProviders = \count(\array_filter($providers));
-                check('laravel', "Service providers ($totalProviders loaded, $bootedProviders booted)", 
+                check('laravel', "Service providers ($totalProviders loaded, $bootedProviders booted)",
                     $totalProviders > 0, "$totalProviders registered");
 
                 // Check specific providers
@@ -366,7 +372,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
                     'Illuminate\Foundation\Providers\FoundationServiceProvider',
                 ];
                 foreach ($expectedProviders as $pClass) {
-                    check('laravel', "Provider: $pClass", 
+                    check('laravel', "Provider: $pClass",
                         isset($providers[$pClass]) && $providers[$pClass],
                         isset($providers[$pClass]) ? ($providers[$pClass] ? 'booted' : 'registered but not booted') : 'NOT FOUND');
                 }
@@ -378,7 +384,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
             check('laravel', 'Application creation', false, 'bootstrap/app.php did not return an Application instance');
         }
     } catch (Throwable $e) {
-        check('laravel', 'Application bootstrap', false, \get_class($e) . ': ' . $e->getMessage());
+        check('laravel', 'Application bootstrap', false, \get_class($e).': '.$e->getMessage());
         if (\str_contains($e->getMessage(), 'database') || \str_contains($e->getMessage(), 'SQLSTATE')) {
             check('laravel', '→ Likely database issue', false, 'Check DB credentials in .env');
         }
@@ -394,7 +400,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
 if ($authenticated && \file_exists($autoloadPath)) {
     $dbDriver = 'unknown';
     try {
-        $envContent = \file_exists($appRoot . '/.env') ? \file_get_contents($appRoot . '/.env') : '';
+        $envContent = \file_exists($appRoot.'/.env') ? \file_get_contents($appRoot.'/.env') : '';
         \preg_match('/DB_CONNECTION=(.+)/', $envContent, $m);
         $dbDriver = \trim($m[1] ?? 'mysql');
         \preg_match('/DB_HOST=(.+)/', $envContent, $m);
@@ -413,7 +419,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
             if (isset($dbName) && \file_exists($dbName)) {
                 check('database', 'SQLite File', true, $dbName);
             } else {
-                check('database', 'SQLite File', false, 'Not found: ' . ($dbName ?? 'unknown'));
+                check('database', 'SQLite File', false, 'Not found: '.($dbName ?? 'unknown'));
             }
         } elseif (\in_array($dbDriver, ['mysql', 'mariadb'])) {
             if (\extension_loaded('pdo_mysql')) {
@@ -421,7 +427,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
                     $dsn = "mysql:host=$dbHost;port=$dbPort;dbname=$dbName";
                     // Use the discovered credentials — no empty password fallback
                     if ($dbPass === '' || $dbPass === null) {
-                        check('database', "MySQL: $dbName @ $dbHost:$dbPort", false, 
+                        check('database', "MySQL: $dbName @ $dbHost:$dbPort", false,
                             'DB_PASSWORD is empty — check .env configuration');
                     } else {
                         $pdo = new PDO($dsn, $dbUser, $dbPass, [
@@ -446,7 +452,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
                 check('database', 'MySQL driver', false, 'pdo_mysql extension not loaded');
             }
         } else {
-            check('database', 'DB Driver', true, $dbDriver . ' (not tested by this check)');
+            check('database', 'DB Driver', true, $dbDriver.' (not tested by this check)');
         }
     } catch (Throwable $e) {
         check('database', 'Database check', false, $e->getMessage());
@@ -456,7 +462,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
 // ===================================================================
 // 11. Build Assets (Vite manifest)
 // ===================================================================
-$manifestPath = $appRoot . '/public/build/manifest.json';
+$manifestPath = $appRoot.'/public/build/manifest.json';
 if (\file_exists($manifestPath)) {
     $manifest = \json_decode(\file_get_contents($manifestPath), true);
     $entryCount = \is_array($manifest) ? \count($manifest) : 0;
@@ -472,11 +478,11 @@ if (\file_exists($manifestPath)) {
 // 12. Cache Directory Contents
 // ===================================================================
 if ($authenticated) {
-    $cacheDir = $appRoot . '/bootstrap/cache';
+    $cacheDir = $appRoot.'/bootstrap/cache';
     if (\is_dir($cacheDir)) {
-        $cacheFiles = \glob($cacheDir . '/*.php');
+        $cacheFiles = \glob($cacheDir.'/*.php');
         $fileNames = \array_map(fn ($f) => \basename($f), $cacheFiles);
-        check('cache', 'Cache files', true, \count($cacheFiles) . ' files: ' . (\implode(', ', $fileNames) ?: 'empty'));
+        check('cache', 'Cache files', true, \count($cacheFiles).' files: '.(\implode(', ', $fileNames) ?: 'empty'));
     }
 }
 
@@ -552,7 +558,7 @@ $gray = '#6b7280';
     </div>
   </div>
 
-  <?php if (!$authenticated) { ?>
+  <?php if (! $authenticated) { ?>
   <div class="authenticated-note">
     &#9888; Showing basic info only. Add <code>?key=health</code> to unlock full diagnostics (DB, .env, permissions, Laravel boot).
   </div>
@@ -560,10 +566,10 @@ $gray = '#6b7280';
 
   <?php
   $groups = [];
-  foreach ($results['checks'] as $check) {
-      $groups[$check['group']][] = $check;
-  }
-  ?>
+foreach ($results['checks'] as $check) {
+    $groups[$check['group']][] = $check;
+}
+?>
 
   <?php foreach ($groups as $groupName => $checks) { ?>
   <div class="group">
@@ -579,7 +585,7 @@ $gray = '#6b7280';
       <span class="label" style="color: <?= $check['passed'] ? 'inherit' : $red ?>;">
         <?= \htmlspecialchars($check['label']) ?>
         <?php if ($check['detail'] !== null) { ?>
-        <span class="detail<?= $check['passed'] ? '' : ' fail-detail' ?>">— <?= \htmlspecialchars((string)$check['detail']) ?></span>
+        <span class="detail<?= $check['passed'] ? '' : ' fail-detail' ?>">— <?= \htmlspecialchars((string) $check['detail']) ?></span>
         <?php } ?>
       </span>
     </div>
