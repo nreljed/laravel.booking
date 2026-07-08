@@ -308,7 +308,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
                 if ($contentLength > 0) {
                     $preview = \strip_tags($content);
                     $preview = \strlen($preview) > 300 ? \substr($preview, 0, 300) . '...' : $preview;
-                    $detail .= " — Preview: " . $preview;
+                    $detail .= ' — Preview: ' . $preview;
                 } else {
                     $detail .= ' — EMPTY RESPONSE BODY';
                 }
@@ -480,7 +480,7 @@ if ($authenticated) {
 // 13. Summary
 // ===================================================================
 $total = \count($results['checks']);
-$passed = \count(\array_filter($results['checks'], fn($c) => $c['passed']));
+$passed = \count(\array_filter($results['checks'], fn ($c) => $c['passed']));
 $failed = $total - $passed;
 $results['status'] = $failed === 0 ? 'passed' : ($passed > 0 ? 'partial' : 'failed');
 $results['summary'] = "$passed/$total checks passed";
@@ -566,7 +566,7 @@ $gray = '#6b7280';
     <div class="group-header">
       <?= \htmlspecialchars(\ucfirst($groupName)) ?>
       <span style="font-weight:400;color:#6b7280;">
-        (<?= \count(\array_filter($checks, fn($c) => $c['passed'])) ?>/<?= \count($checks) ?>)
+        (<?= \count(\array_filter($checks, fn ($c) => $c['passed'])) ?>/<?= \count($checks) ?>)
       </span>
     </div>
     <?php foreach ($checks as $check) { ?>
