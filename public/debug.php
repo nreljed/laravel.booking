@@ -1,5 +1,9 @@
 <?php
 
+use Illuminate\Contracts\Http\Kernel as KernelContract;
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
+
 /**
  * Laravel Deployment Health Check
  *
@@ -264,7 +268,7 @@ if (\file_exists($autoloadPath)) {
                 check('autoload', 'Class autoload: ' . $cls, false, 'Class not found by autoloader');
             }
         }
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         check('autoload', 'vendor/autoload.php', false, 'Error: ' . $e->getMessage());
     }
 } else {
@@ -278,7 +282,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
     // Part A: Create Application (proves bootstrap/app.php loads)
     try {
         $app = require_once $appRoot . '/bootstrap/app.php';
-        if ($app instanceof \Illuminate\Foundation\Application) {
+        if ($app instanceof Application) {
             check('laravel', 'Application creation', true, 'Laravel ' . $app::VERSION);
             check('laravel', 'Environment', true, $app->environment());
             check('laravel', 'Debug Mode', true, $app->hasDebugModeEnabled() ? 'ENABLED' : 'DISABLED');
@@ -289,10 +293,10 @@ if ($authenticated && \file_exists($autoloadPath)) {
                 $obLevel = \ob_get_level();
 
                 // Create a test request for the homepage
-                $testRequest = \Illuminate\Http\Request::create('/', 'GET');
+                $testRequest = Request::create('/', 'GET');
 
-                /** @var \Illuminate\Contracts\Http\Kernel $kernel */
-                $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+                /** @var KernelContract $kernel */
+                $kernel = $app->make(KernelContract::class);
 
                 // This is the same code path as index.php's $app->handleRequest()
                 $response = $kernel->handle($testRequest);
@@ -332,7 +336,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
                     \ob_end_clean();
                 }
 
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 check('laravel', 'Kernel handle()', false,
                     \get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
 
@@ -366,14 +370,14 @@ if ($authenticated && \file_exists($autoloadPath)) {
                         isset($providers[$pClass]) && $providers[$pClass],
                         isset($providers[$pClass]) ? ($providers[$pClass] ? 'booted' : 'registered but not booted') : 'NOT FOUND');
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 check('laravel', 'Service provider check', false, $e->getMessage());
             }
 
         } else {
             check('laravel', 'Application creation', false, 'bootstrap/app.php did not return an Application instance');
         }
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         check('laravel', 'Application bootstrap', false, \get_class($e) . ': ' . $e->getMessage());
         if (\str_contains($e->getMessage(), 'database') || \str_contains($e->getMessage(), 'SQLSTATE')) {
             check('laravel', '→ Likely database issue', false, 'Check DB credentials in .env');
@@ -427,7 +431,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
                         $serverVer = $pdo->getAttribute(PDO::ATTR_SERVER_VERSION);
                         check('database', "MySQL: $dbName @ $dbHost:$dbPort", true, "Connected! Server: $serverVer");
                     }
-                } catch (\PDOException $e) {
+                } catch (PDOException $e) {
                     $errorMsg = $e->getMessage();
                     check('database', "MySQL: $dbName @ $dbHost:$dbPort", false, $errorMsg);
                     if (\str_contains($errorMsg, 'Access denied')) {
@@ -444,7 +448,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
         } else {
             check('database', 'DB Driver', true, $dbDriver . ' (not tested by this check)');
         }
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         check('database', 'Database check', false, $e->getMessage());
     }
 }
@@ -471,7 +475,7 @@ if ($authenticated) {
     $cacheDir = $appRoot . '/bootstrap/cache';
     if (\is_dir($cacheDir)) {
         $cacheFiles = \glob($cacheDir . '/*.php');
-        $fileNames = \array_map(function ($f) { return \basename($f); }, $cacheFiles);
+        $fileNames = \array_map(fn ($f) => \basename($f), $cacheFiles);
         check('cache', 'Cache files', true, \count($cacheFiles) . ' files: ' . (\implode(', ', $fileNames) ?: 'empty'));
     }
 }
