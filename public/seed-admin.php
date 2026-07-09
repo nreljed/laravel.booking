@@ -1,12 +1,15 @@
 <?php
 require __DIR__.'/../vendor/autoload.php';
 $app = require __DIR__.'/../bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
 $key = $_GET['key'] ?? '';
 $expected = $app['config']['app.deploy_token'] ?? '';
-if (!$expected || !hash_equals($expected, $key)) { http_response_code(403); exit('Invalid key'); }
+if (! $expected || ! hash_equals($expected, $key)) {
+    http_response_code(403);
+    exit('Invalid key');
+}
 
 header('Content-Type: text/plain');
 
@@ -32,6 +35,6 @@ try {
     }
 
     echo "\nDone!\n";
-} catch (Throwable $e) {
+} catch (\Throwable $e) {
     echo get_class($e).': '.$e->getMessage()."\n".$e->getTraceAsString();
 }

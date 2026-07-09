@@ -220,7 +220,7 @@ if ($authenticated) {
         } else {
             check('vendor', 'Classmap file', false, 'vendor/composer/autoload_classmap.php not found');
         }
-    } catch (Throwable $e) {
+    } catch (\Throwable $e) {
         check('vendor', 'Classmap integrity', false, 'Error: '.$e->getMessage());
     }
 }
@@ -335,7 +335,7 @@ if (\file_exists($autoloadPath)) {
                 check('autoload', 'Class autoload: '.$cls, false, 'Class not found by autoloader');
             }
         }
-    } catch (Throwable $e) {
+    } catch (\Throwable $e) {
         check('autoload', 'vendor/autoload.php', false, 'Error: '.$e->getMessage());
     }
 } else {
@@ -395,7 +395,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
             check('laravel', 'Application creation', true, 'Laravel '.$app::VERSION);
             $bootstrapOk = true;
         }
-    } catch (Throwable $e) {
+    } catch (\Throwable $e) {
         check('laravel', 'Application creation', false,
             \get_class($e).': '.$e->getMessage());
         @\file_put_contents(\dirname(__DIR__).'/storage/logs/debug-laravel.log',
@@ -433,7 +433,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
             check('laravel_step', "Bootstrap: $stepName", false,
                 'BindingResolutionException: '.$e->getMessage());
             $bootstrapFailed = true;
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $msg = $e->getMessage();
             $checkMsg = \get_class($e).': '.$msg;
 
@@ -508,20 +508,20 @@ if ($authenticated && \file_exists($autoloadPath)) {
                 \ob_end_clean();
             }
 
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             check('laravel', 'Kernel handle()', false,
                 \get_class($e).': '.$e->getMessage().
                 ' in '.$e->getFile().':'.$e->getLine());
 
             try {
                 check('laravel', 'Environment', true, $app->environment());
-            } catch (Throwable) {
+            } catch (\Throwable) {
                 check('laravel', 'Environment', false, 'Not available');
             }
             try {
                 check('laravel', 'Debug Mode', true,
                     $app->hasDebugModeEnabled() ? 'ENABLED' : 'DISABLED');
-            } catch (Throwable) {
+            } catch (\Throwable) {
                 check('laravel', 'Debug Mode', false, 'Not available');
             }
 
@@ -559,7 +559,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
                     ? ($providers[$pClass] ? 'booted' : 'registered but not booted')
                     : 'NOT FOUND');
         }
-    } catch (Throwable $e) {
+    } catch (\Throwable $e) {
         check('laravel', 'Service provider check', false, $e->getMessage());
     }
     } // end if ($bootstrapOk)
@@ -608,7 +608,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
                         $serverVer = $pdo->getAttribute(PDO::ATTR_SERVER_VERSION);
                         check('database', "MySQL: $dbName @ $dbHost:$dbPort", true, "Connected! Server: $serverVer");
                     }
-                } catch (PDOException $e) {
+                } catch (\PDOException $e) {
                     $errorMsg = $e->getMessage();
                     check('database', "MySQL: $dbName @ $dbHost:$dbPort", false, $errorMsg);
                     if (\str_contains($errorMsg, 'Access denied')) {
@@ -625,7 +625,7 @@ if ($authenticated && \file_exists($autoloadPath)) {
         } else {
             check('database', 'DB Driver', true, $dbDriver.' (not tested by this check)');
         }
-    } catch (Throwable $e) {
+    } catch (\Throwable $e) {
         check('database', 'Database check', false, $e->getMessage());
     }
 }
