@@ -185,20 +185,15 @@ jobs:
           files: deploy.zip
           fail_on_unmatched_files: true
 
-      - name: Upload deploy archive via Laravel endpoint
+      - name: Trigger deploy via /deploy/check (GitHub API download)
         continue-on-error: true
         shell: bash
         run: |
           VER="v${{ steps.version.outputs.version }}"
           echo "Release: $VER"
           if curl -sf --max-time 300 \
-            -F "file=@deploy.zip;filename=deploy.zip" \
-            "https://shop.laravel.tunispromo.tn/deploy/upload?token=${{ secrets.DEPLOY_TOKEN }}"; then
-            echo "Deployed via /deploy/upload"
-          elif curl -sf --max-time 300 \
-            -F "file=@deploy.zip;filename=deploy.zip" \
             "https://shop.laravel.tunispromo.tn/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}"; then
-            echo "Deployed via /deploy/check (legacy)"
+            echo "Deployed via /deploy/check (server downloads from GitHub API)"
           else
             echo "::notice::Laravel deploy endpoints unreachable"
           fi
