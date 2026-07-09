@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 
@@ -225,6 +226,8 @@ class DeployController extends Controller
             }
         }
 
+        Cache::forget('system_health_latest_version');
+
         return true;
     }
 
@@ -425,6 +428,8 @@ class DeployController extends Controller
                     $output[] = "$cmd: ERROR ".$e->getMessage();
                 }
             }
+
+            Cache::forget('system_health_latest_version');
 
             return response()->json(['status' => 'deployed', 'tag' => $latestTag, 'output' => $output]);
         } finally {
