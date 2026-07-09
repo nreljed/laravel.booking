@@ -663,22 +663,41 @@ if ($authenticated) {
 $versionFile = $appRoot.'/.deployed-version';
 if (\file_exists($versionFile)) {
     $currentVer = \trim(\file_get_contents($versionFile));
-    $gitHubAPI = "https://api.github.com/repos/nreljed/laravel.shop/releases/latest";
-    $opts = ['http' => ['method' => 'GET', 'header' => "User-Agent: debug.php\r\n", 'timeout' => 5]];
-    $ctx = \stream_context_create($opts);
-    $latestRaw = @\file_get_contents($gitHubAPI, false, $ctx);
-    if ($latestRaw) {
-        $latestData = \json_decode($latestRaw, true);
-        $latestVer = $latestData['tag_name'] ?? '';
-        $latestUrl = $latestData['html_url'] ?? '';
-        $isLatest = $latestVer === '' || \ltrim($currentVer, 'v') === \ltrim($latestVer, 'v');
-        check('version', "Deployed version", true,
-            $currentVer . ($isLatest ? ' (latest)' : " — BEHIND: $latestVer available at $latestUrl"));
-        if (! $isLatest) {
-            check('version', 'Update needed', false, "Deploy $latestVer to catch up");
+
+    // Read GITHUB_TOKEN from .env for authenticated API calls
+    $githubToken = '';
+    if (\file_exists($envPath)) {
+        $envRaw = \file_get_contents($envPath);
+        if (\preg_match('/^GITHUB_TOKEN\s*=\s*"?([^"\r\n]+)"?\s*$/m', $envRaw, $m)) {
+            $githubToken = \trim($m[1]);
         }
-    } else {
-        check('version', "Deployed version", true, $currentVer.' (GitHub API unreachable — cannot compare)');
+    }
+
+    try {
+        $gitHubAPI = "https://api.github.com/repos/nreljed/laravel.shop/releases/latest";
+        $headers = "User-Agent: debug.php\r\n";
+        if ($githubToken !== '') {
+            $headers .= "Authorization: Bearer $githubToken\r\n";
+        }
+        $opts = ['http' => ['method' => 'GET', 'header' => $headers, 'timeout' => 5]];
+        $ctx = \stream_context_create($opts);
+        $latestRaw = @\file_get_contents($gitHubAPI, false, $ctx);
+
+        if ($latestRaw) {
+            $latestData = \json_decode($latestRaw, true);
+            $latestVer = $latestData['tag_name'] ?? '';
+            $latestUrl = $latestData['html_url'] ?? '';
+            $isLatest = $latestVer === '' || \ltrim($currentVer, 'v') === \ltrim($latestVer, 'v');
+            check('version', "Deployed version", true,
+                $currentVer . ($isLatest ? ' (latest)' : " — BEHIND: $latestVer available at $latestUrl"));
+            if (! $isLatest) {
+                check('version', 'Update needed', false, "Deploy $latestVer to catch up");
+            }
+        } else {
+            check('version', "Deployed version", true, $currentVer.' (GitHub API unreachable — cannot compare)');
+        }
+    } catch (\Throwable $e) {
+        check('version', "Deployed version", true, "$currentVer (version check error: " . $e->getMessage() . ')');
     }
 } else {
     check('version', 'Deployed version', false, '.deployed-version not found — deploy has never completed');
