@@ -31,12 +31,14 @@ use Illuminate\Http\Request;
 \register_shutdown_function(function () {
     $error = \error_get_last();
     if ($error !== null && \in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR])) {
-        \header('Content-Type: text/plain; charset=utf-8');
-        echo "=== FATAL ERROR ===\n";
-        echo "Type: {$error['type']}\n";
-        echo "Message: {$error['message']}\n";
-        echo "File: {$error['file']}\n";
-        echo "Line: {$error['line']}\n";
+        $msg = "=== FATAL ERROR ===\nType: {$error['type']}\nMessage: {$error['message']}\nFile: {$error['file']}\nLine: {$error['line']}\n";
+        // Log to file in case browser output fails
+        @\file_put_contents(\dirname(__DIR__).'/storage/logs/debug-fatal.log', $msg, FILE_APPEND);
+        // Also try to flush to browser
+        if (!\headers_sent()) {
+            \header('Content-Type: text/plain; charset=utf-8');
+        }
+        echo $msg;
     }
 });
 
@@ -419,15 +421,16 @@ if ($authenticated && \file_exists($autoloadPath)) {
                         isset($providers[$pClass]) && $providers[$pClass],
                         isset($providers[$pClass]) ? ($providers[$pClass] ? 'booted' : 'registered but not booted') : 'NOT FOUND');
                 }
-            } catch (Throwable $e) {
-                check('laravel', 'Service provider check', false, $e->getMessage());
-            }
+} catch (Throwable $e) {
+        check('laravel', 'Service provider check', false, $e->getMessage());
+    }
 
         } else {
             check('laravel', 'Application creation', false, 'bootstrap/app.php did not return an Application instance');
         }
     } catch (Throwable $e) {
         check('laravel', 'Application bootstrap', false, \get_class($e).': '.$e->getMessage());
+        @\file_put_contents(\dirname(__DIR__).'/storage/logs/debug-laravel.log', \date('Y-m-d H:i:s').' bootstrap: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine()."\n", FILE_APPEND);
         if (\str_contains($e->getMessage(), 'database') || \str_contains($e->getMessage(), 'SQLSTATE')) {
             check('laravel', '→ Likely database issue', false, 'Check DB credentials in .env');
         }
