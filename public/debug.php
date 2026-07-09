@@ -42,10 +42,17 @@ use Illuminate\Http\Request;
     }
 });
 
-$accessKey = 'health';
 $appRoot = \dirname(__DIR__);
 
-// ---- Security ----
+// ---- Security (derive key from APP_KEY so it's unique per installation) ----
+$envPath = $appRoot.'/.env';
+$accessKey = 'health'; // fallback
+if (\file_exists($envPath)) {
+    $envRaw = \file_get_contents($envPath);
+    if (\preg_match('/^APP_KEY\s*=\s*"?([^"\r\n]+)"?\s*$/m', $envRaw, $m)) {
+        $accessKey = \substr(\hash('sha256', $m[1].'debug-access'), 0, 16);
+    }
+}
 $authenticated = isset($_GET['key']) && $_GET['key'] === $accessKey;
 $jsonMode = isset($_GET['json']) && $_GET['json'] === '1';
 

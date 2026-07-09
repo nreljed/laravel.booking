@@ -16,6 +16,7 @@ import {
   FileText,
   AlertTriangle,
   Info,
+  Bug,
 } from "lucide-react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
@@ -151,6 +152,11 @@ interface UsersInfo {
   admin: number;
 }
 
+interface DeployedVersion {
+  exists: boolean;
+  version?: string;
+}
+
 interface BuildInfo {
   exists: boolean;
   modified_at?: string;
@@ -190,6 +196,8 @@ interface SystemHealthProps {
   logs: LogInfo;
   users: UsersInfo;
   build: BuildInfo;
+  deployed_version: DeployedVersion;
+  debug_access_url: string | null;
 }
 
 function severityIcon(severity: string) {
@@ -239,6 +247,7 @@ export default function SystemHealth(props: SystemHealthProps) {
         { label: "PHP Version", value: props.php.version },
         { label: "Server Software", value: props.server.software },
         { label: "Server OS", value: props.php.sapi },
+        { label: "Deployed Version", value: props.deployed_version.exists ? props.deployed_version.version! : "N/A" },
       ],
     },
     {
@@ -468,6 +477,28 @@ export default function SystemHealth(props: SystemHealthProps) {
                   </>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {props.debug_access_url && (
+          <Card>
+            <CardHeader className="flex flex-row items-center gap-2">
+              <Bug className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-lg">Diagnostics</CardTitle>
+              <CardDescription>Full server diagnostics tool</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-2 text-sm text-muted-foreground">
+                Access the <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">debug.php</code>{" "}
+                diagnostic tool with your unique access key:
+              </p>
+              <div className="rounded-md bg-muted p-3">
+                <code className="break-all text-xs">{props.debug_access_url}</code>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Bookmark this URL — it's unique to this installation and never changes unless APP_KEY changes.
+              </p>
             </CardContent>
           </Card>
         )}

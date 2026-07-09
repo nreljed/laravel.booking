@@ -76,6 +76,8 @@ class SystemHealthService
                 'admin' => User::whereHas('roles', fn ($q) => $q->where('slug', 'admin'))->count(),
             ],
             'build' => $this->getBuildInfo(),
+            'deployed_version' => $this->getDeployedVersion(),
+            'debug_access_url' => $this->getDebugAccessUrl(),
         ];
     }
 
@@ -440,6 +442,31 @@ class SystemHealthService
             'channel' => $channel,
             'level' => $level,
             'path' => $path,
+        ];
+    }
+
+    protected function getDebugAccessUrl(): ?string
+    {
+        $appKey = config('app.key');
+        if (! $appKey) {
+            return null;
+        }
+        $key = substr(hash('sha256', $appKey.'debug-access'), 0, 16);
+
+        return url('/debug.php?key='.$key);
+    }
+
+    protected function getDeployedVersion(): array
+    {
+        $versionFile = base_path('.deployed-version');
+        if (! file_exists($versionFile)) {
+            return ['exists' => false];
+        }
+        $version = trim(file_get_contents($versionFile));
+
+        return [
+            'exists' => true,
+            'version' => $version,
         ];
     }
 
