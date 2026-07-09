@@ -277,14 +277,21 @@ if ($authenticated) {
         $rawKey = '';
         foreach (\explode("\n", $envRaw) as $line) {
             $line = \trim($line);
+            if ($line === '' || \str_starts_with($line, '#')) {
+                continue;
+            }
             if (\str_starts_with($line, 'APP_KEY=')) {
                 $rawKey = \substr($line, 8);
-                // Strip surrounding double quotes (Laravel .env supports quoted values)
-                if (\str_starts_with($rawKey, '"') && \str_ends_with($rawKey, '"')) {
-                    $rawKey = \substr($rawKey, 1, -1);
-                }
-                break;
+            } elseif (\preg_match('/^APP_KEY\s*=\s*/', $line)) {
+                $rawKey = \preg_replace('/^APP_KEY\s*=\s*/', '', $line);
+            } else {
+                continue;
             }
+            // Strip surrounding double quotes (Laravel .env supports quoted values)
+            if (\str_starts_with($rawKey, '"') && \str_ends_with($rawKey, '"')) {
+                $rawKey = \substr($rawKey, 1, -1);
+            }
+            break;
         }
         $requiredEnv = ['APP_KEY', 'APP_ENV', 'APP_DEBUG', 'APP_URL', 'DB_CONNECTION', 'DB_HOST', 'DB_DATABASE', 'DB_USERNAME'];
         foreach ($requiredEnv as $key) {
@@ -331,7 +338,7 @@ if (\file_exists($autoloadPath)) {
 // ===================================================================
 // 8.5. .env Parser Test (uses actual Dotenv library, pre-bootstrap)
 // ===================================================================
-if ($authenticated && \file_exists($autoloadPath) && \interface_exists('Dotenv\Dotenv')) {
+if ($authenticated && \file_exists($autoloadPath) && \class_exists('Dotenv\Dotenv')) {
     $envPathForParser = $appRoot.'/.env';
     if (\file_exists($envPathForParser)) {
         try {
@@ -360,6 +367,8 @@ if ($authenticated && \file_exists($autoloadPath) && \interface_exists('Dotenv\D
     }
 } elseif ($authenticated && !\file_exists($autoloadPath)) {
     check('env_parser', '.env parser test', false, 'Skipped — vendor autoloader missing');
+} elseif ($authenticated && !\class_exists('Dotenv\Dotenv')) {
+    check('env_parser', '.env parser test', false, 'Skipped — Dotenv class not found (check vendor)');
 }
 
 // ===================================================================
