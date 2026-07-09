@@ -1083,7 +1083,7 @@ export default function SystemHealth(props: SystemHealthProps) {
               <InfoRow label="Driver" value={props.logs.driver} />
               <InfoRow label="Level" value={props.logs.level} />
               <InfoRow label="Path" value={props.logs.path ?? "Stack driver"} />
-              {props.logs.size ? <InfoRow label="Size" value={props.logs.size} /> : null}
+              {props.logs.path ? <InfoRow label="Size" value={props.logs.size} /> : null}
               {props.logs.recent_errors > 0 && (
                 <InfoRow
                   label="Recent Errors"
