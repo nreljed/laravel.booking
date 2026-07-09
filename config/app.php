@@ -135,4 +135,8 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'github_token' => env('GITHUB_TOKEN'),
+    'deploy_token' => env('DEPLOY_TOKEN'),
+    'deploy_repo' => 'nreljed/laravel.shop',
+
 ];
