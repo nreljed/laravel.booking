@@ -108,6 +108,7 @@ Route::middleware(['auth', 'admin', 'throttle:60,1'])->prefix('dashboard/admin')
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings');
     Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::get('/system-health', [AdminController::class, 'systemHealth'])->name('system-health');
+    Route::post('/system-health/refresh', [AdminController::class, 'refreshSystemHealth'])->name('system-health.refresh');
 
     // User management
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
