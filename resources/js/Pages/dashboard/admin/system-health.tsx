@@ -283,14 +283,17 @@ function StatusDot({ ok }: { ok: boolean }) {
 
 function SeverityIcon({ severity }: { severity: string }) {
   switch (severity) {
-    case "critical":
+    case "critical": {
       return <XCircle className="h-4 w-4 shrink-0" style={{ color: "var(--status-error)" }} />;
-    case "high":
+    }
+    case "high": {
       return <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: "var(--warning)" }} />;
-    default:
+    }
+    default: {
       return (
         <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "var(--status-success)" }} />
       );
+    }
   }
 }
 
@@ -435,8 +438,7 @@ export default function SystemHealth(props: SystemHealthProps) {
     if (props.recommendations.length > 0) {
       lines.push("=== RECOMMENDATIONS ===");
       for (const r of props.recommendations) {
-        lines.push(`  [${r.severity}] ${r.title}`);
-        lines.push(`  ${r.message}`);
+        lines.push(`  [${r.severity}] ${r.title}`, `  ${r.message}`);
         if (r.fix) lines.push(`  Fix: ${r.fix.replaceAll("\n", " | ")}`);
         lines.push("");
       }
@@ -449,8 +451,6 @@ export default function SystemHealth(props: SystemHealthProps) {
       L("Debug", String(props.laravel.debug)),
       L("URL", props.laravel.url),
       "",
-    );
-    lines.push(
       "=== PHP ===",
       L("Version", props.php.version),
       L("SAPI", props.php.sapi),
@@ -787,7 +787,7 @@ export default function SystemHealth(props: SystemHealthProps) {
                   props.environment.is_local
                 }
               />
-              <InfoRow label="Loaded Extensions" value={`${props.php.loaded_extensions_count}`} />
+              <InfoRow label="Loaded Extensions" value={props.php.loaded_extensions_count} />
               <Separator className="my-2" />
               <InfoRow label="php.ini Path" value={props.php.ini_path} />
               <InfoRow label="Scanned INI" value={props.php.scanned_ini_dirs} />
@@ -1083,7 +1083,7 @@ export default function SystemHealth(props: SystemHealthProps) {
               <InfoRow label="Driver" value={props.logs.driver} />
               <InfoRow label="Level" value={props.logs.level} />
               <InfoRow label="Path" value={props.logs.path ?? "Stack driver"} />
-              {props.logs.size && <InfoRow label="Size" value={props.logs.size} />}
+              {props.logs.size ? <InfoRow label="Size" value={props.logs.size} /> : null}
               {props.logs.recent_errors > 0 && (
                 <InfoRow
                   label="Recent Errors"
