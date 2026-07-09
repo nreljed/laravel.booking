@@ -364,12 +364,12 @@ function CollapsibleSection({
 
   const badgeVariant =
     status === "good"
-      ? "default"
+      ? "success"
       : status === "warning"
-        ? "secondary"
+        ? "warning"
         : status === "critical"
-          ? "destructive"
-          : "outline";
+          ? "error"
+          : "info";
 
   const badgeLabel =
     status === "good"
@@ -540,7 +540,7 @@ export default function SystemHealth(props: SystemHealthProps) {
                   Server configuration and diagnostics for {props.laravel.name}
                 </p>
                 <Badge
-                  variant={props.environment.is_production ? "default" : "secondary"}
+                  variant={props.environment.is_production ? "success" : "info"}
                   className="text-[10px] px-1.5 py-0 shrink-0"
                 >
                   {props.environment.is_production ? "Production" : props.environment.detected}
@@ -661,7 +661,7 @@ export default function SystemHealth(props: SystemHealthProps) {
                   )}
                 </div>
               </div>
-              <Badge variant={isUpToDate ? "default" : "secondary"} className="shrink-0">
+              <Badge variant={isUpToDate ? "success" : "warning"} className="shrink-0">
                 {isUpToDate ? "Up to date" : "Update available"}
               </Badge>
             </CardContent>
