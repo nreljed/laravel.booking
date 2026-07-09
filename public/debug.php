@@ -651,7 +651,34 @@ if ($authenticated) {
 }
 
 // ===================================================================
-// 13. Summary
+// 13. Application Version
+// ===================================================================
+$versionFile = $appRoot.'/.deployed-version';
+if (\file_exists($versionFile)) {
+    $currentVer = \trim(\file_get_contents($versionFile));
+    $gitHubAPI = "https://api.github.com/repos/nreljed/laravel.shop/releases/latest";
+    $opts = ['http' => ['method' => 'GET', 'header' => "User-Agent: debug.php\r\n", 'timeout' => 5]];
+    $ctx = \stream_context_create($opts);
+    $latestRaw = @\file_get_contents($gitHubAPI, false, $ctx);
+    if ($latestRaw) {
+        $latestData = \json_decode($latestRaw, true);
+        $latestVer = $latestData['tag_name'] ?? '';
+        $latestUrl = $latestData['html_url'] ?? '';
+        $isLatest = $latestVer === '' || \ltrim($currentVer, 'v') === \ltrim($latestVer, 'v');
+        check('version', "Deployed version", true,
+            $currentVer . ($isLatest ? ' (latest)' : " — BEHIND: $latestVer available at $latestUrl"));
+        if (! $isLatest) {
+            check('version', 'Update needed', false, "Deploy $latestVer to catch up");
+        }
+    } else {
+        check('version', "Deployed version", true, $currentVer.' (GitHub API unreachable — cannot compare)');
+    }
+} else {
+    check('version', 'Deployed version', false, '.deployed-version not found — deploy has never completed');
+}
+
+// ===================================================================
+// 14. Summary
 // ===================================================================
 $total = \count($results['checks']);
 $passed = \count(\array_filter($results['checks'], fn ($c) => $c['passed']));
