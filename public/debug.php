@@ -19,6 +19,27 @@ use Illuminate\Http\Request;
  */
 
 // ---- Configuration ----
+\error_reporting(E_ALL);
+\ini_set('display_errors', '1');
+
+// Convert PHP warnings/notices to exceptions so existing try/catch blocks catch them
+\set_error_handler(function (int $severity, string $message, string $file, int $line): bool {
+    throw new \ErrorException($message, 0, $severity, $file, $line);
+});
+
+// Catch fatal errors that bypass try/catch
+\register_shutdown_function(function () {
+    $error = \error_get_last();
+    if ($error !== null && \in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR])) {
+        \header('Content-Type: text/plain; charset=utf-8');
+        echo "=== FATAL ERROR ===\n";
+        echo "Type: {$error['type']}\n";
+        echo "Message: {$error['message']}\n";
+        echo "File: {$error['file']}\n";
+        echo "Line: {$error['line']}\n";
+    }
+});
+
 $accessKey = 'health';
 $appRoot = \dirname(__DIR__);
 
@@ -160,32 +181,38 @@ if ($authenticated) {
     }
 
     // Check for orphaned autoload entries in classmap
-    $classmapPath = $appRoot.'/vendor/composer/autoload_classmap.php';
-    if (\file_exists($classmapPath)) {
-        $classmap = require $classmapPath;
-        $checked = 0;
-        $missing = 0;
-        $sampleMissing = [];
-        foreach ($classmap as $class => $path) {
-            if ($checked >= 2000) {
-                break;
-            }
-            $checked++;
-            if (! \file_exists($path)) {
-                $missing++;
-                if (\count($sampleMissing) < 5) {
-                    $sampleMissing[] = "$class => $path";
+    try {
+        $classmapPath = $appRoot.'/vendor/composer/autoload_classmap.php';
+        if (\file_exists($classmapPath)) {
+            $classmap = require $classmapPath;
+            $checked = 0;
+            $missing = 0;
+            $sampleMissing = [];
+            if (\is_array($classmap)) {
+                foreach ($classmap as $class => $path) {
+                    if ($checked >= 2000) {
+                        break;
+                    }
+                    $checked++;
+                    if (! \file_exists($path)) {
+                        $missing++;
+                        if (\count($sampleMissing) < 5) {
+                            $sampleMissing[] = "$class => $path";
+                        }
+                    }
                 }
             }
-        }
-        if ($missing > 0) {
-            check('vendor', "Classmap missing files ($missing of $checked checked)", false,
-                'Sample: '.\implode('; ', $sampleMissing));
+            if ($missing > 0) {
+                check('vendor', "Classmap missing files ($missing of $checked checked)", false,
+                    'Sample: '.\implode('; ', $sampleMissing));
+            } else {
+                check('vendor', "Classmap integrity ($checked checked)", true, 'All files present');
+            }
         } else {
-            check('vendor', "Classmap integrity ($checked checked)", true, 'All files present');
+            check('vendor', 'Classmap file', false, 'vendor/composer/autoload_classmap.php not found');
         }
-    } else {
-        check('vendor', 'Classmap file', false, 'vendor/composer/autoload_classmap.php not found');
+    } catch (Throwable $e) {
+        check('vendor', 'Classmap integrity', false, 'Error: '.$e->getMessage());
     }
 }
 
