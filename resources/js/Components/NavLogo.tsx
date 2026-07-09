@@ -47,7 +47,7 @@ export function NavLogo({ logo, name, appUrl }: NavLogoProps) {
             <a href={route("home")} className="flex items-center gap-3">
               {renderLogoIcon()}
               <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-medium">{name || "Cost Breaker 360"}</span>
+                <span className="truncate font-medium">{name || "Shop App"}</span>
               </div>
             </a>
           </SidebarMenuButton>

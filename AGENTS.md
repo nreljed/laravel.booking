@@ -1,4 +1,4 @@
-# Cost Breaker 360
+# Shop App
 
 A SaaS application built with Laravel + Inertia.js + React 19.
 

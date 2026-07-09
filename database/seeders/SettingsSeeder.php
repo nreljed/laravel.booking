@@ -11,7 +11,7 @@ class SettingsSeeder extends Seeder
     {
         $settings = [
             // General
-            ['key' => 'app_name', 'value' => 'Cost Breaker 360', 'group' => 'general'],
+            ['key' => 'app_name', 'value' => 'Shop App', 'group' => 'general'],
             ['key' => 'app_description', 'value' => 'SaaS application for cost management', 'group' => 'general'],
             ['key' => 'app_url', 'value' => config('app.url'), 'group' => 'general'],
             ['key' => 'app_logo', 'value' => '', 'group' => 'general'],
@@ -34,7 +34,7 @@ class SettingsSeeder extends Seeder
             // Email
             ['key' => 'mail_driver', 'value' => config('mail.default', 'log'), 'group' => 'email'],
             ['key' => 'mail_from_address', 'value' => 'noreply@costbreaker360.com', 'group' => 'email'],
-            ['key' => 'mail_from_name', 'value' => 'Cost Breaker 360', 'group' => 'email'],
+            ['key' => 'mail_from_name', 'value' => 'Shop App', 'group' => 'email'],
 
             // Maintenance
             ['key' => 'maintenance_mode', 'value' => '0', 'group' => 'maintenance'],

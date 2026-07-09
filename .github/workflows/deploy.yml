@@ -52,7 +52,7 @@ jobs:
       - name: Generate Build .env (SQLite for build process)
         run: |
           $dbPath = "$((Get-Location).Path.Replace('\', '/'))/database/database.sqlite"
-          "APP_NAME=Laravel",
+          'APP_NAME="Shop App"',
           "APP_ENV=local",
           "APP_KEY=base64:pHIa377aV0cusfWxNM2X3bpkWnRpztIQFwBGevG2DaY=",
           "APP_DEBUG=true",
@@ -115,7 +115,7 @@ jobs:
 
       - name: Overwrite .env with Production Settings
         run: |
-          "APP_NAME=Cost Breaker 360",
+          'APP_NAME="Shop App"',
           "APP_ENV=production",
           "APP_KEY=${{ secrets.APP_KEY }}",
           "APP_DEBUG=false",

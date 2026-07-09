@@ -12,11 +12,20 @@ if (!$expected || !hash_equals($expected, $key)) {
     exit('Invalid key');
 }
 
-$command = $_GET['cmd'] ?? 'list';
+$rawCmd = $_GET['cmd'] ?? 'list';
+$parts = explode(' ', $rawCmd, 2);
+$command = $parts[0];
+$extraArgs = [];
+if (isset($parts[1])) {
+    parse_str($parts[1], $extraArgs);
+}
+if (isset($_GET['args'])) {
+    parse_str($_GET['args'], $extraArgs);
+}
 header('Content-Type: text/plain');
 
 try {
-    $exitCode = $kernel->call($command, ['--force' => true]);
+    $exitCode = $kernel->call($command, array_merge(['--force' => true], $extraArgs));
     echo "Exit code: $exitCode\n\n";
     echo $kernel->output();
 } catch (Throwable $e) {

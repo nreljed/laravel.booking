@@ -104,7 +104,7 @@ class HandleInertiaRequests extends Middleware
             'emailTemplates' => fn () => $this->getEmailTemplates(),
             'brand' => [
                 'logo' => fn () => self::safeSetting('app_logo', ''),
-                'name' => fn () => self::safeSetting('app_name', 'Cost Breaker 360'),
+                'name' => fn () => self::safeSetting('app_name', 'Shop App'),
             ],
             'app_url' => fn () => self::safeSetting('app_url', config('app.url')),
             'cart' => function () use ($request) {

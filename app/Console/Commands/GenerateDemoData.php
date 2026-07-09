@@ -98,7 +98,7 @@ class GenerateDemoData extends Command
 
     public function handle(): int
     {
-        $this->info('=== Cost Breaker 360 Demo Data Generator ===');
+        $this->info('=== Shop App Demo Data Generator ===');
         $this->newLine();
 
         if ($this->option('fresh')) {

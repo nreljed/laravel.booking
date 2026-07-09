@@ -262,10 +262,28 @@ if ($authenticated) {
                 [$key, $val] = \explode('=', $line, 2);
                 $key = \trim($key);
                 $val = \trim($val);
+                // Strip surrounding double quotes (Laravel .env supports quoted values)
+                if (\str_starts_with($val, '"') && \str_ends_with($val, '"')) {
+                    $val = \substr($val, 1, -1);
+                }
                 if (\in_array($key, ['APP_KEY', 'DB_PASSWORD', 'DEPLOY_TOKEN', 'GITHUB_TOKEN'])) {
                     $val = \strlen($val) > 8 ? \substr($val, 0, 4).'****'.\substr($val, -4) : '****';
                 }
                 $envVars[$key] = $val;
+            }
+        }
+        // Store raw values for format validation (before masking)
+        $envRaw = \file_get_contents($envPath);
+        $rawKey = '';
+        foreach (\explode("\n", $envRaw) as $line) {
+            $line = \trim($line);
+            if (\str_starts_with($line, 'APP_KEY=')) {
+                $rawKey = \substr($line, 8);
+                // Strip surrounding double quotes (Laravel .env supports quoted values)
+                if (\str_starts_with($rawKey, '"') && \str_ends_with($rawKey, '"')) {
+                    $rawKey = \substr($rawKey, 1, -1);
+                }
+                break;
             }
         }
         $requiredEnv = ['APP_KEY', 'APP_ENV', 'APP_DEBUG', 'APP_URL', 'DB_CONNECTION', 'DB_HOST', 'DB_DATABASE', 'DB_USERNAME'];
@@ -275,7 +293,7 @@ if ($authenticated) {
         }
         check('env', 'ENV: DB_PASSWORD', isset($envVars['DB_PASSWORD']), 'present');
         check('env', 'ENV: APP_KEY has valid format',
-            isset($envVars['APP_KEY']) && \str_starts_with($envVars['APP_KEY'], 'base64:'),
+            $rawKey !== '' && \str_starts_with($rawKey, 'base64:'),
             $envVars['APP_KEY'] ?? 'MISSING');
     } else {
         check('env', '.env file', false, 'NOT FOUND at '.$envPath);
@@ -311,134 +329,225 @@ if (\file_exists($autoloadPath)) {
 }
 
 // ===================================================================
-// 9. Laravel Bootstrap + Full Kernel Handle Test (authenticated only)
+// 8.5. .env Parser Test (uses actual Dotenv library, pre-bootstrap)
+// ===================================================================
+if ($authenticated && \file_exists($autoloadPath) && \interface_exists('Dotenv\Dotenv')) {
+    $envPathForParser = $appRoot.'/.env';
+    if (\file_exists($envPathForParser)) {
+        try {
+            $dotenv = \Dotenv\Dotenv::createImmutable($appRoot);
+            // safeLoad() catches InvalidFileException gracefully — but we want to see it
+            // Use load() instead to throw on invalid format
+            $dotenv->load();
+            check('env_parser', '.env parsed successfully', true, 'No syntax errors');
+        } catch (\Dotenv\Exception\InvalidFileException $e) {
+            check('env_parser', '.env parsing failed', false,
+                'InvalidFileException: '.$e->getMessage());
+        } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            // Detect the specific infinite-recursion-on-unquoted-value pattern we hit
+            if (\str_contains($msg, 'Allowed memory size') && \str_contains($msg, 'Dotenv\\Parser')) {
+                check('env_parser', '.env parsing failed', false,
+                    'FATAL: Dotenv parser crashed (likely unquoted multi-word value in .env). '
+                    .'Check all values with spaces/unicode are wrapped in double quotes, e.g.: APP_NAME="My App"');
+            } else {
+                check('env_parser', '.env parsing failed', false,
+                    \get_class($e).': '.$msg);
+            }
+        }
+    } else {
+        check('env_parser', '.env file', false, 'Not found at '.$envPathForParser);
+    }
+} elseif ($authenticated && !\file_exists($autoloadPath)) {
+    check('env_parser', '.env parser test', false, 'Skipped — vendor autoloader missing');
+}
+
+// ===================================================================
+// 9. Laravel Bootstrap — Step-by-Step Trace + Full Kernel Handle Test (authenticated only)
 // ===================================================================
 if ($authenticated && \file_exists($autoloadPath)) {
-    // Part A: Create Application (proves bootstrap/app.php loads)
+    $bootstrapOk = false;
+    $bootstrappers = [];
+
+    // ---- Step 0: Create Application (proves bootstrap/app.php loads) ----
     try {
         $app = require_once $appRoot.'/bootstrap/app.php';
-        if ($app instanceof Application) {
+        if (! $app instanceof Application) {
+            check('laravel', 'Application creation', false,
+                'bootstrap/app.php did not return an Application instance');
+        } else {
             check('laravel', 'Application creation', true, 'Laravel '.$app::VERSION);
+            $bootstrapOk = true;
+        }
+    } catch (Throwable $e) {
+        check('laravel', 'Application creation', false,
+            \get_class($e).': '.$e->getMessage());
+        @\file_put_contents(\dirname(__DIR__).'/storage/logs/debug-laravel.log',
+            \date('Y-m-d H:i:s').' bootstrap/app.php: '.$e->getMessage().
+            ' in '.$e->getFile().':'.$e->getLine()."\n", FILE_APPEND);
+    }
 
-            // Part B: Full Kernel handle() test — same flow as index.php
-            // NOTE: $app->environment() and $app->hasDebugModeEnabled() are
-            // placed AFTER handle() because they access $this['env'], which
-            // triggers container resolution of 'env' before the app bootstraps.
-            try {
-                // Capture output buffering state
-                $obLevel = \ob_get_level();
+    if ($bootstrapOk) {
 
-                // Create a test request for the homepage
-                $testRequest = Request::create('/', 'GET');
+    // ---- Step-by-step Bootstrap Trace ----
+    // Test each Laravel bootstrapper individually to pinpoint failures
+    $bootstrappers = [
+        'LoadEnvironmentVariables' => \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
+        'LoadConfiguration'        => \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
+        'HandleExceptions'         => \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
+        'RegisterFacades'          => \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
+        'RegisterProviders'        => \Illuminate\Foundation\Bootstrap\RegisterProviders::class,
+        'BootProviders'            => \Illuminate\Foundation\Bootstrap\BootProviders::class,
+    ];
 
-                /** @var KernelContract $kernel */
-                $kernel = $app->make(KernelContract::class);
+    $bootstrapFailed = false;
+    foreach ($bootstrappers as $stepName => $bootClass) {
+        if ($bootstrapFailed) {
+            check('laravel_step', "Bootstrap: $stepName", false, 'Skipped (previous step failed)');
+            continue;
+        }
+        try {
+            $app->bootstrapWith([$bootClass]);
+            check('laravel_step', "Bootstrap: $stepName", true);
+        } catch (\Dotenv\Exception\InvalidFileException $e) {
+            check('laravel_step', "Bootstrap: $stepName", false,
+                'InvalidFileException: '.$e->getMessage());
+            $bootstrapFailed = true;
+        } catch (\Illuminate\Contracts\Container\BindingResolutionException $e) {
+            check('laravel_step', "Bootstrap: $stepName", false,
+                'BindingResolutionException: '.$e->getMessage());
+            $bootstrapFailed = true;
+        } catch (Throwable $e) {
+            $msg = $e->getMessage();
+            $checkMsg = \get_class($e).': '.$msg;
 
-                // This is the same code path as index.php's $app->handleRequest()
-                $response = $kernel->handle($testRequest);
+            // Specific error pattern detection
+            if (\str_contains($msg, 'Allowed memory size') && \str_contains($msg, 'Dotenv\\Parser')) {
+                $checkMsg .= ' [ACTION: Check .env has all multi-word values in quotes, e.g. APP_NAME="My App"]';
+            } elseif (\preg_match('/Base table.*not found|SQLSTATE|sessions/', $msg)) {
+                $checkMsg .= ' [ACTION: Run php artisan migrate to create missing tables]';
+            } elseif (\str_contains($msg, 'file_put_contents') || \str_contains($msg, 'failed to open stream')) {
+                $checkMsg .= ' [ACTION: Check storage/ directory permissions (writable)]';
+            } elseif (\str_contains($msg, 'Access denied') || \str_contains($msg, 'SQLSTATE[HY000]')) {
+                $checkMsg .= ' [ACTION: Check DB credentials in .env]';
+            } elseif (\str_contains($msg, ' Class ') && \str_contains($msg, ' not found')) {
+                $checkMsg .= ' [ACTION: Run composer dump-autoload or check vendor directory]';
+            }
 
-                check('laravel', 'Environment', true, $app->environment());
-                check('laravel', 'Debug Mode', true, $app->hasDebugModeEnabled() ? 'ENABLED' : 'DISABLED');
+            check('laravel_step', "Bootstrap: $stepName", false, $checkMsg);
+            $bootstrapFailed = true;
+        }
+    }
 
-                $statusCode = $response->getStatusCode();
-                $content = $response->getContent();
-                $contentLength = $content !== null ? \strlen($content) : 0;
+    // ---- Full Kernel handle() Test (skips bootstrap since already bootstrapped) ----
+    if (! $bootstrapFailed) {
+        try {
+            $obLevel = \ob_get_level();
 
-                check('laravel', 'Kernel handle() — Status', $statusCode >= 200 && $statusCode < 500, "HTTP $statusCode");
+            $testRequest = Request::create('/', 'GET');
+            /** @var KernelContract $kernel */
+            $kernel = $app->make(KernelContract::class);
 
-                $contentCheck = $contentLength > 0 ? 'passed' : 'failed';
-                $detail = "Content-Length: $contentLength bytes";
-                if ($contentLength > 0) {
-                    $preview = \strip_tags($content);
-                    $preview = \strlen($preview) > 300 ? \substr($preview, 0, 300).'...' : $preview;
-                    $detail .= ' — Preview: '.$preview;
-                } else {
-                    $detail .= ' — EMPTY RESPONSE BODY';
-                }
-                check('laravel', 'Kernel handle() — Content', $contentLength > 0, $detail);
+            $response = $kernel->handle($testRequest);
 
-                // Check for session/db error pattern in response
-                if ($contentLength > 0 && $statusCode >= 400) {
-                    if (\str_contains($content, 'Base table or view not found') ||
-                        \str_contains($content, 'SQLSTATE') ||
-                        \str_contains($content, 'sessions')) {
-                        check('laravel', '→ Likely session/database issue', false,
-                            'Session table or database not configured. Run: php artisan sessions:table && php artisan migrate');
-                    }
-                }
+            check('laravel', 'Environment', true, $app->environment());
+            check('laravel', 'Debug Mode', true,
+                $app->hasDebugModeEnabled() ? 'ENABLED' : 'DISABLED');
 
-                // Clean up
-                $kernel->terminate($testRequest, $response);
+            $statusCode = $response->getStatusCode();
+            $content = $response->getContent();
+            $contentLength = $content !== null ? \strlen($content) : 0;
 
-                // Restore output buffering
-                while (\ob_get_level() > $obLevel) {
-                    \ob_end_clean();
-                }
+            check('laravel', 'Kernel handle() — Status',
+                $statusCode >= 200 && $statusCode < 500, "HTTP $statusCode");
 
-            } catch (Throwable $e) {
-                check('laravel', 'Kernel handle()', false,
-                    \get_class($e).': '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
+            $detail = "Content-Length: $contentLength bytes";
+            if ($contentLength > 0) {
+                $preview = \strip_tags($content);
+                $preview = \strlen($preview) > 300
+                    ? \substr($preview, 0, 300).'...' : $preview;
+                $detail .= ' — Preview: '.$preview;
+            } else {
+                $detail .= ' — EMPTY RESPONSE BODY';
+            }
+            check('laravel', 'Kernel handle() — Content', $contentLength > 0, $detail);
 
-                // Try to get environment info even on failure (bootstrap may have partially run)
-                try {
-                    check('laravel', 'Environment', true, $app->environment());
-                } catch (Throwable) {
-                    check('laravel', 'Environment', false, 'Not available (pre-bootstrap)');
-                }
-                try {
-                    check('laravel', 'Debug Mode', true, $app->hasDebugModeEnabled() ? 'ENABLED' : 'DISABLED');
-                } catch (Throwable) {
-                    check('laravel', 'Debug Mode', false, 'Not available (pre-bootstrap)');
-                }
-
-                if (\str_contains($e->getMessage(), 'Base table or view not found') ||
-                    \str_contains($e->getMessage(), 'SQLSTATE') ||
-                    \str_contains($e->getMessage(), 'sessions')) {
+            // Pattern-match known error responses
+            if ($contentLength > 0 && $statusCode >= 400) {
+                if (\str_contains($content, 'Base table or view not found') ||
+                    \str_contains($content, 'SQLSTATE') ||
+                    \str_contains($content, 'sessions')) {
                     check('laravel', '→ Likely session/database issue', false,
-                        'Session table or database not configured properly');
-                }
-                if (\str_contains($e->getMessage(), 'file_put_contents') || \str_contains($e->getMessage(), 'failed to open stream')) {
+                        'Run: php artisan migrate (or access /migrate.php if available)');
+                } elseif (\str_contains($content, 'file_put_contents') ||
+                    \str_contains($content, 'failed to open stream')) {
                     check('laravel', '→ Likely storage permissions', false,
-                        'Check storage/ directory is writable');
+                        'Check storage/ and bootstrap/cache are writable');
                 }
             }
 
-            // Part C: Check registered service providers
-            try {
-                $providers = $app->getLoadedProviders();
-                $totalProviders = \count($providers);
-                $bootedProviders = \count(\array_filter($providers));
-                check('laravel', "Service providers ($totalProviders loaded, $bootedProviders booted)",
-                    $totalProviders > 0, "$totalProviders registered");
+            $kernel->terminate($testRequest, $response);
 
-                // Check specific providers
-                $expectedProviders = [
-                    'App\Providers\AppServiceProvider',
-                    'Illuminate\Foundation\Providers\FoundationServiceProvider',
-                ];
-                foreach ($expectedProviders as $pClass) {
-                    check('laravel', "Provider: $pClass",
-                        isset($providers[$pClass]) && $providers[$pClass],
-                        isset($providers[$pClass]) ? ($providers[$pClass] ? 'booted' : 'registered but not booted') : 'NOT FOUND');
-                }
-} catch (Throwable $e) {
-        check('laravel', 'Service provider check', false, $e->getMessage());
+            while (\ob_get_level() > $obLevel) {
+                \ob_end_clean();
+            }
+
+        } catch (Throwable $e) {
+            check('laravel', 'Kernel handle()', false,
+                \get_class($e).': '.$e->getMessage().
+                ' in '.$e->getFile().':'.$e->getLine());
+
+            try {
+                check('laravel', 'Environment', true, $app->environment());
+            } catch (Throwable) {
+                check('laravel', 'Environment', false, 'Not available');
+            }
+            try {
+                check('laravel', 'Debug Mode', true,
+                    $app->hasDebugModeEnabled() ? 'ENABLED' : 'DISABLED');
+            } catch (Throwable) {
+                check('laravel', 'Debug Mode', false, 'Not available');
+            }
+
+            $msg = $e->getMessage();
+            if (\preg_match('/Base table.*not found|SQLSTATE|sessions/', $msg)) {
+                check('laravel', '→ Likely database issue', false,
+                    'Missing tables — run: php artisan migrate');
+            } elseif (\str_contains($msg, 'file_put_contents') ||
+                \str_contains($msg, 'failed to open stream')) {
+                check('laravel', '→ Likely storage permissions', false,
+                    'Check storage/ directory is writable');
+            }
+        }
+    } else {
+        check('laravel', 'Kernel handle()', false,
+            'Skipped — bootstrap did not complete');
     }
 
-        } else {
-            check('laravel', 'Application creation', false, 'bootstrap/app.php did not return an Application instance');
+    // ---- Service Provider Check ----
+    try {
+        $providers = $app->getLoadedProviders();
+        $totalProviders = \count($providers);
+        $bootedProviders = \count(\array_filter($providers));
+        check('laravel', "Service providers ($totalProviders loaded, $bootedProviders booted)",
+            $totalProviders > 0, "$totalProviders registered");
+
+        $expectedProviders = [
+            'App\Providers\AppServiceProvider',
+            'Illuminate\Foundation\Providers\FoundationServiceProvider',
+        ];
+        foreach ($expectedProviders as $pClass) {
+            check('laravel', "Provider: $pClass",
+                isset($providers[$pClass]) && $providers[$pClass],
+                isset($providers[$pClass])
+                    ? ($providers[$pClass] ? 'booted' : 'registered but not booted')
+                    : 'NOT FOUND');
         }
     } catch (Throwable $e) {
-        check('laravel', 'Application bootstrap', false, \get_class($e).': '.$e->getMessage());
-        @\file_put_contents(\dirname(__DIR__).'/storage/logs/debug-laravel.log', \date('Y-m-d H:i:s').' bootstrap: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine()."\n", FILE_APPEND);
-        if (\str_contains($e->getMessage(), 'database') || \str_contains($e->getMessage(), 'SQLSTATE')) {
-            check('laravel', '→ Likely database issue', false, 'Check DB credentials in .env');
-        }
-        if (\str_contains($e->getMessage(), 'file_put_contents')) {
-            check('laravel', '→ Likely storage permissions', false, 'Check storage/ directory is writable');
-        }
+        check('laravel', 'Service provider check', false, $e->getMessage());
     }
-}
+    } // end if ($bootstrapOk)
+} // end if ($authenticated)
 
 // ===================================================================
 // 10. Database Connection (authenticated only)

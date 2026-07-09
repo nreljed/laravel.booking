@@ -116,7 +116,7 @@ ListItem.displayName = "ListItem";
 export function SiteHeader({ variant = "default", categories = [], cart }: SiteHeaderProps) {
   const { props } = usePage();
   const brand = (props.brand as { logo?: string; name?: string }) || {};
-  const appName = brand.name || "Cost Breaker 360";
+  const appName = brand.name || "Shop App";
   const isStore = variant === "store";
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
