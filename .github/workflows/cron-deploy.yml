@@ -1,0 +1,18 @@
+name: Manual Deploy Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deploy check on server
+        run: |
+          echo "Checking for new release on server..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 180 \
+            "https://booking.laravel.tunispromo.tn/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}")
+          echo "Server responded with HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::Deploy check returned $HTTP_CODE — investigate manually"
+          fi
