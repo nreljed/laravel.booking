@@ -2,12 +2,11 @@
 
 namespace App\Booking\Controllers;
 
-use App\Properties\Models\Property;
-use App\Http\Controllers\Controller;
-
 use App\Booking\Services\BookingAvailabilityService;
 use App\Booking\Services\BookingCacheService;
 use App\Booking\Services\BookingPriceCalculator;
+use App\Http\Controllers\Controller;
+use App\Properties\Models\Property;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;

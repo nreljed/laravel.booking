@@ -2,10 +2,6 @@
 
 namespace App\Booking\Controllers;
 
-use App\Enums\AuditAction;
-use App\Http\Controllers\Controller;
-use App\Models\User;
-
 use App\Booking\Enums\BookingStatus;
 use App\Booking\Models\Booking;
 use App\Booking\Services\BookingAvailabilityService;
@@ -17,6 +13,9 @@ use App\Booking\Services\BookingPriceCalculator;
 use App\Booking\Services\BookingService;
 use App\Booking\Services\BookingStatusManager;
 use App\Booking\Services\HostProfileService;
+use App\Enums\AuditAction;
+use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Properties\Models\Property;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;

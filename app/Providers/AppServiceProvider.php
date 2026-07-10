@@ -2,16 +2,16 @@
 
 namespace App\Providers;
 
+use App\Booking\Models\Booking;
 use App\Models\Notification;
 use App\Models\User;
-use App\Booking\Models\Booking;
-use App\Posts\Models\Post;
-use App\Properties\Models\Property;
 use App\Notifications\ResetPassword as CustomResetPassword;
 use App\Notifications\VerifyEmail as CustomVerifyEmail;
 use App\Policies\BookingPolicy;
 use App\Policies\PostPolicy;
 use App\Policies\PropertyPolicy;
+use App\Posts\Models\Post;
+use App\Properties\Models\Property;
 use App\Services\FormattingService;
 use App\Services\MailerConfigurator;
 use Illuminate\Auth\Notifications\ResetPassword;

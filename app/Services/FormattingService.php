@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Booking\BookingServiceProvider;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
 use Illuminate\Support\Facades\Cache;
 
 class FormattingService
@@ -240,9 +243,9 @@ class FormattingService
     {
         return Cache::remember('formatting.module_configs', 3600, function () {
             return [
-                'bookings' => \App\Booking\BookingServiceProvider::getMetaFormattingConfig(),
-                'properties' => \App\Properties\PropertiesServiceProvider::getMetaFormattingConfig(),
-                'posts' => \App\Posts\PostsServiceProvider::getMetaFormattingConfig(),
+                'bookings' => BookingServiceProvider::getMetaFormattingConfig(),
+                'properties' => PropertiesServiceProvider::getMetaFormattingConfig(),
+                'posts' => PostsServiceProvider::getMetaFormattingConfig(),
             ];
         });
     }

@@ -2,9 +2,7 @@
 
 namespace App\Booking\Services;
 
-
 use App\Booking\Enums\BookingStatus;
-
 use App\Properties\Models\Property;
 use App\Services\SettingsService;
 

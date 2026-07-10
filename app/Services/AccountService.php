@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use App\Booking\BookingServiceProvider;
 use App\Enums\AuditAction;
 use App\Models\NotificationPreference;
 use App\Models\User;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -157,9 +160,9 @@ class AccountService
     public function deleteAllUserData(User $user): void
     {
         try {
-            \App\Booking\BookingServiceProvider::onUserDelete($user->id);
-            \App\Properties\PropertiesServiceProvider::onUserDelete($user->id);
-            \App\Posts\PostsServiceProvider::onUserDelete($user->id);
+            BookingServiceProvider::onUserDelete($user->id);
+            PropertiesServiceProvider::onUserDelete($user->id);
+            PostsServiceProvider::onUserDelete($user->id);
         } catch (\Throwable $e) {
             Log::warning('Domain data cleanup failed for user '.$user->id.': '.$e->getMessage());
         }

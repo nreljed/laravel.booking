@@ -2,10 +2,9 @@
 
 namespace App\Booking\Services;
 
-use App\Properties\Models\Property;
-
 use App\Booking\Enums\BookingStatus;
 use App\Booking\Models\Booking;
+use App\Properties\Models\Property;
 use Illuminate\Support\Facades\Log;
 
 class BookingUnitService

@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Booking\BookingServiceProvider;
 use App\Http\Requests\Email\SendTestEmailRequest;
 use App\Http\Requests\Email\UpdateEmailSettingsRequest;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
 use App\Services\EmailSettingsService;
 use App\Services\EmailTemplateService;
 use App\Services\MailService;
@@ -207,9 +210,9 @@ class EmailSettingsController extends Controller
         $templates = $this->getCoreTemplates();
 
         foreach ([
-            \App\Booking\BookingServiceProvider::class,
-            \App\Properties\PropertiesServiceProvider::class,
-            \App\Posts\PostsServiceProvider::class,
+            BookingServiceProvider::class,
+            PropertiesServiceProvider::class,
+            PostsServiceProvider::class,
         ] as $provider) {
             $moduleTemplates = $provider::getEmailTemplates();
             if (! empty($moduleTemplates)) {

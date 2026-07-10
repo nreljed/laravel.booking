@@ -2,8 +2,8 @@
 
 namespace App\Properties\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Booking\Services\BookingPropertyIntegrationService;
+use App\Http\Controllers\Controller;
 use App\Properties\Models\City;
 use App\Properties\Models\Property;
 use App\Properties\Models\PropertyImage;

@@ -2,7 +2,6 @@
 
 namespace App\Booking\Services;
 
-
 use App\Properties\Models\Property;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\Cache;

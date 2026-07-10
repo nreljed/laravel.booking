@@ -3,7 +3,6 @@
 namespace App\Booking\Services;
 
 use App\Properties\Models\Property;
-
 use App\Services\FormattingService;
 use App\Services\SettingsService;
 

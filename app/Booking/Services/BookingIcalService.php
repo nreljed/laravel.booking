@@ -3,7 +3,6 @@
 namespace App\Booking\Services;
 
 use App\Properties\Models\Property;
-
 use Carbon\Carbon;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Support\Facades\Http;

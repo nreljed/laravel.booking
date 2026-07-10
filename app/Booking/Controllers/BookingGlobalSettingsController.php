@@ -3,7 +3,6 @@
 namespace App\Booking\Controllers;
 
 use App\Http\Controllers\Controller;
-
 use App\Properties\Models\Property;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;

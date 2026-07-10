@@ -2,9 +2,8 @@
 
 namespace App\Properties\Models;
 
-use App\Models\User;
 use App\Booking\Models\Booking;
-
+use App\Models\User;
 use App\Services\SettingsService;
 use Carbon\Carbon;
 use Database\Factories\PropertyFactory;
@@ -18,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-class Property extends Model 
+class Property extends Model
 {
     use HasFactory;
 

@@ -2,9 +2,8 @@
 
 namespace App\Booking\Services;
 
-use App\Properties\Models\Property;
-
 use App\Booking\Models\Booking;
+use App\Properties\Models\Property;
 use App\Services\MailService;
 
 class BookingRefundMailService

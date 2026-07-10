@@ -8,7 +8,6 @@ use App\Models\Notification;
 use App\Models\User;
 use App\Posts\PostsServiceProvider;
 use App\Properties\PropertiesServiceProvider;
-use App\Services\EmailSettingsService;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -136,6 +135,7 @@ class HandleInertiaRequests extends Middleware
                     $items[] = $nav;
                 }
             }
+
             return $items;
         } catch (\Throwable) {
             return [];
@@ -152,6 +152,7 @@ class HandleInertiaRequests extends Middleware
                     $data[basename(str_replace('\\', '/', $provider))] = $shared;
                 }
             }
+
             return $data;
         } catch (\Throwable) {
             return [];
@@ -191,6 +192,7 @@ class HandleInertiaRequests extends Middleware
                     },
                 ];
             }
+
             return ['enabled' => ['bookings', 'properties', 'posts'], 'list' => $list];
         } catch (\Throwable) {
             return ['enabled' => [], 'list' => []];
@@ -213,6 +215,7 @@ class HandleInertiaRequests extends Middleware
                     $configs[$slug] = $repeaters;
                 }
             }
+
             return $configs;
         } catch (\Throwable) {
             return [];
@@ -235,6 +238,7 @@ class HandleInertiaRequests extends Middleware
                     $configs[$slug] = $fields;
                 }
             }
+
             return $configs;
         } catch (\Throwable) {
             return [];

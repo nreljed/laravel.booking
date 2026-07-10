@@ -2,8 +2,6 @@
 
 namespace App\Booking\Controllers;
 
-use App\Enums\AuditAction;
-use App\Http\Controllers\Controller;
 use App\Booking\Enums\BookingStatus;
 use App\Booking\Models\Booking;
 use App\Booking\Services\BookingAvailabilityService;
@@ -11,6 +9,8 @@ use App\Booking\Services\BookingCacheService;
 use App\Booking\Services\BookingGuestTokenService;
 use App\Booking\Services\BookingPipelineTrace;
 use App\Booking\Services\BookingPriceCalculator;
+use App\Enums\AuditAction;
+use App\Http\Controllers\Controller;
 use App\Properties\Models\Property;
 use App\Services\AuditService;
 use Carbon\Carbon;

@@ -2,8 +2,8 @@
 
 namespace App\Booking\Models;
 
-use App\Models\User;
 use App\Booking\Enums\BookingStatus;
+use App\Models\User;
 use App\Properties\Models\Property;
 use Carbon\Carbon;
 use Database\Factories\BookingFactory;

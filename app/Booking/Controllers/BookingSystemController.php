@@ -2,8 +2,8 @@
 
 namespace App\Booking\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Booking\Services\BookingStatusManager;
+use App\Http\Controllers\Controller;
 use App\Services\SettingsService;
 use Illuminate\Http\JsonResponse;
 

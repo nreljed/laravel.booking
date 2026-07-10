@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Booking\BookingServiceProvider;
 use App\Models\User;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
@@ -67,19 +70,19 @@ class SystemHealthService
                     'name' => 'Bookings',
                     'slug' => 'bookings',
                     'enabled' => true,
-                    'version' => \App\Booking\BookingServiceProvider::VERSION ?? '1.0.0',
+                    'version' => BookingServiceProvider::VERSION ?? '1.0.0',
                 ],
                 [
                     'name' => 'Properties',
                     'slug' => 'properties',
                     'enabled' => true,
-                    'version' => \App\Properties\PropertiesServiceProvider::VERSION ?? '1.0.0',
+                    'version' => PropertiesServiceProvider::VERSION ?? '1.0.0',
                 ],
                 [
                     'name' => 'Posts',
                     'slug' => 'posts',
                     'enabled' => true,
-                    'version' => \App\Posts\PostsServiceProvider::VERSION ?? '1.0.0',
+                    'version' => PostsServiceProvider::VERSION ?? '1.0.0',
                 ],
             ],
             'schedule' => $this->getScheduleInfo(),

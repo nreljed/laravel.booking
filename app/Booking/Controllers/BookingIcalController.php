@@ -2,8 +2,8 @@
 
 namespace App\Booking\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Booking\Services\BookingIcalService;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

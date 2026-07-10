@@ -23,6 +23,7 @@ class GalleryService
                 $all[$slug] = $gallery;
             }
         }
+
         return $all;
     }
 
