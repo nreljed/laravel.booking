@@ -2,6 +2,8 @@
 
 A SaaS application built with Laravel + Inertia.js + React 19.
 
+> **Important:** If this project was copied from another app (e.g., `shop-laravel` → `booking-laravel`), read `docs/project-setup-after-copy.md` first — the copy leaves stale APP_KEY, APP_NAME, URLs, and can confuse opencode Desktop's project registry.
+
 ## Tech Stack
 
 - **Backend**: Laravel 13 (PHP 8.4)

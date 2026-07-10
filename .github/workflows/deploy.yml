@@ -138,6 +138,14 @@ jobs:
           "FILESYSTEM_DISK=local",
           "QUEUE_CONNECTION=sync",
           "CACHE_STORE=file",
+          "MAIL_MAILER=smtp",
+          "MAIL_HOST=mail.tunispromo.tn",
+          "MAIL_PORT=587",
+          "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}",
+          "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}",
+          "MAIL_ENCRYPTION=tls",
+          'MAIL_FROM_ADDRESS="booking.contact@tunispromo.tn"',
+          'MAIL_FROM_NAME="Booking App"',
           "DEPLOY_TOKEN=${{ secrets.DEPLOY_TOKEN }}",
           "GITHUB_TOKEN=${{ secrets.GH_TOKEN }}"
           | Set-Content -Path .env -Encoding UTF8
@@ -192,6 +200,9 @@ jobs:
           VER="v${{ steps.version.outputs.version }}"
           echo "Release: $VER"
           if curl -sf --max-time 300 \
+            -H "X-Admin-Email: ${{ secrets.ADMIN_EMAIL }}" \
+            -H "X-Admin-Password: ${{ secrets.ADMIN_PASSWORD }}" \
+            -H "X-Admin-Name: ${{ secrets.ADMIN_NAME }}" \
             "https://booking.laravel.tunispromo.tn/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}"; then
             echo "Deployed via /deploy/check (server downloads from GitHub API)"
           else

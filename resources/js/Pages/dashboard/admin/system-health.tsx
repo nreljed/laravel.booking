@@ -429,7 +429,7 @@ export default function SystemHealth(props: SystemHealthProps) {
     const L = (label: string, val: string) => `  ${label}: ${val}`;
     const d = new Date();
     const lines = [
-      "Shop App — System Health Report",
+      `${props.laravel.name} — System Health Report`,
       `Generated: ${d.toISOString().slice(0, 19).replace("T", " ")}`,
       `Environment: ${props.laravel.environment} (${props.environment.detected})`,
       "",
