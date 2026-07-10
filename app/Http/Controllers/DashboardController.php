@@ -46,7 +46,7 @@ class DashboardController extends Controller
                     'property' => ['property.%', '%property%'],
                     'account' => ['%user%', '%password%', '%email%', '%account%'],
                     'content' => ['post.%', '%content%'],
-                    'orders' => ['order.%', '%stock%', '%shop%'],
+                    'orders' => ['order.%', '%stock%'],
                 ];
 
                 $patterns = $typePatterns[$typeFilter] ?? ["{$typeFilter}%"];

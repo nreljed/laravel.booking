@@ -50,16 +50,6 @@ class RolesAndPermissionsSeeder extends Seeder
             ['name' => 'Admin', 'description' => 'Full access to everything']
         );
 
-        $shopOwnerRole = Role::firstOrCreate(
-            ['slug' => 'shop_owner'],
-            ['name' => 'Shop Owner', 'description' => 'Full shop control: products, orders, categories, reviews, etc.']
-        );
-
-        $shopManagerRole = Role::firstOrCreate(
-            ['slug' => 'shop_manager'],
-            ['name' => 'Shop Manager', 'description' => 'Manage existing shop content: edit products, view orders']
-        );
-
         $customerRole = Role::firstOrCreate(
             ['slug' => 'customer'],
             ['name' => 'Customer', 'description' => 'Account management: profile, notifications, account settings']
@@ -76,8 +66,6 @@ class RolesAndPermissionsSeeder extends Seeder
             'manage-notifications',
         ])->pluck('id');
 
-        $shopOwnerRole->permissions()->sync($corePerms);
-        $shopManagerRole->permissions()->sync($corePerms);
         $customerRole->permissions()->sync($corePerms);
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Services\PermissionCacheService;
-use App\Shop\Models\Order;
 use App\Traits\UserDataTrait;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\MustVerifyEmail;
@@ -11,7 +10,6 @@ use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -38,11 +36,6 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function roles()
     {
         return $this->belongsToMany(Role::class);
-    }
-
-    public function orders(): HasMany
-    {
-        return $this->hasMany(Order::class);
     }
 
     public function permissions()

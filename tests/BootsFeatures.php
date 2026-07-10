@@ -5,7 +5,6 @@ namespace Tests;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\FeatureRegistry;
 use App\Services\PermissionCacheService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
@@ -13,7 +12,7 @@ trait BootsFeatures
 {
     protected function bootFeatures(): void
     {
-        $registry = app(FeatureRegistry::class);
+        $registry = app(ModuleRegistry::class);
 
         app(RolesAndPermissionsSeeder::class)->run();
 
@@ -58,16 +57,6 @@ trait BootsFeatures
         $adminRole = Role::where('slug', 'admin')->first();
         if ($adminRole) {
             $adminRole->permissions()->sync($allPermIds);
-        }
-
-        // Shop Owner gets ALL feature permissions (matches production: permissions:sync)
-        $shopOwnerRole = Role::where('slug', 'shop_owner')->first();
-        if ($shopOwnerRole) {
-            $existingIds = $shopOwnerRole->permissions()->pluck('permissions.id');
-            $newIds = $featurePermIds->diff($existingIds)->values()->toArray();
-            if (! empty($newIds)) {
-                $shopOwnerRole->permissions()->attach($newIds);
-            }
         }
 
         $this->clearPermissionCache();

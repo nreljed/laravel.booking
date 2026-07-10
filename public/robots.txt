@@ -4,4 +4,4 @@ Disallow: /dashboard
 Disallow: /deploy
 Disallow: /api
 
-Sitemap: https://booking.laravel.tunispromo.tn/sitemap.xml
+Sitemap: /sitemap.xml

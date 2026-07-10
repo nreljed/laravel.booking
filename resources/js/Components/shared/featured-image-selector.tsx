@@ -6,6 +6,7 @@ import { toast } from "sonner";
 interface FeaturedImageSelectorProps {
   value?: string;
   onChange: (_url: string, _path?: string) => void;
+  onUpload?: (_file: File) => Promise<{ url: string }>;
   label?: string;
   description?: string;
   disabled?: boolean;
@@ -14,6 +15,7 @@ interface FeaturedImageSelectorProps {
 export function FeaturedImageSelector({
   value = "",
   onChange,
+  onUpload,
   label = "Featured Image",
   description = "Select a featured image",
   disabled,
@@ -23,7 +25,6 @@ export function FeaturedImageSelector({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPreview(value);
   }, [value]);
 
@@ -35,24 +36,33 @@ export function FeaturedImageSelector({
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      if (onUpload) {
+        const result = await onUpload(file);
+        if (result?.url) {
+          setPreview(result.url);
+          onChange(result.url);
+          toast.success("Image uploaded successfully");
+        }
+      } else {
+        const formData = new FormData();
+        formData.append("file", file);
 
-      const csrfToken =
-        document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
-      const res = await fetch(route("dashboard.shop.products.upload-image"), {
-        method: "POST",
-        body: formData,
-        headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": csrfToken },
-      });
+        const csrfToken =
+          document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+        const res = await fetch("/dashboard/posts/upload-image", {
+          method: "POST",
+          body: formData,
+          headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": csrfToken },
+        });
 
-      if (!res.ok) throw new Error("Upload failed");
+        if (!res.ok) throw new Error("Upload failed");
 
-      const data = await res.json();
-      if (data?.url) {
-        setPreview(data.url);
-        onChange(data.url);
-        toast.success("Image uploaded successfully");
+        const data = await res.json();
+        if (data?.url) {
+          setPreview(data.url);
+          onChange(data.url);
+          toast.success("Image uploaded successfully");
+        }
       }
     } catch {
       toast.error("Upload failed");
@@ -72,7 +82,6 @@ export function FeaturedImageSelector({
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file) handleFileSelect(file);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();

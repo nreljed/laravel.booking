@@ -2,10 +2,11 @@
 
 namespace App\Providers;
 
-use App\Blog\BlogServiceProvider;
+use App\Booking\BookingServiceProvider;
 use App\Models\Permission;
 use App\Models\User;
-use App\Shop\ShopServiceProvider;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -44,19 +45,9 @@ class PermissionGateServiceProvider extends ServiceProvider
                 'manage-notifications',
             ];
 
-            $featureProviders = [];
-            $shop = app()->getProvider(ShopServiceProvider::class);
-            $blog = app()->getProvider(BlogServiceProvider::class);
-            if ($shop) {
-                $featureProviders[] = $shop;
-            }
-            if ($blog) {
-                $featureProviders[] = $blog;
-            }
-
             $moduleSlugs = [];
-            foreach ($featureProviders as $provider) {
-                foreach ($provider->permissions() as $perm) {
+            foreach ([BookingServiceProvider::class, PropertiesServiceProvider::class, PostsServiceProvider::class] as $provider) {
+                foreach ($provider::permissions() as $perm) {
                     $moduleSlugs[] = $perm['slug'];
                 }
             }

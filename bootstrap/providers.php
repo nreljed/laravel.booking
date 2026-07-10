@@ -1,16 +1,18 @@
 <?php
 
-use App\Blog\BlogServiceProvider;
+use App\Booking\BookingServiceProvider;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\PermissionGateServiceProvider;
 use App\Providers\TelescopeServiceProvider;
-use App\Shop\ShopServiceProvider;
 use Laravel\Telescope\TelescopeApplicationServiceProvider;
 
 return array_filter([
     AppServiceProvider::class,
-    ShopServiceProvider::class,
-    BlogServiceProvider::class,
+    BookingServiceProvider::class,
+    PropertiesServiceProvider::class,
+    PostsServiceProvider::class,
     PermissionGateServiceProvider::class,
     class_exists(TelescopeApplicationServiceProvider::class)
         ? TelescopeServiceProvider::class

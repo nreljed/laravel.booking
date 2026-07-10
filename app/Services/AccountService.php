@@ -157,9 +157,11 @@ class AccountService
     public function deleteAllUserData(User $user): void
     {
         try {
-            app(FeatureRegistry::class)->cleanupUserData($user->id);
+            \App\Booking\BookingServiceProvider::onUserDelete($user->id);
+            \App\Properties\PropertiesServiceProvider::onUserDelete($user->id);
+            \App\Posts\PostsServiceProvider::onUserDelete($user->id);
         } catch (\Throwable $e) {
-            Log::warning('Module data cleanup failed for user '.$user->id.': '.$e->getMessage());
+            Log::warning('Domain data cleanup failed for user '.$user->id.': '.$e->getMessage());
         }
 
         if (method_exists($user, 'tokens')) {

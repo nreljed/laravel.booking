@@ -6,7 +6,6 @@ use App\Http\Requests\Email\SendTestEmailRequest;
 use App\Http\Requests\Email\UpdateEmailSettingsRequest;
 use App\Services\EmailSettingsService;
 use App\Services\EmailTemplateService;
-use App\Services\FeatureRegistry;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 
@@ -18,18 +17,14 @@ class EmailSettingsController extends Controller
 
     protected EmailTemplateService $templateService;
 
-    protected FeatureRegistry $featureRegistry;
-
     public function __construct(
         EmailSettingsService $settingsService,
         MailService $mailService,
         EmailTemplateService $templateService,
-        FeatureRegistry $featureRegistry
     ) {
         $this->settingsService = $settingsService;
         $this->mailService = $mailService;
         $this->templateService = $templateService;
-        $this->featureRegistry = $featureRegistry;
     }
 
     /**
@@ -211,8 +206,12 @@ class EmailSettingsController extends Controller
     {
         $templates = $this->getCoreTemplates();
 
-        foreach ($this->featureRegistry->all() as $module) {
-            $moduleTemplates = $module->getEmailTemplates();
+        foreach ([
+            \App\Booking\BookingServiceProvider::class,
+            \App\Properties\PropertiesServiceProvider::class,
+            \App\Posts\PostsServiceProvider::class,
+        ] as $provider) {
+            $moduleTemplates = $provider::getEmailTemplates();
             if (! empty($moduleTemplates)) {
                 $templates = array_merge($templates, $moduleTemplates);
             }

@@ -30,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'profile/avatar',
+            'booking/*',
+            'dashboard/bookings/guest/*',
+            'dashboard/bookings/ajax/*',
             'deploy/*',
             'api/notifications/*',
         ]);

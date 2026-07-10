@@ -2,7 +2,6 @@
 
 use App\Models\Permission;
 use App\Models\Role;
-use App\Services\FeatureRegistry;
 use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
@@ -16,8 +15,8 @@ return new class extends Migration
         ]);
 
         // Ensure crm_user role gets all module permissions
-        if (app()->resolved(FeatureRegistry::class)) {
-            $registry = app(FeatureRegistry::class);
+        if (app()->resolved(ModuleRegistry::class)) {
+            $registry = app(ModuleRegistry::class);
             $crmUser = Role::where('slug', 'crm_user')->first();
             if ($crmUser) {
                 $moduleSlugs = [];

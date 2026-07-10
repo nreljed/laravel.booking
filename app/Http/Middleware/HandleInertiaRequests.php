@@ -2,16 +2,14 @@
 
 namespace App\Http\Middleware;
 
-use App\Blog\BlogServiceProvider;
+use App\Booking\BookingServiceProvider;
 use App\Http\Controllers\EmailSettingsController;
 use App\Models\Notification;
 use App\Models\User;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
 use App\Services\EmailSettingsService;
 use App\Services\SettingsService;
-use App\Shop\Models\Cart;
-use App\Shop\Models\Wishlist;
-use App\Shop\Services\CurrencyService;
-use App\Shop\ShopServiceProvider;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -95,6 +93,8 @@ class HandleInertiaRequests extends Middleware
                     return [];
                 }
             },
+            'featureNavItems' => fn () => $this->getModuleNavItems(),
+            'sharedData' => fn () => $this->getModuleSharedData(),
             'moduleNavItems' => fn () => $this->getModuleNavItems(),
             'moduleData' => fn () => $this->getModuleSharedData(),
             'modules' => fn () => $this->getModulesData(),
@@ -107,49 +107,6 @@ class HandleInertiaRequests extends Middleware
                 'name' => fn () => self::safeSetting('app_name', 'Booking App'),
             ],
             'app_url' => fn () => self::safeSetting('app_url', config('app.url')),
-            'cart' => function () use ($request) {
-                if (! $request->hasSession()) {
-                    return ['items' => [], 'subtotal' => 0, 'total' => 0];
-                }
-
-                $cart = $request->user()
-                    ? Cart::where('user_id', $request->user()->id)->first()
-                    : Cart::where('session_id', $request->session()->getId())->first();
-
-                if (! $cart) {
-                    return ['items' => [], 'subtotal' => 0, 'total' => 0];
-                }
-
-                $cart->load('items.product', 'items.variation');
-
-                return [
-                    'id' => $cart->id,
-                    'items' => $cart->items->map(fn ($item) => [
-                        'id' => $item->id,
-                        'product_id' => $item->product_id,
-                        'quantity' => $item->quantity,
-                        'unit_price' => (float) $item->unit_price,
-                        'variant_label' => $item->variant_label,
-                        'product' => $item->product ? [
-                            'id' => $item->product->id,
-                            'name' => $item->product->name,
-                            'slug' => $item->product->slug,
-                            'thumbnail_url' => $item->product->thumbnail_url,
-                        ] : null,
-                        'variation' => $item->variation ? [
-                            'id' => $item->variation->id,
-                            'image_url' => $item->variation->image_url,
-                        ] : null,
-                    ])->values()->all(),
-                    'subtotal' => (float) $cart->subtotal,
-                    'total' => (float) $cart->total,
-                    'coupon_code' => $cart->coupon_code,
-                    'discount' => (float) $cart->discount,
-                ];
-            },
-            'wishlistIds' => fn () => $request->user()
-                ? Wishlist::where('user_id', $request->user()->id)->pluck('product_id')
-                : collect(),
             'wishlistResult' => fn () => null,
             'impersonating' => fn () => $request->session()->get('impersonating', false),
             'impersonator' => fn () => $request->session()->has('impersonator_id')
@@ -157,112 +114,129 @@ class HandleInertiaRequests extends Middleware
                 : null,
             'debug' => fn () => config('app.debug', false),
             'moduleDebugData' => fn () => $this->getModuleDebugData(),
-            'activeCurrencies' => fn () => $this->getActiveCurrencies(),
-            'selectedCurrency' => fn () => session('selected_currency', 'EUR'),
         ];
     }
 
-    /**
-     * @return array<int, ShopServiceProvider|BlogServiceProvider>
-     */
-    protected function featureProviders(): array
+    private static function providers(): array
     {
-        $providers = [];
-        $shop = app()->getProvider(ShopServiceProvider::class);
-        $blog = app()->getProvider(BlogServiceProvider::class);
-        if ($shop) {
-            $providers[] = $shop;
-        }
-        if ($blog) {
-            $providers[] = $blog;
-        }
-
-        return $providers;
+        return [
+            BookingServiceProvider::class,
+            PropertiesServiceProvider::class,
+            PostsServiceProvider::class,
+        ];
     }
 
     protected function getModuleNavItems(): array
     {
-        $items = [];
-
-        foreach ($this->featureProviders() as $provider) {
-            $nav = $provider->getNavItems();
-            if (! empty($nav)) {
-                $nav['groupLabel'] = $provider->getNavGroupLabel();
-                $items[] = $nav;
+        try {
+            $items = [];
+            foreach (self::providers() as $provider) {
+                $nav = $provider::getNavItems();
+                if (! empty($nav)) {
+                    $items[] = $nav;
+                }
             }
+            return $items;
+        } catch (\Throwable) {
+            return [];
         }
-
-        return $items;
     }
 
     protected function getModuleSharedData(): array
     {
-        $data = [];
-
-        foreach ($this->featureProviders() as $provider) {
-            $shared = $provider->getSharedData();
-            if (! empty($shared)) {
-                $data = array_merge($data, $shared);
+        try {
+            $data = [];
+            foreach (self::providers() as $provider) {
+                $shared = $provider::getSharedData();
+                if (! empty($shared)) {
+                    $data[basename(str_replace('\\', '/', $provider))] = $shared;
+                }
             }
+            return $data;
+        } catch (\Throwable) {
+            return [];
         }
-
-        return $data;
     }
 
     protected function getModulesData(): array
     {
-        $enabled = [];
-        $list = [];
-
-        foreach ($this->featureProviders() as $provider) {
-            $slug = $provider->slug();
-            $enabled[] = $slug;
-            $list[] = [
-                'name' => $slug,
-                'displayName' => $provider->name(),
-                'description' => $provider->description(),
-                'version' => $provider->version(),
-                'enabled' => true,
-                'dependencies' => $provider->dependencies(),
-            ];
+        try {
+            $list = [];
+            foreach (self::providers() as $provider) {
+                $slug = match ($provider) {
+                    BookingServiceProvider::class => 'bookings',
+                    PropertiesServiceProvider::class => 'properties',
+                    PostsServiceProvider::class => 'posts',
+                    default => '',
+                };
+                $list[] = [
+                    'name' => $slug,
+                    'displayName' => match ($slug) {
+                        'bookings' => 'Bookings',
+                        'properties' => 'Properties',
+                        'posts' => 'Posts',
+                        default => $slug,
+                    },
+                    'description' => match ($slug) {
+                        'bookings' => 'Manage guest bookings, availability, and reservations.',
+                        'properties' => 'Manage property listings with pricing, surface area, and rich metadata.',
+                        'posts' => 'Create and manage blog posts and articles.',
+                        default => '',
+                    },
+                    'version' => '1.0.0',
+                    'enabled' => true,
+                    'dependencies' => match ($slug) {
+                        'bookings' => ['properties'],
+                        default => [],
+                    },
+                ];
+            }
+            return ['enabled' => ['bookings', 'properties', 'posts'], 'list' => $list];
+        } catch (\Throwable) {
+            return ['enabled' => [], 'list' => []];
         }
-
-        return ['enabled' => $enabled, 'list' => $list];
     }
 
     protected function getRepeaterConfigs(): array
     {
-        $configs = [];
-
-        foreach ($this->featureProviders() as $provider) {
-            $config = $provider->getRepeaterConfig();
-            if (! empty($config)) {
-                $configs[$provider->slug()] = $config;
+        try {
+            $configs = [];
+            foreach (self::providers() as $provider) {
+                $repeaters = $provider::getRepeaterConfig();
+                if (! empty($repeaters)) {
+                    $slug = match ($provider) {
+                        BookingServiceProvider::class => 'bookings',
+                        PropertiesServiceProvider::class => 'properties',
+                        PostsServiceProvider::class => 'posts',
+                        default => '',
+                    };
+                    $configs[$slug] = $repeaters;
+                }
             }
+            return $configs;
+        } catch (\Throwable) {
+            return [];
         }
-
-        return $configs;
     }
 
     protected function getProfileFieldConfigs(): array
     {
-        $configs = [];
-
-        foreach ($this->featureProviders() as $provider) {
-            $config = $provider->getProfileFieldsConfig();
-            if (! empty($config)) {
-                $configs[$provider->slug()] = $config;
-            }
-        }
-
-        return $configs;
-    }
-
-    protected function getEmailSettings(): array
-    {
         try {
-            return app(EmailSettingsService::class)->forFrontend();
-        } catch (\Exception $e) {
+            $configs = [];
+            foreach (self::providers() as $provider) {
+                $fields = $provider::getProfileFieldsConfig();
+                if (! empty($fields)) {
+                    $slug = match ($provider) {
+                        BookingServiceProvider::class => 'bookings',
+                        PropertiesServiceProvider::class => 'properties',
+                        PostsServiceProvider::class => 'posts',
+                        default => '',
+                    };
+                    $configs[$slug] = $fields;
+                }
+            }
+            return $configs;
+        } catch (\Throwable) {
             return [];
         }
     }
@@ -285,11 +259,20 @@ class HandleInertiaRequests extends Middleware
             ],
         ];
 
-        foreach ($this->featureProviders() as $provider) {
-            foreach ($provider->permissions() as $perm) {
-                $caps[$perm['slug']] = $user->can($perm['slug']);
+        try {
+            foreach (self::providers() as $provider) {
+                $slug = match ($provider) {
+                    BookingServiceProvider::class => 'bookings',
+                    PropertiesServiceProvider::class => 'properties',
+                    PostsServiceProvider::class => 'posts',
+                    default => '',
+                };
+                foreach ($provider::permissions() as $perm) {
+                    $caps[$perm['slug']] = $user->can($perm['slug']);
+                }
+                $caps['hasModule_'.$slug] = true;
             }
-            $caps['hasModule_'.$provider->slug()] = true;
+        } catch (\Throwable) {
         }
 
         return $caps;
@@ -299,49 +282,60 @@ class HandleInertiaRequests extends Middleware
     {
         $data = [];
 
-        foreach ($this->featureProviders() as $provider) {
-            $slug = $provider->slug();
+        try {
+            foreach (self::providers() as $provider) {
+                $slug = match ($provider) {
+                    BookingServiceProvider::class => 'bookings',
+                    PropertiesServiceProvider::class => 'properties',
+                    PostsServiceProvider::class => 'posts',
+                    default => '',
+                };
+                $nav = $provider::getNavItems();
 
-            try {
-                $nav = $provider->getNavItems();
-            } catch (\Throwable $e) {
-                $nav = [];
-            }
+                $navUrls = [];
 
-            $navUrls = [];
-
-            if (! empty($nav)) {
-                $navUrls['parent'] = [
-                    'title' => $nav['title'] ?? '',
-                    'url' => $nav['url'] ?? null,
-                ];
-                foreach ($nav['items'] ?? [] as $sub) {
-                    $navUrls['children'][] = [
-                        'title' => $sub['title'] ?? '',
-                        'url' => $sub['url'] ?? null,
+                if (! empty($nav)) {
+                    $navUrls['parent'] = [
+                        'title' => $nav['title'] ?? '',
+                        'url' => $nav['url'] ?? null,
                     ];
+                    foreach ($nav['items'] ?? [] as $sub) {
+                        $navUrls['children'][] = [
+                            'title' => $sub['title'] ?? '',
+                            'url' => $sub['url'] ?? null,
+                        ];
+                    }
                 }
-            }
 
-            $data[] = [
-                'name' => $provider->name(),
-                'slug' => $slug,
-                'enabled' => true,
-                'booted' => true,
-                'nav' => $navUrls,
-                'dependencies' => $provider->dependencies(),
-            ];
+                $data[] = [
+                    'name' => match ($slug) {
+                        'bookings' => 'Bookings',
+                        'properties' => 'Properties',
+                        'posts' => 'Posts',
+                        default => $slug,
+                    },
+                    'slug' => $slug,
+                    'enabled' => true,
+                    'booted' => true,
+                    'nav' => $navUrls,
+                    'dependencies' => match ($slug) {
+                        'bookings' => ['properties'],
+                        default => [],
+                    },
+                ];
+            }
+        } catch (\Throwable) {
         }
 
         return $data;
     }
 
-    protected function getActiveCurrencies(): array
+    protected function getEmailSettings(): array
     {
         try {
-            return app(CurrencyService::class)->getAllForSelector();
+            return SettingsService::getGroup('email');
         } catch (\Throwable) {
-            return [['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'is_default' => true]];
+            return [];
         }
     }
 

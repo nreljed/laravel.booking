@@ -16,7 +16,7 @@ self.addEventListener('push', function (event) {
     data = {};
   }
 
-  var title = data.title || 'Shop App';
+  var title = data.title || 'Booking App';
   var options = {
     body: data.body || 'You have a new notification.',
     icon: data.icon || '/build/assets/favicon.ico',

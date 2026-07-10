@@ -23,22 +23,6 @@ class DatabaseSeeder extends Seeder
             'password' => $password,
         ])->roles()->attach(Role::where('slug', 'admin')->first()->id);
 
-        // Shop Owner — full shop + posts control
-        User::factory()->create([
-            'name' => 'shop_owner',
-            'email' => 'shopowner@example.com',
-            'username' => 'shop_owner',
-            'password' => $password,
-        ])->roles()->attach(Role::where('slug', 'shop_owner')->first()->id);
-
-        // Shop Manager — view/edit existing content
-        User::factory()->create([
-            'name' => 'shop_manager',
-            'email' => 'shopmanager@example.com',
-            'username' => 'shop_manager',
-            'password' => $password,
-        ])->roles()->attach(Role::where('slug', 'shop_manager')->first()->id);
-
         // Customer — account only (default registration role)
         User::factory()->create([
             'name' => 'customer',
@@ -48,6 +32,5 @@ class DatabaseSeeder extends Seeder
         ])->roles()->attach(Role::where('slug', 'customer')->first()->id);
 
         $this->call(SettingsSeeder::class);
-        $this->call(CurrencySeeder::class);
     }
 }

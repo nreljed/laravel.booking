@@ -21,9 +21,8 @@
 
 | Module | Documents | Slug | Dependencies |
 |--------|-----------|------|-------------|
-| [Properties](modules/properties/index.md) | [Controllers](modules/properties/controllers.md) · [Services](modules/properties/services.md) · [Frontend](modules/properties/frontend.md) | `properties` | none |
-| [Booking](modules/booking/index.md) | [Architecture](modules/booking/architecture.md) · [Controllers](modules/booking/controllers.md) · [Services](modules/booking/services.md) · [Frontend](modules/booking/frontend.md) · [Settings](modules/booking/settings.md) · [Guest Portal](modules/booking/guest-portal.md) | `bookings` | `properties` |
-| [Shop](modules/shop/index.md) | [Controllers](modules/shop/controllers.md) · [Frontend](modules/shop/frontend.md) | `shop` | none |
+| [Properties](modules/properties.md) | Full module reference | `properties` | none |
+| [Booking](modules/booking.md) | Full module reference | `bookings` | `properties` |
 | [Posts](modules/posts/index.md) | [Controllers](modules/posts/controllers.md) · [Frontend](modules/posts/frontend.md) | `posts` | none |
 
 ## Frontend
@@ -74,11 +73,4 @@
 | Document | Description |
 |----------|-------------|
 | [Audit Index](auditing/index.md) | Master reference for all audits |
-| [Upgrade Plan](auditing/upgrade-plan.md) | 8-phase codebase improvement plan |
 | [CRM Migration Opportunities](auditing/crm-migration-opportunities.md) | Cross-project comparison |
-
-## Progress
-
-| Document | Description |
-|----------|-------------|
-| [Progress Summary](progress-summary.md) | Development progress log |

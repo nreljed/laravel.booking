@@ -11,17 +11,13 @@ class NotificationService
 {
     protected NotificationTypeRegistry $typeRegistry;
 
-    protected FeatureRegistry $featureRegistry;
-
     protected MailService $mailService;
 
     public function __construct(
         NotificationTypeRegistry $typeRegistry,
-        FeatureRegistry $featureRegistry,
         MailService $mailService,
     ) {
         $this->typeRegistry = $typeRegistry;
-        $this->featureRegistry = $featureRegistry;
         $this->mailService = $mailService;
     }
 
@@ -37,7 +33,6 @@ class NotificationService
         $channels = $channels ?? ($typeConfig['default_channels'] ?? ['in_app']);
         $defaultEnabled = $typeConfig['default_enabled'] ?? true;
 
-        // Batch-load all preferences for this user + type in one query
         $prefs = NotificationPreference::where('user_id', $notifiable->id)
             ->where('type', $type)
             ->whereIn('channel', $channels)

@@ -7,7 +7,6 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\SettingsService;
-use App\Shop\Services\CartMergeService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -48,8 +47,6 @@ class RegisteredUserController extends Controller
         }
 
         event(new Registered($user));
-
-        app(CartMergeService::class)->mergeGuestCartIntoUserCart($user);
 
         Auth::login($user);
 

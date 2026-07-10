@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdateSettingsRequest;
 use App\Http\Requests\UploadLogoRequest;
 use App\Models\Role;
-use App\Services\FeatureRegistry;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -22,15 +21,11 @@ class SettingsController extends Controller
             ]);
         }
 
-        $modules = [];
-        if (app()->resolved(FeatureRegistry::class)) {
-            $modules = collect(app(FeatureRegistry::class)->all())->map(fn ($p) => [
-                'name' => $p->name(),
-                'slug' => $p->slug(),
-                'version' => $p->version(),
-                'enabled' => true,
-            ])->values()->toArray();
-        }
+        $modules = [
+            ['name' => 'Bookings', 'slug' => 'bookings', 'version' => '1.0.0', 'enabled' => true],
+            ['name' => 'Properties', 'slug' => 'properties', 'version' => '1.0.0', 'enabled' => true],
+            ['name' => 'Posts', 'slug' => 'posts', 'version' => '1.0.0', 'enabled' => true],
+        ];
 
         return Inertia::render('dashboard/admin/settings', [
             'settings' => SettingsService::getAllGrouped(),

@@ -16,7 +16,6 @@ import { FormattingSection } from "@/Components/settings/sections/FormattingSect
 import { DateFormatSection } from "@/Components/settings/sections/DateFormatSection";
 import { PropertiesSection } from "@/Components/settings/sections/PropertiesSection";
 import { BookingSection } from "@/Components/settings/sections/BookingSection";
-import { ShopSection } from "@/Components/settings/sections/ShopSection";
 import { toast } from "sonner";
 
 interface AdminSettingsProps {
@@ -45,7 +44,6 @@ export default function AdminSettings({
   const formattingData = settings.formatting || {};
   const propertiesData = settings.properties || {};
   const bookingData = settings.booking || {};
-  const ecomData = settings.shop || {};
 
   const flatSettings = {
     ...generalData,
@@ -62,17 +60,14 @@ export default function AdminSettings({
   const [fmtData, setFmtData] = React.useState(formattingData);
   const [propData, setPropData] = React.useState(propertiesData);
   const [bookData, setBookData] = React.useState(bookingData);
-  const [ecomFormData, setEcomFormData] = React.useState(ecomData);
   const [genErrors, setGenErrors] = React.useState({});
   const [fmtErrors, setFmtErrors] = React.useState({});
   const [propErrors, setPropErrors] = React.useState({});
   const [bookErrors, setBookErrors] = React.useState({});
-  const [ecomErrors, setEcomErrors] = React.useState({});
   const [genLoading, setGenLoading] = React.useState(false);
   const [fmtLoading, setFmtLoading] = React.useState(false);
   const [propLoading, setPropLoading] = React.useState(false);
   const [bookLoading, setBookLoading] = React.useState(false);
-  const [ecomLoading, setEcomLoading] = React.useState(false);
 
   if (flash?.status) toast.success(flash.status);
 
@@ -164,29 +159,6 @@ export default function AdminSettings({
         setBookErrors(errs);
         toast.error("Failed to save.");
         setBookLoading(false);
-      },
-    });
-  };
-
-  const handleEcomSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (ecomLoading) return;
-    setEcomLoading(true);
-    setEcomErrors({});
-    router.put(route("admin.shop.settings.update"), ecomFormData, {
-      preserveScroll: true,
-      preserveState: true,
-      replace: true,
-      onSuccess: (page: unknown) => {
-        const pg = page as { props?: { settings?: Record<string, Record<string, string>> } };
-        if (pg.props?.settings?.shop) setEcomFormData(pg.props.settings.shop);
-        toast.success("Shop settings saved.");
-        setEcomLoading(false);
-      },
-      onError: (errs) => {
-        setEcomErrors(errs);
-        toast.error("Failed to save.");
-        setEcomLoading(false);
       },
     });
   };
@@ -300,18 +272,6 @@ export default function AdminSettings({
             </TabsContent>
           )}
 
-          {enabledModules.includes("shop") && (
-            <TabsContent value="shop" className="mt-6">
-              <ShopSection
-                data={ecomFormData}
-                onChange={(f, v) => setEcomFormData((p) => ({ ...p, [f]: v }))}
-                errors={ecomErrors}
-                loading={ecomLoading}
-                onSubmit={handleEcomSubmit}
-                asAccordion
-              />
-            </TabsContent>
-          )}
         </Tabs>
       </div>
     </AdminLayout>

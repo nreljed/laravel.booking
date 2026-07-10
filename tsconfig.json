@@ -16,12 +16,24 @@
         "noEmit": true,
         "paths": {
             "@/*": ["./resources/js/*"],
-            "@shop": ["./app/Shop/Resources/js"],
-            "@shop/*": ["./app/Shop/Resources/js/*"],
-            "@blog": ["./app/Blog/Resources/js"],
-            "@blog/*": ["./app/Blog/Resources/js/*"],
+            "@booking": ["./app/Booking/Resources/js"],
+            "@booking/*": ["./app/Booking/Resources/js/*"],
+            "@properties": ["./app/Properties/Resources/js"],
+            "@properties/*": ["./app/Properties/Resources/js/*"],
+            "@posts": ["./app/Posts/Resources/js"],
+            "@posts/*": ["./app/Posts/Resources/js/*"],
             "ziggy-js": ["./vendor/tightenco/ziggy"]
         }
     },
-    "include": ["resources/js/**/*.ts", "resources/js/**/*.tsx", "resources/js/**/*.d.ts"]
+    "include": [
+        "resources/js/**/*.ts",
+        "resources/js/**/*.tsx",
+        "resources/js/**/*.d.ts",
+        "app/Booking/Resources/js/**/*.ts",
+        "app/Booking/Resources/js/**/*.tsx",
+        "app/Properties/Resources/js/**/*.ts",
+        "app/Properties/Resources/js/**/*.tsx",
+        "app/Posts/Resources/js/**/*.ts",
+        "app/Posts/Resources/js/**/*.tsx"
+    ]
 }

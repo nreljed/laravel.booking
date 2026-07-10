@@ -19,8 +19,6 @@ $kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
 use App\Models\User;
-use App\Shop\Models\Order;
-use App\Shop\Models\Product;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -46,19 +44,7 @@ echo "Deleting {$count} non-admin user(s)...\n";
 // notification_preferences, role_user, permission_user, carts
 $nonAdminQuery->delete();
 
-// 3. Clean up orphaned orders (SET NULL user_ids)
-$orphanOrders = Order::whereNull('user_id')->orWhereNull('processed_by')->delete();
-echo "Deleted orphaned orders.\n";
-
-// 4. Nullify products.created_by for deleted users
-Product::whereNotNull('created_by')
-    ->whereNotIn('created_by', function ($q) {
-        $q->select('id')->from('users');
-    })
-    ->update(['created_by' => null]);
-echo "Cleaned up products.created_by.\n";
-
-// 5. Clear sessions
+// 3. Clear sessions
 if (Schema::hasTable('sessions')) {
     DB::table('sessions')->truncate();
     echo "Cleared sessions table.\n";

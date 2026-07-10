@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Booking\BookingServiceProvider;
 use App\Models\RepeaterData;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
 
 class RepeaterService
 {
@@ -12,13 +15,31 @@ class RepeaterService
 
     protected static array $modelCache = [];
 
-    public static function getConfig(): array
+    private static function getProviderConfigs(): array
     {
         if (static::$configCache === null) {
-            static::$configCache = app(FeatureRegistry::class)->getAllRepeaterConfigs();
+            $configs = [];
+            foreach ([BookingServiceProvider::class, PropertiesServiceProvider::class, PostsServiceProvider::class] as $provider) {
+                $repeaters = $provider::getRepeaterConfig();
+                if (! empty($repeaters)) {
+                    $slug = match ($provider) {
+                        BookingServiceProvider::class => 'bookings',
+                        PropertiesServiceProvider::class => 'properties',
+                        PostsServiceProvider::class => 'posts',
+                        default => '',
+                    };
+                    $configs[$slug] = $repeaters;
+                }
+            }
+            static::$configCache = $configs;
         }
 
         return static::$configCache;
+    }
+
+    public static function getConfig(): array
+    {
+        return self::getProviderConfigs();
     }
 
     public static function getRepeaters(?string $module = null): array

@@ -16,7 +16,7 @@ export default defineConfig({
             ],
         refresh: [
             ...(typeof globalThis !== 'undefined' && globalThis.process?.env?.APP_ENV !== 'production'
-                ? [{ server: false, paths: ['app/Shop/Resources/js/**', 'app/Blog/Resources/js/**'] }]
+                ? [{ server: false, paths: ['app/Booking/Resources/js/**', 'app/Properties/Resources/js/**', 'app/Posts/Resources/js/**'] }]
                 : []),
         ],
         }),
@@ -26,8 +26,9 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            '@shop': path.resolve(__dirname, './app/Shop/Resources/js'),
-            '@blog': path.resolve(__dirname, './app/Blog/Resources/js'),
+            '@booking': path.resolve(__dirname, './app/Booking/Resources/js'),
+            '@properties': path.resolve(__dirname, './app/Properties/Resources/js'),
+            '@posts': path.resolve(__dirname, './app/Posts/Resources/js'),
         },
     },
     build: {

@@ -15,5 +15,7 @@ declare global {
 
 declare module "@inertiajs/core" {
   // eslint-disable-next-line no-unused-vars
-  interface PageProps extends InertiaPageProps, AppPageProps {}
+  interface PageProps extends InertiaPageProps, AppPageProps {
+    [key: string]: unknown;
+  }
 }

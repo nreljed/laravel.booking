@@ -301,7 +301,7 @@ Playwright MCP (`@playwright/mcp` v0.0.77 by Microsoft) is installed globally an
 
 ### How It Works
 - Run headless Chromium via `npx @playwright/mcp --config playwright-mcp.json`
-- Accessible as MCP tools to interact with `http://booking.laravel.tunispromo.tn/`
+- Accessible as MCP tools to interact with `http://booking-laravel.local/`
 - Config: headless, isolated profiles (no disk caching), `core+network+storage+testing` caps
 - Output dir: `storage/debug/playwright-output/` (auto-cleaned on size > 50MB via `outputMaxSize`)
 

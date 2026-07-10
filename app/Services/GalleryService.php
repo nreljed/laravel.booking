@@ -2,18 +2,40 @@
 
 namespace App\Services;
 
+use App\Booking\BookingServiceProvider;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
+
 class GalleryService
 {
+    private static function getAllProviderConfigs(): array
+    {
+        $all = [];
+        foreach ([BookingServiceProvider::class, PropertiesServiceProvider::class, PostsServiceProvider::class] as $provider) {
+            $gallery = $provider::getGalleryConfig();
+            if (! empty($gallery)) {
+                $slug = match ($provider) {
+                    BookingServiceProvider::class => 'bookings',
+                    PropertiesServiceProvider::class => 'properties',
+                    PostsServiceProvider::class => 'posts',
+                    default => '',
+                };
+                $all[$slug] = $gallery;
+            }
+        }
+        return $all;
+    }
+
     public static function getConfig(string $module): ?array
     {
-        $all = self::getAllConfigs();
+        $all = self::getAllProviderConfigs();
 
         return $all[$module] ?? null;
     }
 
     public static function getAllConfigs(): array
     {
-        return app(FeatureRegistry::class)->getAllGalleryConfigs();
+        return self::getAllProviderConfigs();
     }
 
     public static function getGalleryConfig(string $module, string $galleryKey): ?array

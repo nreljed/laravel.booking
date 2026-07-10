@@ -2,40 +2,48 @@
 
 namespace App\Services;
 
+use App\Booking\BookingServiceProvider;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
+
 class NotificationTypeRegistry
 {
-    protected FeatureRegistry $registry;
-
     protected ?array $types = null;
 
-    public function __construct(FeatureRegistry $registry)
-    {
-        $this->registry = $registry;
-    }
-
-    public function all(): array
+    private function loadTypes(): array
     {
         if ($this->types === null) {
-            $this->types = $this->registry->getAllNotificationTypes();
+            $all = [];
+            foreach ([BookingServiceProvider::class, PropertiesServiceProvider::class, PostsServiceProvider::class] as $provider) {
+                foreach ($provider::getNotificationTypes() as $key => $type) {
+                    $all[$key] = $type;
+                }
+            }
+            $this->types = $all;
         }
 
         return $this->types;
     }
 
+    public function all(): array
+    {
+        return $this->loadTypes();
+    }
+
     public function get(string $key): ?array
     {
-        return $this->all()[$key] ?? null;
+        return $this->loadTypes()[$key] ?? null;
     }
 
     public function getByGroup(string $group): array
     {
-        return array_filter($this->all(), fn ($type) => ($type['group'] ?? '') === $group);
+        return array_filter($this->loadTypes(), fn ($type) => ($type['group'] ?? '') === $group);
     }
 
     public function groups(): array
     {
         $groups = [];
-        foreach ($this->all() as $key => $type) {
+        foreach ($this->loadTypes() as $key => $type) {
             $group = $type['group'] ?? 'Other';
             if (! isset($groups[$group])) {
                 $groups[$group] = [];

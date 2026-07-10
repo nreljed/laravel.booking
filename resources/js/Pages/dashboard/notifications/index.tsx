@@ -12,7 +12,6 @@ import {
   Search,
   Calendar,
   Home,
-  ShoppingCart,
   User,
   FileText,
 } from "lucide-react";
@@ -105,7 +104,6 @@ function inferTypeGroup(type: string): string {
     t.includes("shop")
   )
     return "orders";
-  if (t.includes("payment")) return "orders";
   return "other";
 }
 
@@ -115,7 +113,6 @@ const TYPE_FILTERS = [
   { value: "property", label: "Property", icon: Home },
   { value: "account", label: "Account", icon: User },
   { value: "content", label: "Content", icon: FileText },
-  { value: "orders", label: "Orders", icon: ShoppingCart },
 ];
 
 export default function NotificationsPage({

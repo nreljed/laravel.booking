@@ -17,6 +17,7 @@ use App\Http\Controllers\EmailSettingsController;
 use App\Http\Controllers\NotificationTestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicController;
+use App\Http\Controllers\PublicPropertyController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -34,6 +35,9 @@ Route::get('/', function () {
 Route::get('/about', [PublicController::class, 'about'])->name('about');
 Route::get('/services', [PublicController::class, 'services'])->name('services');
 Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
+
+Route::get('/properties', [PublicPropertyController::class, 'index'])->name('properties.index');
+Route::get('/properties/{slug}', [PublicPropertyController::class, 'show'])->name('properties.show');
 
 // ═══════════════════════════════════════════════════
 // DASHBOARD (Backend) Pages — requires auth
@@ -171,11 +175,5 @@ Route::post('/deploy/update-env', [DeployController::class, 'updateEnv']);
 Route::get('/deploy/cache-clear', [DeployController::class, 'cacheClear']);
 Route::match(['get', 'post'], '/deploy/check', [DeployController::class, 'check']);
 
-// Feature routes (Properties, Bookings, Shop, Blog) are loaded by
-// their respective Service Providers — no duplication needed here.
-
-// Shop (core feature) routes
-require __DIR__.'/shop.php';
-
-// Blog (core feature) routes
-require __DIR__.'/blog.php';
+// Feature routes (Properties, Bookings, Posts) are loaded by their
+// respective Module classes via HasRoutes trait — no duplication needed here.

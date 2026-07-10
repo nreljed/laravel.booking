@@ -17,9 +17,6 @@ import {
   Home,
   RefreshCw,
   MessageCircle,
-  ShoppingCart,
-  ArrowLeftRight,
-  Package,
   FileText,
   Clock,
   ShieldCheck,
@@ -59,9 +56,6 @@ const typeConfig: Record<string, TypeIconConfig> = {
   "property.created": { icon: Home, color: "text-green-500", label: "New Property" },
   "property.updated": { icon: RefreshCw, color: "text-blue-500", label: "Updated" },
   "property.inquiry": { icon: MessageCircle, color: "text-purple-500", label: "Inquiry" },
-  "order.placed": { icon: ShoppingCart, color: "text-green-500", label: "New Order" },
-  "order.status_changed": { icon: ArrowLeftRight, color: "text-blue-500", label: "Status Changed" },
-  low_stock: { icon: Package, color: "text-red-500", label: "Low Stock" },
   "post.published": { icon: FileText, color: "text-green-500", label: "Published" },
   "post.scheduled": { icon: Clock, color: "text-purple-500", label: "Scheduled" },
   "user.registered": { icon: UserPlus, color: "text-green-500", label: "New User" },
@@ -98,7 +92,7 @@ const severityConfig: Record<Severity, { dot: string; icon: React.ReactNode }> =
 function getSeverity(type: string, n?: StructuredNotification): Severity {
   if (n?.severity && ["info", "warning", "urgent", "critical"].includes(n.severity))
     return n.severity;
-  if (type.includes("cancel") || type.includes("deleted") || type === "low_stock")
+  if (type.includes("cancel") || type.includes("deleted"))
     return "critical";
   if (type.includes("inquiry") || type.includes("modified")) return "warning";
   if (type.includes("reset") || type.includes("changed")) return "urgent";

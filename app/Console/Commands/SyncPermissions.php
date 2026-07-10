@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Booking\BookingServiceProvider;
 use App\Models\Permission;
 use App\Models\Role;
-use App\Services\FeatureRegistry;
+use App\Posts\PostsServiceProvider;
+use App\Properties\PropertiesServiceProvider;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
 
@@ -12,9 +14,9 @@ class SyncPermissions extends Command
 {
     protected $signature = 'permissions:sync';
 
-    protected $description = 'Sync feature permissions into the permissions table and assign to admin and shop_owner roles';
+    protected $description = 'Sync feature permissions into the permissions table and assign to admin role';
 
-    public function handle(FeatureRegistry $registry): int
+    public function handle(): int
     {
         if (! Schema::hasTable('permissions')) {
             $this->error('Permissions table does not exist. Run migrations first.');
@@ -25,8 +27,8 @@ class SyncPermissions extends Command
         $existing = Permission::pluck('slug')->toArray();
         $synced = 0;
 
-        foreach ($registry->all() as $provider) {
-            foreach ($provider->permissions() as $perm) {
+        foreach ([BookingServiceProvider::class, PropertiesServiceProvider::class, PostsServiceProvider::class] as $provider) {
+            foreach ($provider::permissions() as $perm) {
                 if (! in_array($perm['slug'], $existing)) {
                     Permission::create([
                         'name' => $perm['name'],
@@ -43,14 +45,13 @@ class SyncPermissions extends Command
         $this->info("Synced {$synced} new permission(s).");
 
         $permSlugs = [];
-        foreach ($registry->all() as $provider) {
-            foreach ($provider->permissions() as $perm) {
+        foreach ([BookingServiceProvider::class, PropertiesServiceProvider::class, PostsServiceProvider::class] as $provider) {
+            foreach ($provider::permissions() as $perm) {
                 $permSlugs[] = $perm['slug'];
             }
         }
         $featurePerms = Permission::whereIn('slug', $permSlugs)->pluck('id');
 
-        // Auto-assign all feature permissions to admin role (admin gets everything)
         $admin = Role::where('slug', 'admin')->first();
         if ($admin) {
             $existingIds = $admin->permissions()->pluck('permissions.id')->toArray();
@@ -61,20 +62,6 @@ class SyncPermissions extends Command
                 $this->line('  Assigned '.count($newIds).' feature permission(s) to admin role.');
             } else {
                 $this->line('  No new feature permissions to assign to admin role.');
-            }
-        }
-
-        // Auto-assign all feature permissions to shop_owner role
-        $shopOwner = Role::where('slug', 'shop_owner')->first();
-        if ($shopOwner) {
-            $existingIds = $shopOwner->permissions()->pluck('permissions.id')->toArray();
-            $newIds = $featurePerms->diff($existingIds)->values()->toArray();
-
-            if (! empty($newIds)) {
-                $shopOwner->permissions()->attach($newIds);
-                $this->line('  Assigned '.count($newIds).' feature permission(s) to shop_owner role.');
-            } else {
-                $this->line('  No new feature permissions to assign to shop_owner role.');
             }
         }
 

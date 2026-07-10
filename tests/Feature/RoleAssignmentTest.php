@@ -36,24 +36,6 @@ class RoleAssignmentTest extends TestCase
         $this->assertFalse($user->isAdmin());
     }
 
-    public function test_shop_owner_has_expected_permissions(): void
-    {
-        $user = User::factory()->create();
-        $role = Role::where('slug', 'shop_owner')->first();
-        $user->roles()->attach($role);
-
-        $user->load('roles');
-
-        $this->assertTrue($user->hasPermission('view-dashboard'));
-        $this->assertTrue($user->hasPermission('view-profile'));
-        $this->assertTrue($user->hasPermission('edit-profile'));
-        $this->assertFalse($user->hasPermission('manage-users'));
-        $this->assertFalse($user->hasPermission('manage-settings'));
-        $this->assertFalse($user->hasPermission('manage-roles'));
-        $this->assertFalse($user->hasPermission('manage_options'));
-        $this->assertFalse($user->hasPermission('view-system-health'));
-    }
-
     public function test_admin_user_has_all_permissions(): void
     {
         $user = User::factory()->create();

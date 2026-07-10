@@ -62,14 +62,26 @@ class SystemHealthService
                 'default' => config('filesystems.default'),
                 'disks' => array_keys(config('filesystems.disks', [])),
             ],
-            'modules' => app()->resolved(FeatureRegistry::class)
-                ? collect(app(FeatureRegistry::class)->all())->map(fn ($p) => [
-                    'name' => $p->name(),
-                    'slug' => $p->slug(),
+            'modules' => [
+                [
+                    'name' => 'Bookings',
+                    'slug' => 'bookings',
                     'enabled' => true,
-                    'version' => $p->version(),
-                ])->values()->toArray()
-                : [],
+                    'version' => \App\Booking\BookingServiceProvider::VERSION ?? '1.0.0',
+                ],
+                [
+                    'name' => 'Properties',
+                    'slug' => 'properties',
+                    'enabled' => true,
+                    'version' => \App\Properties\PropertiesServiceProvider::VERSION ?? '1.0.0',
+                ],
+                [
+                    'name' => 'Posts',
+                    'slug' => 'posts',
+                    'enabled' => true,
+                    'version' => \App\Posts\PostsServiceProvider::VERSION ?? '1.0.0',
+                ],
+            ],
             'schedule' => $this->getScheduleInfo(),
             'logs' => $this->getLogInfo(),
             'users' => [

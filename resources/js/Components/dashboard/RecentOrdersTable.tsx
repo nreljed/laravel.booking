@@ -1,4 +1,3 @@
-import { Link } from "@inertiajs/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Badge } from "@/Components/ui/badge";
 import { Avatar, AvatarFallback } from "@/Components/ui/avatar";
@@ -64,12 +63,6 @@ export default function RecentOrdersTable({ orders }: RecentOrdersTableProps) {
           <ShoppingCart className="h-4 w-4" />
           Recent Orders
         </CardTitle>
-        <Link
-          href={route("dashboard.shop.orders.index")}
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          View All
-        </Link>
       </CardHeader>
       <CardContent className="p-0">
         {orders.length === 0 ? (
@@ -86,12 +79,9 @@ export default function RecentOrdersTable({ orders }: RecentOrdersTableProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <Link
-                      href={route("dashboard.shop.orders.edit", order.id)}
-                      className="font-medium hover:underline truncate block leading-tight"
-                    >
+                    <span className="font-medium truncate block leading-tight">
                       {order.customer_name}
-                    </Link>
+                    </span>
                     <span className="text-xs text-muted-foreground">
                       {order.items_count} items &middot; {order.created_at}
                     </span>

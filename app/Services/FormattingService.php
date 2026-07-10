@@ -239,7 +239,11 @@ class FormattingService
     public function getModuleMetaConfigs(): array
     {
         return Cache::remember('formatting.module_configs', 3600, function () {
-            return app(FeatureRegistry::class)->getAllMetaFormattingConfigs();
+            return [
+                'bookings' => \App\Booking\BookingServiceProvider::getMetaFormattingConfig(),
+                'properties' => \App\Properties\PropertiesServiceProvider::getMetaFormattingConfig(),
+                'posts' => \App\Posts\PostsServiceProvider::getMetaFormattingConfig(),
+            ];
         });
     }
 
