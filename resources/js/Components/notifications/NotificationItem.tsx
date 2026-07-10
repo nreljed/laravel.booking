@@ -92,8 +92,7 @@ const severityConfig: Record<Severity, { dot: string; icon: React.ReactNode }> =
 function getSeverity(type: string, n?: StructuredNotification): Severity {
   if (n?.severity && ["info", "warning", "urgent", "critical"].includes(n.severity))
     return n.severity;
-  if (type.includes("cancel") || type.includes("deleted"))
-    return "critical";
+  if (type.includes("cancel") || type.includes("deleted")) return "critical";
   if (type.includes("inquiry") || type.includes("modified")) return "warning";
   if (type.includes("reset") || type.includes("changed")) return "urgent";
   return "info";

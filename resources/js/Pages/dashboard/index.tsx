@@ -132,7 +132,9 @@ export default function DashboardIndex({ analytics }: DashboardIndexProps) {
                 <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-lg font-bold">{analytics.total_customers.toLocaleString()}</div>
+                <div className="text-lg font-bold">
+                  {analytics.total_customers.toLocaleString()}
+                </div>
               </CardContent>
             </Card>
           </div>

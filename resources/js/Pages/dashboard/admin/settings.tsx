@@ -271,7 +271,6 @@ export default function AdminSettings({
               />
             </TabsContent>
           )}
-
         </Tabs>
       </div>
     </AdminLayout>

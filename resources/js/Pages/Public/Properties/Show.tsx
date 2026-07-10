@@ -219,7 +219,15 @@ const LABEL_MAP: Record<string, string> = {
 
 const STAT_KEYS = ["bedrooms", "bathrooms", "rooms", "year_built", "floor_level", "garage"];
 
-function PropertyDetailStat({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string }) {
+function PropertyDetailStat({
+  icon,
+  label,
+  value,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
       {icon && <div className="text-primary">{icon}</div>}
@@ -312,7 +320,11 @@ export default function PropertyShow() {
   const [showPhone, setShowPhone] = useState(false);
 
   const meta = property.metadata;
-  const locationParts = [property.city_obj?.name || property.city, property.state, property.zip].filter(Boolean);
+  const locationParts = [
+    property.city_obj?.name || property.city,
+    property.state,
+    property.zip,
+  ].filter(Boolean);
 
   const rentalPeriod = getMetaStr(meta, "rental_period");
   const furnished = getMetaStr(meta, "furnished");
@@ -399,14 +411,27 @@ export default function PropertyShow() {
                       garage: <Car className="h-5 w-5" />,
                     };
                     return (
-                      <PropertyDetailStat key={key} icon={icons[key]} label={label} value={String(valNum)} />
+                      <PropertyDetailStat
+                        key={key}
+                        icon={icons[key]}
+                        label={label}
+                        value={String(valNum)}
+                      />
                     );
                   })}
                   {furnished && (
-                    <PropertyDetailStat icon={<Armchair className="h-5 w-5" />} label="Furnished" value={furnished} />
+                    <PropertyDetailStat
+                      icon={<Armchair className="h-5 w-5" />}
+                      label="Furnished"
+                      value={furnished}
+                    />
                   )}
                   {property.surface_formatted && (
-                    <PropertyDetailStat icon={<Ruler className="h-5 w-5" />} label="Surface" value={property.surface_formatted} />
+                    <PropertyDetailStat
+                      icon={<Ruler className="h-5 w-5" />}
+                      label="Surface"
+                      value={property.surface_formatted}
+                    />
                   )}
                 </div>
                 {property.description && (
@@ -429,7 +454,9 @@ export default function PropertyShow() {
                           <ul className="space-y-2">
                             {feats.map((f) => (
                               <li key={f.id} className="flex items-center gap-2 text-sm">
-                                <div className="text-primary">{FEATURE_ICONS[f.icon || ""] || <Home className="h-4 w-4" />}</div>
+                                <div className="text-primary">
+                                  {FEATURE_ICONS[f.icon || ""] || <Home className="h-4 w-4" />}
+                                </div>
                                 {f.name}
                               </li>
                             ))}
@@ -445,7 +472,9 @@ export default function PropertyShow() {
                     <div className="mt-3 divide-y divide-border rounded-xl border border-border">
                       {additionalDetails.map((detail, i) => (
                         <div key={i} className="flex justify-between px-4 py-3 text-sm">
-                          <span className="text-muted-foreground">{String(detail.label || detail.key || "")}</span>
+                          <span className="text-muted-foreground">
+                            {String(detail.label || detail.key || "")}
+                          </span>
                           <span className="font-medium">{String(detail.value || "")}</span>
                         </div>
                       ))}
@@ -459,7 +488,10 @@ export default function PropertyShow() {
                       {floorPlans.map((plan, i) => {
                         const planUrl = String(plan.image || plan.url || "");
                         return (
-                          <div key={i} className="overflow-hidden rounded-xl border border-border bg-card">
+                          <div
+                            key={i}
+                            className="overflow-hidden rounded-xl border border-border bg-card"
+                          >
                             {planUrl ? (
                               <img
                                 src={planUrl}
@@ -508,7 +540,9 @@ export default function PropertyShow() {
                 <div className="sticky top-24 space-y-4">
                   <div className="rounded-xl border border-border bg-card p-6">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-primary">{property.price_formatted}</span>
+                      <span className="text-2xl font-bold text-primary">
+                        {property.price_formatted}
+                      </span>
                       {rentalPeriod && (
                         <span className="text-sm text-muted-foreground">/ {rentalPeriod}</span>
                       )}
@@ -519,7 +553,9 @@ export default function PropertyShow() {
                         Book Now
                       </Button>
                       <Button variant="outline" className="w-full" size="lg" asChild>
-                        <a href={`mailto:${property.user?.email || ""}?subject=Inquiry about ${property.name}`}>
+                        <a
+                          href={`mailto:${property.user?.email || ""}?subject=Inquiry about ${property.name}`}
+                        >
                           Send Inquiry
                         </a>
                       </Button>

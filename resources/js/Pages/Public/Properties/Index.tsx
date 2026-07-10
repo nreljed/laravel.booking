@@ -24,13 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/Components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/Components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/Components/ui/sheet";
 import { Separator } from "@/Components/ui/separator";
 import { SiteHeader } from "@/Components/frontend/SiteHeader";
 import { SiteFooter } from "@/Components/frontend/SiteFooter";
@@ -139,7 +133,10 @@ function PropertyCard({ property }: { property: PropertyItem }) {
           </Badge>
         )}
         {firstType && (
-          <Badge variant="outline" className="absolute bottom-2 right-2 bg-background/90 backdrop-blur-sm">
+          <Badge
+            variant="outline"
+            className="absolute bottom-2 right-2 bg-background/90 backdrop-blur-sm"
+          >
             {firstType.name}
           </Badge>
         )}
@@ -208,7 +205,9 @@ function FilterContent({ column, ctx }: { column?: boolean; ctx: FilterContext }
               key={s.id}
               variant={filters.status_id === String(s.id) ? "default" : "outline"}
               className="cursor-pointer px-3 py-1.5 text-xs"
-              onClick={() => applyFilter("status_id", filters.status_id === String(s.id) ? "" : String(s.id))}
+              onClick={() =>
+                applyFilter("status_id", filters.status_id === String(s.id) ? "" : String(s.id))
+              }
             >
               {s.name}
             </Badge>
@@ -220,10 +219,7 @@ function FilterContent({ column, ctx }: { column?: boolean; ctx: FilterContext }
         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Type
         </label>
-        <Select
-          value={filters.type_id || ""}
-          onValueChange={(v) => applyFilter("type_id", v)}
-        >
+        <Select value={filters.type_id || ""} onValueChange={(v) => applyFilter("type_id", v)}>
           <SelectTrigger>
             <SelectValue placeholder="All types" />
           </SelectTrigger>
@@ -241,10 +237,7 @@ function FilterContent({ column, ctx }: { column?: boolean; ctx: FilterContext }
         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           City
         </label>
-        <Select
-          value={filters.city_id || ""}
-          onValueChange={(v) => applyFilter("city_id", v)}
-        >
+        <Select value={filters.city_id || ""} onValueChange={(v) => applyFilter("city_id", v)}>
           <SelectTrigger>
             <SelectValue placeholder="All cities" />
           </SelectTrigger>
@@ -313,7 +306,9 @@ function FilterContent({ column, ctx }: { column?: boolean; ctx: FilterContext }
               key={n}
               variant={filters.bedrooms === String(n) ? "default" : "outline"}
               className="cursor-pointer px-3 py-1.5 text-xs"
-              onClick={() => applyFilter("bedrooms", filters.bedrooms === String(n) ? "" : String(n))}
+              onClick={() =>
+                applyFilter("bedrooms", filters.bedrooms === String(n) ? "" : String(n))
+              }
             >
               {n}+
             </Badge>
@@ -321,7 +316,12 @@ function FilterContent({ column, ctx }: { column?: boolean; ctx: FilterContext }
         </div>
       </div>
       {hasActiveFilters && (
-        <Button variant="ghost" size="sm" className="w-full gap-2 text-muted-foreground" onClick={clearFilters}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full gap-2 text-muted-foreground"
+          onClick={clearFilters}
+        >
           <X className="h-4 w-4" />
           Clear all filters
         </Button>
@@ -370,11 +370,27 @@ export default function PropertyIndex() {
     router.get(route("properties.index"), {}, { preserveState: true, replace: true });
   };
 
-  const hasActiveFilters = Boolean(filters.type_id || filters.city_id || filters.status_id ||
-    filters.price_min || filters.price_max || filters.surface_min || filters.surface_max ||
-    filters.bedrooms || filters.search);
+  const hasActiveFilters = Boolean(
+    filters.type_id ||
+    filters.city_id ||
+    filters.status_id ||
+    filters.price_min ||
+    filters.price_max ||
+    filters.surface_min ||
+    filters.surface_max ||
+    filters.bedrooms ||
+    filters.search,
+  );
 
-  const filterContext = { filters, statuses, types, cities, applyFilter, hasActiveFilters, clearFilters };
+  const filterContext = {
+    filters,
+    statuses,
+    types,
+    cities,
+    applyFilter,
+    hasActiveFilters,
+    clearFilters,
+  };
 
   return (
     <>
@@ -412,7 +428,12 @@ export default function PropertyIndex() {
                   {properties.total === 1 ? "property" : "properties"} found
                 </p>
                 {hasActiveFilters && (
-                  <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={clearFilters}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs"
+                    onClick={clearFilters}
+                  >
                     <X className="h-3 w-3" />
                     Clear
                   </Button>
@@ -501,7 +522,9 @@ export default function PropertyIndex() {
                           {Array.from({ length: properties.last_page }, (_, i) => i + 1)
                             .filter((p) => {
                               const cur = properties.current_page;
-                              return p === 1 || p === properties.last_page || Math.abs(p - cur) <= 2;
+                              return (
+                                p === 1 || p === properties.last_page || Math.abs(p - cur) <= 2
+                              );
                             })
                             .reduce<(number | "...")[]>((acc, p, idx, arr) => {
                               if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("...");

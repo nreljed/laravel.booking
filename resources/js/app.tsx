@@ -44,9 +44,10 @@ const propertyPages = import.meta.glob(
   "../../app/Properties/Resources/js/Pages/**/*.tsx",
 ) as Record<string, ImportFn>;
 
-const bookingPages = import.meta.glob(
-  "../../app/Booking/Resources/js/Pages/**/*.tsx",
-) as Record<string, ImportFn>;
+const bookingPages = import.meta.glob("../../app/Booking/Resources/js/Pages/**/*.tsx") as Record<
+  string,
+  ImportFn
+>;
 
 const postsPages = import.meta.glob("@posts/Pages/**/*.tsx") as Record<string, ImportFn>;
 

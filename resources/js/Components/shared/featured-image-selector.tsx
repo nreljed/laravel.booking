@@ -26,48 +26,51 @@ export function FeaturedImageSelector({
 
   if (preview !== value) setPreview(value);
 
-  const handleFileSelect = useCallback(async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
-
-    setUploading(true);
-    try {
-      if (onUpload) {
-        const result = await onUpload(file);
-        if (result?.url) {
-          setPreview(result.url);
-          onChange(result.url);
-          toast.success("Image uploaded successfully");
-        }
-      } else {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const csrfToken =
-          document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
-        const res = await fetch("/dashboard/posts/upload-image", {
-          method: "POST",
-          body: formData,
-          headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": csrfToken },
-        });
-
-        if (!res.ok) throw new Error("Upload failed");
-
-        const data = await res.json();
-        if (data?.url) {
-          setPreview(data.url);
-          onChange(data.url);
-          toast.success("Image uploaded successfully");
-        }
+  const handleFileSelect = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file");
+        return;
       }
-    } catch {
-      toast.error("Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  }, [onUpload, onChange]);
+
+      setUploading(true);
+      try {
+        if (onUpload) {
+          const result = await onUpload(file);
+          if (result?.url) {
+            setPreview(result.url);
+            onChange(result.url);
+            toast.success("Image uploaded successfully");
+          }
+        } else {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const csrfToken =
+            document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+          const res = await fetch("/dashboard/posts/upload-image", {
+            method: "POST",
+            body: formData,
+            headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": csrfToken },
+          });
+
+          if (!res.ok) throw new Error("Upload failed");
+
+          const data = await res.json();
+          if (data?.url) {
+            setPreview(data.url);
+            onChange(data.url);
+            toast.success("Image uploaded successfully");
+          }
+        }
+      } catch {
+        toast.error("Upload failed");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [onUpload, onChange],
+  );
 
   const handleRemove = () => {
     setPreview("");
@@ -76,11 +79,14 @@ export function FeaturedImageSelector({
 
   const handleClick = () => fileInputRef.current?.click();
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFileSelect(file);
-  }, [handleFileSelect]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files?.[0];
+      if (file) handleFileSelect(file);
+    },
+    [handleFileSelect],
+  );
 
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
