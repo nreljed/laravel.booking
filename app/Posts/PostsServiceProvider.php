@@ -35,6 +35,7 @@ class PostsServiceProvider extends ServiceProvider
     {
         return [
             'title' => 'Posts',
+            'groupLabel' => 'Manage Posts',
             'url' => route('dashboard.posts.dashboard', [], false),
             'icon' => 'FileText',
             'permission' => 'posts.view',

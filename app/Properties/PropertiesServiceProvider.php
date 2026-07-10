@@ -35,6 +35,7 @@ class PropertiesServiceProvider extends ServiceProvider
     {
         return [
             'title' => 'Properties',
+            'groupLabel' => 'Manage Property',
             'url' => route('dashboard.properties.dashboard', [], false),
             'icon' => 'Building2',
             'permission' => 'properties.view',

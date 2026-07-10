@@ -2,7 +2,6 @@
 
 namespace App\Booking;
 
-use App\Models\User;
 use App\Booking\Enums\BookingStatus;
 use App\Booking\Models\Booking;
 use App\Booking\Services\BookingCacheService;
@@ -10,6 +9,7 @@ use App\Booking\Services\BookingEmailService;
 use App\Booking\Services\BookingGuestTokenService;
 use App\Booking\Services\BookingPipelineTrace;
 use App\Booking\Services\BookingRefundMailService;
+use App\Models\User;
 use App\Notifications\AppNotification;
 use App\Properties\Models\Property;
 use App\Services\NotificationService;
@@ -64,6 +64,7 @@ class BookingServiceProvider extends ServiceProvider
     {
         return [
             'title' => 'Bookings',
+            'groupLabel' => 'Manage Booking',
             'url' => route('dashboard.bookings.dashboard', [], false),
             'icon' => 'Calendar',
             'permission' => 'bookings.view',
