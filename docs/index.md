@@ -1,4 +1,4 @@
-# Shop App — Documentation
+# Booking App — Documentation
 
 > Laravel 13 + Inertia.js 3.4 + React 19 SaaS application
 

@@ -41,4 +41,4 @@ features_always_bump_minor = true
 breaking_always_bump_major = true
 
 [github]
-repo = "nreljed/laravel.shop"
+repo = "nreljed/laravel.booking"

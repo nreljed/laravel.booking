@@ -1,6 +1,6 @@
-# Shop App
+# Booking App
 
-A SaaS e-commerce application built with Laravel + Inertia.js + React 19.
+A SaaS booking application built with Laravel + Inertia.js + React 19.
 
 ## Requirements
 
@@ -60,7 +60,7 @@ php scripts/seed-test-users.php
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `APP_NAME` | `Shop App` | Site name used in emails, page titles, etc. |
+| `APP_NAME` | `Booking App` | Site name used in emails, page titles, etc. |
 | `APP_URL` | `http://localhost` | Must match the deployment URL for proper Vite asset resolution |
 | `APP_ENV` | `local` | Set to `production` on live server |
 | `APP_DEBUG` | `true` | Set to `false` in production |

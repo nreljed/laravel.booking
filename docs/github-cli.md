@@ -26,16 +26,16 @@ All repository secrets are stored and managed via `gh` — never in local `.env`
 
 ```bash
 # Set a single secret
-gh secret set SECRET_NAME -b "value" -R nreljed/laravel.shop
+gh secret set SECRET_NAME -b "value" -R nreljed/laravel.booking
 
 # Set a secret from a local file
-cat key.pem | gh secret set MY_KEY -R nreljed/laravel.shop
+cat key.pem | gh secret set MY_KEY -R nreljed/laravel.booking
 
 # List all secrets (shows name + last updated date, not values)
-gh secret list -R nreljed/laravel.shop
+gh secret list -R nreljed/laravel.booking
 
 # Delete a secret
-gh secret delete SECRET_NAME -R nreljed/laravel.shop
+gh secret delete SECRET_NAME -R nreljed/laravel.booking
 ```
 
 ### Current Secrets (12)
@@ -64,13 +64,13 @@ gh secret delete SECRET_NAME -R nreljed/laravel.shop
 
 ```bash
 # View repo details
-gh repo view nreljed/laravel.shop
+gh repo view nreljed/laravel.booking
 
 # Fork this repo
-gh repo fork nreljed/laravel.shop
+gh repo fork nreljed/laravel.booking
 
 # Clone
-gh repo clone nreljed/laravel.shop
+gh repo clone nreljed/laravel.booking
 ```
 
 ## CI/CD

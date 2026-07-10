@@ -183,7 +183,7 @@ class ShopProductSeeder extends Seeder
                     'description' => 'Experience the pinnacle of smartphone innovation with the Xiaomi 14 Pro. Featuring a stunning LTPO AMOLED display, the cutting-edge Snapdragon 8 Gen 3 processor, and a professional Leica optics camera system with a 50MP triple setup. The 120W HyperCharge technology takes you from 0 to 100% in just 18 minutes, while the 5000mAh battery keeps you going all day. IP68 water resistance, MIUI 15 based on Android 15, and a premium ceramic build make this the ultimate flagship experience.',
                     'short_description' => 'Snapdragon 8 Gen 3 | Leica 50MP Triple Camera | 120W HyperCharge | 6.73" LTPO AMOLED | IP68',
                     'seo' => [
-                        'meta_title' => 'Xiaomi 14 Pro 5G - Flagship Smartphone | Shop App',
+                        'meta_title' => 'Xiaomi 14 Pro 5G - Flagship Smartphone | Booking App',
                         'meta_description' => 'Shop the Xiaomi 14 Pro with Leica optics, Snapdragon 8 Gen 3, 120W HyperCharge, and LTPO AMOLED display. Free shipping across Europe.',
                         'og_image' => 'https://picsum.photos/seed/xiaomi-14-pro-og/1200/630',
                     ],
@@ -222,7 +222,7 @@ class ShopProductSeeder extends Seeder
                     'description' => 'The Redmi Note 13 Pro redefines mid-range excellence with a 200MP main camera, 6.67" AMOLED 120Hz display, and MediaTek Dimensity 7200 Ultra chipset. With 67W turbo charging and a 5100mAh battery, this phone keeps up with your busy lifestyle. The sleek glass sandwich design with IP54 splash resistance offers premium feel at an accessible price. Choose from three stunning colors and two storage configurations.',
                     'short_description' => '200MP Camera | 6.67" AMOLED 120Hz | Dimensity 7200 Ultra | 67W Turbo Charging | 5100mAh',
                     'seo' => [
-                        'meta_title' => 'Redmi Note 13 Pro 5G - 200MP Camera | Shop App',
+                        'meta_title' => 'Redmi Note 13 Pro 5G - 200MP Camera | Booking App',
                         'meta_description' => 'Discover the Redmi Note 13 Pro with 200MP camera, AMOLED 120Hz display, and 67W turbo charging at unbeatable prices.',
                         'og_image' => 'https://picsum.photos/seed/redmi-note-13-pro-og/1200/630',
                     ],
@@ -264,7 +264,7 @@ class ShopProductSeeder extends Seeder
                     'description' => 'Charge your compatible Xiaomi devices at blazing speeds with the official Xiaomi 67W Turbo Charger. Featuring GaN technology for compact size, USB-C output, and intelligent temperature control. Compatible with Xiaomi 14 series, Redmi Note 13 series, and other USB-C devices. Supports QC 3.0 and PD 3.0 fast charging protocols.',
                     'short_description' => 'GaN Technology | USB-C | QC 3.0 / PD 3.0 | Intelligent Temperature Control | Compact Design',
                     'seo' => [
-                        'meta_title' => 'Xiaomi 67W Turbo Charger - GaN Fast Charger | Shop App',
+                        'meta_title' => 'Xiaomi 67W Turbo Charger - GaN Fast Charger | Booking App',
                         'meta_description' => 'Buy the official Xiaomi 67W Turbo Charger with GaN technology. Fast charging for Xiaomi smartphones and USB-C devices.',
                         'og_image' => 'https://picsum.photos/seed/xiaomi-charger-og/1200/630',
                     ],
@@ -303,7 +303,7 @@ class ShopProductSeeder extends Seeder
                     'description' => 'The Xiaomi 20000mAh Power Bank 3 offers massive capacity in a sleek metal body. Dual USB-A and single USB-C port with 18W fast charging support. Charge three devices simultaneously. LED indicator shows remaining power. 20000mAh capacity charges most smartphones 4-5 times. Features circuit protection against overcharge, over-discharge, and short circuit.',
                     'short_description' => '20000mAh | 3-Port (2xUSB-A + USB-C) | 18W Fast Charge | Metal Body | Triple Device Charging',
                     'seo' => [
-                        'meta_title' => 'Xiaomi 20000mAh Power Bank 3 - Fast Charging | Shop App',
+                        'meta_title' => 'Xiaomi 20000mAh Power Bank 3 - Fast Charging | Booking App',
                         'meta_description' => 'Shop the Xiaomi 20000mAh Power Bank 3 with triple-port fast charging, metal body, and high-density lithium polymer cells.',
                         'og_image' => 'https://picsum.photos/seed/xiaomi-powerbank-og/1200/630',
                     ],
@@ -345,7 +345,7 @@ class ShopProductSeeder extends Seeder
                     'description' => 'The Xiaomi Smart Band 8 Pro features a stunning 1.74" AMOLED always-on display with 60Hz refresh rate. Track your fitness with 150+ workout modes, built-in GPS, heart rate monitoring, SpO2 tracking, and sleep analysis. With 5ATM water resistance and up to 14 days battery life, it is your perfect fitness companion. This product is sold directly by Xiaomi via mi.com.',
                     'short_description' => '1.74" AMOLED Display | Built-in GPS | 150+ Workout Modes | 5ATM Water Resistant | 14-Day Battery',
                     'seo' => [
-                        'meta_title' => 'Xiaomi Smart Band 8 Pro - Fitness Tracker | Shop App',
+                        'meta_title' => 'Xiaomi Smart Band 8 Pro - Fitness Tracker | Booking App',
                         'meta_description' => 'Discover the Xiaomi Smart Band 8 Pro with AMOLED display, GPS, 150+ workout modes. Available via mi.com affiliate link.',
                         'og_image' => 'https://picsum.photos/seed/xiaomi-band8pro-og/1200/630',
                     ],
@@ -384,7 +384,7 @@ class ShopProductSeeder extends Seeder
                     'description' => 'The Xiaomi Smart Life Bundle brings together the essential Xiaomi accessories for the complete ecosystem experience. Includes the 67W Turbo Charger for ultra-fast charging and the 20000mAh Power Bank for all-day power on the go. Save when you buy them together in this specially priced bundle.',
                     'short_description' => 'Includes: 67W Turbo Charger + 20000mAh Power Bank 3 | Save €19',
                     'seo' => [
-                        'meta_title' => 'Xiaomi Smart Life Bundle - Charger + Power Bank | Shop App',
+                        'meta_title' => 'Xiaomi Smart Life Bundle - Charger + Power Bank | Booking App',
                         'meta_description' => 'Save on the Xiaomi Smart Life Bundle featuring the 67W Turbo Charger and 20000mAh Power Bank 3. Essential Xiaomi accessories.',
                         'og_image' => 'https://picsum.photos/seed/xiaomi-bundle-og/1200/630',
                     ],
@@ -424,7 +424,7 @@ class ShopProductSeeder extends Seeder
                     'description' => 'Transform your Xiaomi device with the Pro Themes Pack featuring 50 exclusive premium themes, 100+ custom icons, 20 animated wallpapers, and 10 always-on display designs. Created by top MIUI designers. Compatible with all Xiaomi and Redmi devices running MIUI 14 and above. Instant download after purchase with unlimited access.',
                     'short_description' => '50 Premium Themes | 100+ Icons | 20 Animated Wallpapers | 10 AOD Designs | MIUI 14+',
                     'seo' => [
-                        'meta_title' => 'Xiaomi Pro Themes Pack - 50 Premium Themes | Shop App',
+                        'meta_title' => 'Xiaomi Pro Themes Pack - 50 Premium Themes | Booking App',
                         'meta_description' => 'Download the Xiaomi Pro Themes Pack with 50 premium themes, icons, and wallpapers for your Xiaomi device. Instant digital delivery.',
                         'og_image' => 'https://picsum.photos/seed/xiaomi-themes-og/1200/630',
                     ],
@@ -464,7 +464,7 @@ class ShopProductSeeder extends Seeder
                     'description' => 'Extend your peace of mind with Xiaomi Priority Care, our comprehensive 1-year service plan. Enjoy priority customer support with dedicated hotline, express repair service at authorized centers (48-hour turnaround), one free screen replacement, 20% discount on out-of-warranty repairs, and battery replacement at 50% off. Coverage extends to all Xiaomi and Redmi smartphones purchased from our store.',
                     'short_description' => 'Priority Support | Express Repair | 1 Free Screen Replacement | 50% Battery Replacement',
                     'seo' => [
-                        'meta_title' => 'Xiaomi Priority Care 1-Year Service Plan | Shop App',
+                        'meta_title' => 'Xiaomi Priority Care 1-Year Service Plan | Booking App',
                         'meta_description' => 'Protect your Xiaomi device with Priority Care. Priority support, express repair, free screen replacement, and exclusive discounts.',
                         'og_image' => 'https://picsum.photos/seed/xiaomi-care-og/1200/630',
                     ],

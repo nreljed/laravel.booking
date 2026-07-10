@@ -1,4 +1,4 @@
-# Shop App
+# Booking App
 
 A SaaS application built with Laravel + Inertia.js + React 19.
 
@@ -271,19 +271,19 @@ gh auth login
 **Manage secrets:**
 ```bash
 # Set a secret (creates/updates)
-gh secret set SECRET_NAME -b "value" -R nreljed/laravel.shop
+gh secret set SECRET_NAME -b "value" -R nreljed/laravel.booking
 
 # List all secrets
-gh secret list -R nreljed/laravel.shop
+gh secret list -R nreljed/laravel.booking
 
 # Generate a secure Laravel APP_KEY
 php -r "echo 'base64:' . base64_encode(random_bytes(32));"
-gh secret set APP_KEY -b "$(php -r 'echo "base64:" . base64_encode(random_bytes(32));')" -R nreljed/laravel.shop
+gh secret set APP_KEY -b "$(php -r 'echo "base64:" . base64_encode(random_bytes(32));')" -R nreljed/laravel.booking
 ```
 
 **Repo operations:**
 ```bash
-gh repo view nreljed/laravel.shop      # View repo details
+gh repo view nreljed/laravel.booking      # View repo details
 gh run list                             # View recent workflow runs
 gh run watch <run-id>                   # Watch a workflow live
 gh release list                         # List releases
@@ -301,7 +301,7 @@ Playwright MCP (`@playwright/mcp` v0.0.77 by Microsoft) is installed globally an
 
 ### How It Works
 - Run headless Chromium via `npx @playwright/mcp --config playwright-mcp.json`
-- Accessible as MCP tools to interact with `http://shop-laravel.local/`
+- Accessible as MCP tools to interact with `http://booking.laravel.tunispromo.tn/`
 - Config: headless, isolated profiles (no disk caching), `core+network+storage+testing` caps
 - Output dir: `storage/debug/playwright-output/` (auto-cleaned on size > 50MB via `outputMaxSize`)
 

@@ -96,7 +96,7 @@ After CI succeeds, note the release version (e.g. `v0.1.0`).
 Via cPanel File Manager, FTP, or wget:
 
 **Option A — cPanel File Manager:**
-1. Download `deploy.zip` from the GitHub Release page: `https://github.com/nreljed/laravel.shop/releases/download/v0.1.0/deploy.zip`
+1. Download `deploy.zip` from the GitHub Release page: `https://github.com/nreljed/laravel.booking/releases/download/v0.1.0/deploy.zip`
 2. Upload to `public_html/` and extract
 3. Move contents UP from the extracted subdirectory into `public_html/` directly
 4. Result: `public_html/artisan`, `public_html/app/`, `public_html/public/index.php`, etc.
@@ -104,7 +104,7 @@ Via cPanel File Manager, FTP, or wget:
 **Option B — wget directly on server (if available):**
 ```bash
 cd /home/USER/domains/shop.example.com/public_html
-wget https://github.com/nreljed/laravel.shop/releases/download/v0.1.0/deploy.zip
+wget https://github.com/nreljed/laravel.booking/releases/download/v0.1.0/deploy.zip
 unzip deploy.zip
 rm deploy.zip
 ```
@@ -114,7 +114,7 @@ rm deploy.zip
 Create `.env` at the project root (`public_html/.env`) with production settings:
 
 ```ini
-APP_NAME="Shop App"
+APP_NAME="Booking App"
 APP_ENV=production
 APP_KEY=base64:YOUR_GENERATED_KEY_HERE
 APP_DEBUG=false

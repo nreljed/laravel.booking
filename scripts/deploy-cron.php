@@ -27,7 +27,7 @@ $logFile = base_path('.deploy-log');
 $lockFile = base_path('.deploy-lock');
 $versionFile = base_path('.deployed-version');
 $envPath = base_path('.env');
-$repo = 'nreljed/laravel.shop';
+$repo = 'nreljed/laravel.booking';
 
 function logMsg(string $msg): void
 {

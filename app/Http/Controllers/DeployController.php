@@ -286,7 +286,7 @@ class DeployController extends Controller
 
         $versionFile = base_path('.deployed-version');
         $lockFile = base_path('.deploy-lock');
-        $repo = 'nreljed/laravel.shop';
+        $repo = 'nreljed/laravel.booking';
 
         if (File::exists($lockFile) && (time() - File::lastModified($lockFile)) < 600) {
             return response()->json(['status' => 'locked']);

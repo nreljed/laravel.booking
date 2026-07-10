@@ -684,7 +684,7 @@ class SystemHealthService
         $cacheKey = 'system_health_latest_version';
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () {
-            $repo = config('app.deploy_repo', 'nreljed/laravel.shop');
+            $repo = config('app.deploy_repo', 'nreljed/laravel.booking');
             $token = config('app.github_token');
 
             try {

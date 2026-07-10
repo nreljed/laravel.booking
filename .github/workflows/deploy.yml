@@ -52,7 +52,7 @@ jobs:
       - name: Generate Build .env (SQLite for build process)
         run: |
           $dbPath = "$((Get-Location).Path.Replace('\', '/'))/database/database.sqlite"
-          'APP_NAME="Shop App"',
+          'APP_NAME="Booking App"',
           "APP_ENV=local",
           "APP_KEY=base64:pHIa377aV0cusfWxNM2X3bpkWnRpztIQFwBGevG2DaY=",
           "APP_DEBUG=true",
@@ -115,11 +115,11 @@ jobs:
 
       - name: Overwrite .env with Production Settings
         run: |
-          'APP_NAME="Shop App"',
+          'APP_NAME="Booking App"',
           "APP_ENV=production",
           "APP_KEY=${{ secrets.APP_KEY }}",
           "APP_DEBUG=false",
-          "APP_URL=https://shop.laravel.tunispromo.tn",
+          "APP_URL=https://booking.laravel.tunispromo.tn",
           "APP_LOCALE=en",
           "APP_FALLBACK_LOCALE=en",
           "BCRYPT_ROUNDS=12",
@@ -192,7 +192,7 @@ jobs:
           VER="v${{ steps.version.outputs.version }}"
           echo "Release: $VER"
           if curl -sf --max-time 300 \
-            "https://shop.laravel.tunispromo.tn/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}"; then
+            "https://booking.laravel.tunispromo.tn/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}"; then
             echo "Deployed via /deploy/check (server downloads from GitHub API)"
           else
             echo "::notice::Laravel deploy endpoints unreachable"
@@ -203,7 +203,7 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
-          $ftpUrl = "ftp://${{ secrets.FTP_SERVER }}/domains/shop.laravel.tunispromo.tn/public_html/deploy.zip"
+          $ftpUrl = "ftp://${{ secrets.FTP_SERVER }}/domains/booking.laravel.tunispromo.tn/public_html/deploy.zip"
           $cred = New-Object System.Net.NetworkCredential("${{ secrets.FTP_USERNAME }}", "${{ secrets.FTP_PASSWORD }}")
           try {
             $ftp = [System.Net.FtpWebRequest]::Create($ftpUrl)
@@ -222,13 +222,13 @@ jobs:
             $resp.Close()
             Write-Output "---"
             Write-Output "Extract via DirectAdmin File Manager, then visit:"
-            Write-Output "https://shop.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
+            Write-Output "https://booking.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
           } catch {
             Write-Output "FTP upload failed: $_"
             $VER = "${{ steps.version.outputs.version }}"
             Write-Output "Manual steps:"
-            Write-Output "1. Download from: https://github.com/nreljed/laravel.shop/releases/download/$VER/deploy.zip"
+            Write-Output "1. Download from: https://github.com/nreljed/laravel.booking/releases/download/$VER/deploy.zip"
             Write-Output "2. Upload via DirectAdmin File Manager to public_html/"
             Write-Output "3. Extract, then visit:"
-            Write-Output "   https://shop.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
+            Write-Output "   https://booking.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
           }

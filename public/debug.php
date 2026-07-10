@@ -684,7 +684,7 @@ if (\file_exists($versionFile)) {
     }
 
     try {
-        $gitHubAPI = 'https://api.github.com/repos/nreljed/laravel.shop/releases/latest';
+        $gitHubAPI = 'https://api.github.com/repos/nreljed/laravel.booking/releases/latest';
         $headers = "User-Agent: debug.php\r\n";
         if ($githubToken !== '') {
             $headers .= "Authorization: Bearer $githubToken\r\n";

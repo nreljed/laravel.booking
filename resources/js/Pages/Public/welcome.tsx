@@ -5,7 +5,7 @@ import { SiteFooter } from "@/Components/frontend/SiteFooter";
 export default function Welcome() {
   const { props } = usePage();
   const brand = (props.brand as { logo?: string; name?: string }) || {};
-  const appName = brand.name || "Shop App";
+  const appName = brand.name || "Booking App";
 
   return (
     <>

@@ -63,7 +63,7 @@ export default function ErrorPage({ status }: ErrorPageProps) {
 
   return (
     <>
-      <Head title={`${error.title} — Shop App`} />
+      <Head title={`${error.title} — Booking App`} />
 
       <div className="relative flex items-top justify-center min-h-screen sm:items-center sm:pt-0">
         <div className="max-w-xl mx-auto sm:px-6 lg:px-8">
