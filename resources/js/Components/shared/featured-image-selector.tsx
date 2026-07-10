@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { toast } from "sonner";
@@ -24,11 +24,9 @@ export function FeaturedImageSelector({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setPreview(value);
-  }, [value]);
+  if (preview !== value) setPreview(value);
 
-  const handleFileSelect = async (file: File) => {
+  const handleFileSelect = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
@@ -69,7 +67,7 @@ export function FeaturedImageSelector({
     } finally {
       setUploading(false);
     }
-  };
+  }, [onUpload, onChange]);
 
   const handleRemove = () => {
     setPreview("");
@@ -82,7 +80,7 @@ export function FeaturedImageSelector({
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file) handleFileSelect(file);
-  }, []);
+  }, [handleFileSelect]);
 
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 

@@ -98,7 +98,7 @@ function getMetaNum(meta: Record<string, unknown> | null, key: string): number |
   if (typeof val === "number") return val;
   if (typeof val === "string") {
     const n = Number(val);
-    return isNaN(n) ? null : n;
+    return Number.isNaN(n) ? null : n;
   }
   return null;
 }
@@ -145,7 +145,7 @@ function ImageGallery({ images }: { images: PropertyImage[] }) {
                     size="icon"
                     variant="secondary"
                     className="h-8 w-8 bg-background/90 backdrop-blur-sm"
-                    onClick={() => setCurrentIdx((i) => (i === 0 ? images.length - 1 : i - 1))}
+                    onClick={() => setCurrentIdx((i) => (i + images.length - 1) % images.length)}
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -153,7 +153,7 @@ function ImageGallery({ images }: { images: PropertyImage[] }) {
                     size="icon"
                     variant="secondary"
                     className="h-8 w-8 bg-background/90 backdrop-blur-sm"
-                    onClick={() => setCurrentIdx((i) => (i === images.length - 1 ? 0 : i + 1))}
+                    onClick={() => setCurrentIdx((i) => (i + 1) % images.length)}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -389,7 +389,7 @@ export default function PropertyShow() {
                   {STAT_KEYS.map((key) => {
                     const valNum = getMetaNum(meta, key);
                     if (valNum === null) return null;
-                    const label = LABEL_MAP[key] || key.replace(/_/g, " ");
+                    const label = LABEL_MAP[key] || key.replaceAll("_", " ");
                     const icons: Record<string, React.ReactNode> = {
                       bedrooms: <Bed className="h-5 w-5" />,
                       bathrooms: <Bath className="h-5 w-5" />,

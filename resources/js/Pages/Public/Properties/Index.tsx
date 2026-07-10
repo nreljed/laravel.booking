@@ -94,7 +94,7 @@ function getMetaNum(meta: Record<string, unknown> | null, key: string): number |
   if (typeof val === "number") return val;
   if (typeof val === "string") {
     const n = Number(val);
-    return isNaN(n) ? null : n;
+    return Number.isNaN(n) ? null : n;
   }
   return null;
 }
@@ -184,51 +184,19 @@ function PropertyCard({ property }: { property: PropertyItem }) {
   );
 }
 
-export default function PropertyIndex() {
-  const { props } = usePage<{
-    properties: PaginatedData;
-    filters: Filters;
-    types: TermItem[];
-    cities: TermItem[];
-    statuses: TermItem[];
-  }>();
+interface FilterContext {
+  filters: Filters;
+  statuses: TermItem[];
+  types: TermItem[];
+  cities: TermItem[];
+  applyFilter: (_key: string, _value: string | undefined) => void;
+  hasActiveFilters: boolean;
+  clearFilters: () => void;
+}
 
-  const { properties, filters, types, cities, statuses } = props;
-
-  const [search, setSearch] = useState(filters.search || "");
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-
-  const applyFilter = (key: string, value: string | undefined) => {
-    const params: Record<string, string> = {};
-    if (search.trim()) params.search = search.trim();
-    if (filters.type_id) params.type_id = filters.type_id;
-    if (filters.city_id) params.city_id = filters.city_id;
-    if (filters.status_id) params.status_id = filters.status_id;
-    if (filters.price_min) params.price_min = filters.price_min;
-    if (filters.price_max) params.price_max = filters.price_max;
-    if (filters.surface_min) params.surface_min = filters.surface_min;
-    if (filters.surface_max) params.surface_max = filters.surface_max;
-    if (filters.bedrooms) params.bedrooms = filters.bedrooms;
-    if (filters.sort) params.sort = filters.sort;
-    if (value) params[key] = value;
-    router.get(route("properties.index"), params, { preserveState: true, replace: true });
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    applyFilter("search", search);
-  };
-
-  const clearFilters = () => {
-    setSearch("");
-    router.get(route("properties.index"), {}, { preserveState: true, replace: true });
-  };
-
-  const hasActiveFilters = filters.type_id || filters.city_id || filters.status_id ||
-    filters.price_min || filters.price_max || filters.surface_min || filters.surface_max ||
-    filters.bedrooms || filters.search;
-
-  const FilterContent = ({ column }: { column?: boolean }) => (
+function FilterContent({ column, ctx }: { column?: boolean; ctx: FilterContext }) {
+  const { filters, statuses, types, cities, applyFilter, hasActiveFilters, clearFilters } = ctx;
+  return (
     <div className={cn("space-y-5", column && "flex flex-col")}>
       <div className="space-y-2">
         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -360,6 +328,53 @@ export default function PropertyIndex() {
       )}
     </div>
   );
+}
+
+export default function PropertyIndex() {
+  const { props } = usePage<{
+    properties: PaginatedData;
+    filters: Filters;
+    types: TermItem[];
+    cities: TermItem[];
+    statuses: TermItem[];
+  }>();
+
+  const { properties, filters, types, cities, statuses } = props;
+
+  const [search, setSearch] = useState(filters.search || "");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const applyFilter = (key: string, value: string | undefined) => {
+    const params: Record<string, string> = {};
+    if (search.trim()) params.search = search.trim();
+    if (filters.type_id) params.type_id = filters.type_id;
+    if (filters.city_id) params.city_id = filters.city_id;
+    if (filters.status_id) params.status_id = filters.status_id;
+    if (filters.price_min) params.price_min = filters.price_min;
+    if (filters.price_max) params.price_max = filters.price_max;
+    if (filters.surface_min) params.surface_min = filters.surface_min;
+    if (filters.surface_max) params.surface_max = filters.surface_max;
+    if (filters.bedrooms) params.bedrooms = filters.bedrooms;
+    if (filters.sort) params.sort = filters.sort;
+    if (value) params[key] = value;
+    router.get(route("properties.index"), params, { preserveState: true, replace: true });
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    applyFilter("search", search);
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    router.get(route("properties.index"), {}, { preserveState: true, replace: true });
+  };
+
+  const hasActiveFilters = Boolean(filters.type_id || filters.city_id || filters.status_id ||
+    filters.price_min || filters.price_max || filters.surface_min || filters.surface_max ||
+    filters.bedrooms || filters.search);
+
+  const filterContext = { filters, statuses, types, cities, applyFilter, hasActiveFilters, clearFilters };
 
   return (
     <>
@@ -431,7 +446,7 @@ export default function PropertyIndex() {
                       <SheetTitle>Filters</SheetTitle>
                     </SheetHeader>
                     <div className="mt-6">
-                      <FilterContent column />
+                      <FilterContent column ctx={filterContext} />
                     </div>
                   </SheetContent>
                 </Sheet>
@@ -440,7 +455,7 @@ export default function PropertyIndex() {
             <div className="mt-6 flex gap-8">
               <aside className="hidden w-64 shrink-0 lg:block">
                 <div className="sticky top-24 rounded-xl border border-border bg-card p-5">
-                  <FilterContent />
+                  <FilterContent ctx={filterContext} />
                 </div>
               </aside>
               <div className="flex-1">
