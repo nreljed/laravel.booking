@@ -10,15 +10,9 @@ use App\Booking\Services\BookingGuestTokenService;
 use App\Booking\Services\BookingPriceCalculator;
 use App\Booking\Services\BookingStatusManager;
 use App\Booking\Services\HostProfileService;
-use App\Enums\AuditAction;
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Properties\Models\Property;
-use App\Services\AuditService;
-use App\Services\MailService;
-use App\Services\SettingsService;
 use App\Traits\PasswordValidationTrait;
-use App\Traits\UserDataTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,11 +21,15 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Nreljed\DashboardCore\Enums\AuditAction;
+use Nreljed\DashboardCore\Http\Controllers\Controller;
+use Nreljed\DashboardCore\Services\AuditService;
+use Nreljed\DashboardCore\Services\MailService;
+use Nreljed\DashboardCore\Services\SettingsService;
 
 class BookingGuestController extends Controller
 {
     use PasswordValidationTrait;
-    use UserDataTrait;
 
     public function __construct(
         protected BookingAvailabilityService $availabilityService,

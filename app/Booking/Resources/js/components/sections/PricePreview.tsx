@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from "react";
 import { usePage } from "@inertiajs/react";
 import { Switch } from "@/Components/ui/switch";
-import { NumberInput } from "@/Components/ui/number-input";
+import { NumberInput } from "@/Components/shared/number-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { CalendarDays, Users, PawPrint, DollarSign } from "lucide-react";
 import DateRangePicker from "./DateRangePicker";
@@ -197,7 +197,7 @@ function PricePreview({ settings }: PricePreviewProps) {
             {result.extra_guest_charge > 0 && (
               <div className="flex justify-between">
                 <span>
-                  Extra Guest ({guests - result.base_guests} ×{" "}
+                  Extra Guest ({guests - result.base_guests} Ã—{" "}
                   {formatCurrency(result.extra_guest_fee)}/night)
                 </span>
                 <span>{formatCurrency(result.extra_guest_charge)}</span>

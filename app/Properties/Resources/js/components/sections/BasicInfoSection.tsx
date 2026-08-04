@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { useCallback, useMemo, useState } from "react"
-import { Section, SectionField } from "@/Components/section"
+import { Section, SectionField } from "@/Components/shared/section"
 import { Input } from "@/Components/ui/input"
 import { Textarea } from "@/Components/ui/textarea"
-import { NumberInput } from "@/Components/ui/number-input"
+import { NumberInput } from "@/Components/shared/number-input"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/Components/ui/select"
 import { Combobox, ComboboxTrigger, ComboboxValue, ComboboxContent, ComboboxInput, ComboboxEmpty, ComboboxGroup, ComboboxItem, ComboboxLabel, ComboboxList, ComboboxSeparator } from "@/Components/ui/combobox"
 import { Home } from "lucide-react"

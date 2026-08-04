@@ -3,9 +3,9 @@
 namespace App\Booking\Controllers;
 
 use App\Booking\Services\BookingIcalService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Nreljed\DashboardCore\Http\Controllers\Controller;
 
 class BookingIcalController extends Controller
 {

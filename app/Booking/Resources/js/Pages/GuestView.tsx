@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { router, usePage } from "@inertiajs/react";
 import { toast } from "sonner";
+import type { PageProps as AppPageProps } from "@/types";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/Components/ui/card";
 import { Input } from "@/Components/ui/input";
@@ -98,8 +99,7 @@ interface BookingData {
   } | null;
 }
 
-interface GuestViewPageProps {
-  [key: string]: unknown;
+type GuestViewPageProps = AppPageProps<{
   booking: BookingData | null;
   token: string;
   error: null | { title: string; message: string };
@@ -109,7 +109,7 @@ interface GuestViewPageProps {
     status?: string;
     error?: { title?: string; message?: string };
   };
-}
+}>;
 
 const InfoRow = ({ label, value }: { label: string; value: string | number }) => (
   <div className="flex justify-between py-1">

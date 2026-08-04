@@ -1,4 +1,4 @@
-import { NumberInput } from "@/Components/ui/number-input";
+import { NumberInput } from "@/Components/shared/number-input";
 import { Switch } from "@/Components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Timer, CalendarDays } from "lucide-react";
@@ -115,7 +115,7 @@ export function ConfigurationSection({ data, onChange, loading }: BookingSection
             <CardTitle className="text-sm">Include Checkout Day in Pricing</CardTitle>
             <p className="text-sm text-muted-foreground">
               When ON: the night of checkout is charged (guest pays for checkout night). When OFF:
-              pricing stops at the night before checkout. Example: 3-night stay (Mon check-in → Thu
+              pricing stops at the night before checkout. Example: 3-night stay (Mon check-in â†’ Thu
               check-out) charges 3 nights when ON, 2 nights when OFF.
             </p>
           </div>

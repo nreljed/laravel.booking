@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react"
-import { Section, SectionField } from "@/Components/section"
-import { Repeater } from "@/Components/ui/repeater"
+import { Section, SectionField } from "@/Components/shared/section"
+import { Repeater } from "@/Components/shared/repeater"
 import { Switch } from "@/Components/ui/switch"
 import { Layers } from "lucide-react"
 
@@ -29,7 +29,7 @@ const additionalDetailFields = [
 const floorPlanFields = [
   { name: "floor_name", label: "Floor Name", type: "text" as const, placeholder: "e.g. Ground Floor", required: true },
   { name: "floor_price", label: "Price", type: "number" as const, placeholder: "0" },
-  { name: "floor_surface", label: "Surface (m²)", type: "number" as const, placeholder: "0" },
+  { name: "floor_surface", label: "Surface (mÂ²)", type: "number" as const, placeholder: "0" },
   { name: "floor_bedrooms", label: "Bedrooms", type: "number" as const, placeholder: "0" },
   { name: "floor_bathrooms", label: "Bathrooms", type: "number" as const, placeholder: "0" },
   { name: "floor_desc", label: "Description", type: "textarea" as const, placeholder: "Floor description...", fullWidth: true },

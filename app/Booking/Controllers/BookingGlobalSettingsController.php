@@ -2,11 +2,11 @@
 
 namespace App\Booking\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Properties\Models\Property;
-use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Nreljed\DashboardCore\Http\Controllers\Controller;
+use Nreljed\DashboardCore\Services\SettingsService;
 
 class BookingGlobalSettingsController extends Controller
 {

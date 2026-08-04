@@ -3,9 +3,9 @@
 namespace App\Booking\Services;
 
 use App\Booking\Models\Booking;
-use App\Services\FormattingService;
-use App\Services\SettingsService;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Nreljed\DashboardCore\Services\FormattingService;
+use Nreljed\DashboardCore\Services\SettingsService;
 
 class BookingService
 {

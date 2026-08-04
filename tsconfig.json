@@ -15,13 +15,13 @@
         "skipLibCheck": true,
         "noEmit": true,
         "paths": {
-            "@/*": ["./resources/js/*"],
+            "@/*": ["./vendor/nreljed/dashboard-core/resources/js/*"],
+            "@dashboard": ["./vendor/nreljed/dashboard-core/resources/js"],
+            "@dashboard/*": ["./vendor/nreljed/dashboard-core/resources/js/*"],
             "@booking": ["./app/Booking/Resources/js"],
             "@booking/*": ["./app/Booking/Resources/js/*"],
             "@properties": ["./app/Properties/Resources/js"],
             "@properties/*": ["./app/Properties/Resources/js/*"],
-            "@posts": ["./app/Posts/Resources/js"],
-            "@posts/*": ["./app/Posts/Resources/js/*"],
             "ziggy-js": ["./vendor/tightenco/ziggy"]
         }
     },
@@ -31,9 +31,10 @@
         "resources/js/**/*.d.ts",
         "app/Booking/Resources/js/**/*.ts",
         "app/Booking/Resources/js/**/*.tsx",
+        "app/Booking/Resources/js/**/*.d.ts",
         "app/Properties/Resources/js/**/*.ts",
         "app/Properties/Resources/js/**/*.tsx",
-        "app/Posts/Resources/js/**/*.ts",
-        "app/Posts/Resources/js/**/*.tsx"
+        "app/Properties/Resources/js/**/*.d.ts",
+        "vendor/nreljed/dashboard-core/resources/js/**/*.d.ts"
     ]
 }

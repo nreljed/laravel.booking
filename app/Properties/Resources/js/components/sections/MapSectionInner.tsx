@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as React from "react"
 import { useMap } from "react-leaflet"
-import { Section } from "@/Components/section"
+import { Section } from "@/Components/shared/section"
 import { Alert, AlertDescription } from "@/Components/ui/alert"
 import { Button } from "@/Components/ui/button"
 import {
@@ -17,9 +17,9 @@ import {
   MapLayers,
   MapControls,
   MapSearchControl,
-} from "@/Components/ui/map"
-import { MapDebugPanel } from "@/Components/ui/map-debug-panel"
-import type { DebugData } from "@/Components/ui/map-debug-panel"
+} from "@/Components/shared/map/map"
+import { MapDebugPanel } from "@/Components/shared/map/map-debug-panel"
+import type { DebugData } from "@/Components/shared/map/map-debug-panel"
 import { reverseGeocode, TUNISIA_BOUNDS, TUNISIA_CENTER } from "@/lib/geocoding"
 import { getCountryBounds } from "@/lib/country-bounds"
 import type { AddressData } from "@/lib/geocoding"

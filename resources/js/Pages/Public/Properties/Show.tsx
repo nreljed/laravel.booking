@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from "@inertiajs/react";
 import { useState, useCallback } from "react";
+import type { PageProps as AppPageProps } from "@/types";
 import {
   Bed,
   Bath,
@@ -315,7 +316,7 @@ function PropertyCard({ property }: { property: PropertyItem }) {
 }
 
 export default function PropertyShow() {
-  const { props } = usePage<{ property: PropertyItem }>();
+  const { props } = usePage<AppPageProps<{ property: PropertyItem }>>();
   const { property } = props;
   const [showPhone, setShowPhone] = useState(false);
 

@@ -1,6 +1,6 @@
 import { Textarea } from "@/Components/ui/textarea";
 import { Switch } from "@/Components/ui/switch";
-import { NumberInput } from "@/Components/ui/number-input";
+import { NumberInput } from "@/Components/shared/number-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import {
   Select,
@@ -34,7 +34,7 @@ export function BookingPoliciesSection({ data, onChange, loading }: BookingSecti
         <CardHeader>
           <CardTitle>Guest Policies</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Define who can stay — children, infants, and smoking rules
+            Define who can stay â€” children, infants, and smoking rules
           </p>
         </CardHeader>
         <CardContent>

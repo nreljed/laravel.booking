@@ -3,9 +3,9 @@
 namespace App\Booking\Controllers;
 
 use App\Booking\Services\BookingStatusManager;
-use App\Http\Controllers\Controller;
-use App\Services\SettingsService;
 use Illuminate\Http\JsonResponse;
+use Nreljed\DashboardCore\Http\Controllers\Controller;
+use Nreljed\DashboardCore\Services\SettingsService;
 
 class BookingSystemController extends Controller
 {

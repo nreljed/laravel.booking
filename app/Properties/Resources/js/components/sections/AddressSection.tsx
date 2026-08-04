@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import { Section, SectionField } from "@/Components/section"
+import { Section, SectionField } from "@/Components/shared/section"
 import { Input } from "@/Components/ui/input"
 import { Switch } from "@/Components/ui/switch"
 import { MapPinIcon } from "lucide-react"
@@ -59,7 +59,7 @@ export function AddressSection({ data, onChange, errors, loading = false, onSubm
       {hasLocationData && !enableAddress && (
         <div className="flex items-center gap-2 rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
           <MapPinIcon className="size-4 shrink-0" />
-          <span>Location data detected{data.meta?.address ? ` — ${data.meta.address}` : ""}{data.meta?.locality ? `, ${data.meta.locality}` : ""} (enable "Show Address" to display)</span>
+          <span>Location data detected{data.meta?.address ? ` â€” ${data.meta.address}` : ""}{data.meta?.locality ? `, ${data.meta.locality}` : ""} (enable "Show Address" to display)</span>
         </div>
       )}
 

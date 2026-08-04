@@ -9,14 +9,14 @@ use App\Booking\Services\BookingCacheService;
 use App\Booking\Services\BookingGuestTokenService;
 use App\Booking\Services\BookingPipelineTrace;
 use App\Booking\Services\BookingPriceCalculator;
-use App\Enums\AuditAction;
-use App\Http\Controllers\Controller;
 use App\Properties\Models\Property;
-use App\Services\AuditService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Nreljed\DashboardCore\Enums\AuditAction;
+use Nreljed\DashboardCore\Http\Controllers\Controller;
+use Nreljed\DashboardCore\Services\AuditService;
 
 class BookingDemoController extends Controller
 {

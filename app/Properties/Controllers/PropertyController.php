@@ -3,22 +3,24 @@
 namespace App\Properties\Controllers;
 
 use App\Booking\Services\BookingPropertyIntegrationService;
-use App\Http\Controllers\Controller;
 use App\Properties\Models\City;
 use App\Properties\Models\Property;
 use App\Properties\Models\PropertyImage;
 use App\Properties\Requests\StorePropertyRequest;
 use App\Properties\Requests\UpdatePropertyRequest;
+use App\Properties\Requests\UploadImageRequest;
 use App\Properties\Services\ImageUploadService;
 use App\Properties\Services\PropertyFormattingService;
 use App\Properties\Services\PropertyService;
 use App\Properties\Services\PropertyUserCountManager;
-use App\Services\SettingsService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Nreljed\DashboardCore\Http\Controllers\Controller;
+use Nreljed\DashboardCore\Services\SettingsService;
 
 class PropertyController extends Controller
 {
@@ -270,20 +272,32 @@ class PropertyController extends Controller
             ->with('status', 'Property deleted successfully.');
     }
 
-    public function uploadImage(UploadImageRequest $request, Property $property): RedirectResponse
+    public function uploadImage(UploadImageRequest $request, Property $property): RedirectResponse|JsonResponse
     {
-        $this->imageService->upload(
+        $this->authorize('update', $property);
+
+        $image = $this->imageService->upload(
             $request->file('file'),
             $property,
             $request->boolean('is_featured'),
             $request->input('alt_text'),
         );
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'url' => $image->url,
+                'path' => $image->path,
+                'attachment_id' => $image->id,
+            ]);
+        }
+
         return back()->with('status', 'Image uploaded successfully.');
     }
 
     public function deleteImage(Property $property, PropertyImage $image): RedirectResponse
     {
+        $this->authorize('update', $property);
+
         abort_if($image->property_id !== $property->id, 404);
 
         $this->imageService->delete($image);
@@ -293,6 +307,8 @@ class PropertyController extends Controller
 
     public function reorderImages(Request $request, Property $property): RedirectResponse
     {
+        $this->authorize('update', $property);
+
         $request->validate(['ordered_ids' => 'required|array', 'ordered_ids.*' => 'integer|exists:property_images,id']);
 
         $this->imageService->reorder($property, $request->input('ordered_ids'));
@@ -302,6 +318,8 @@ class PropertyController extends Controller
 
     public function setFeaturedImage(Property $property, PropertyImage $image): RedirectResponse
     {
+        $this->authorize('update', $property);
+
         abort_if($image->property_id !== $property->id, 404);
 
         $this->imageService->setFeatured($image);

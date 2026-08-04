@@ -1,20 +1,28 @@
 <?php
 
 use App\Booking\BookingServiceProvider;
-use App\Posts\PostsServiceProvider;
 use App\Properties\PropertiesServiceProvider;
 use App\Providers\AppServiceProvider;
-use App\Providers\PermissionGateServiceProvider;
 use App\Providers\TelescopeServiceProvider;
-use Laravel\Telescope\TelescopeApplicationServiceProvider;
+use Nreljed\DashboardCore\Blog\BlogServiceProvider;
+use Nreljed\DashboardCore\DashboardCoreServiceProvider;
+use Nreljed\DashboardCore\Providers\PermissionGateServiceProvider;
 
-return array_filter([
+return [
+
+    /*
+     * Package Service Providers...
+     */
+    DashboardCoreServiceProvider::class,
+    BlogServiceProvider::class,
+    PermissionGateServiceProvider::class,
+
+    /*
+     * Application Service Providers...
+     */
     AppServiceProvider::class,
+    TelescopeServiceProvider::class,
     BookingServiceProvider::class,
     PropertiesServiceProvider::class,
-    PostsServiceProvider::class,
-    PermissionGateServiceProvider::class,
-    class_exists(TelescopeApplicationServiceProvider::class)
-        ? TelescopeServiceProvider::class
-        : null,
-]);
+
+];

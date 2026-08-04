@@ -87,20 +87,6 @@ class PropertiesServiceProvider extends ServiceProvider
         return route('dashboard.admin.settings', [], false);
     }
 
-    public static function getFrontendPages(): array
-    {
-        return [
-            ['path' => '/dashboard/properties/dashboard', 'component' => 'Properties/Dashboard', 'name' => 'dashboard.properties.dashboard'],
-            ['path' => '/dashboard/properties', 'component' => 'Properties/Index', 'name' => 'dashboard.properties.index'],
-            ['path' => '/dashboard/properties/create', 'component' => 'Properties/Form', 'name' => 'dashboard.properties.create'],
-            ['path' => '/dashboard/properties/{property}/edit', 'component' => 'Properties/Form', 'name' => 'dashboard.properties.edit'],
-            ['path' => '/dashboard/properties/terms/types', 'component' => 'Properties/Types', 'name' => 'dashboard.properties.terms.types.index'],
-            ['path' => '/dashboard/properties/terms/cities', 'component' => 'Properties/Cities', 'name' => 'dashboard.properties.terms.cities.index'],
-            ['path' => '/dashboard/properties/terms/features', 'component' => 'Properties/Features', 'name' => 'dashboard.properties.terms.features.index'],
-            ['path' => '/dashboard/properties/terms/statuses', 'component' => 'Properties/Statuses', 'name' => 'dashboard.properties.terms.statuses.index'],
-        ];
-    }
-
     public static function permissions(): array
     {
         return [

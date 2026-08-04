@@ -16,7 +16,7 @@ export default defineConfig({
             ],
         refresh: [
             ...(typeof globalThis !== 'undefined' && globalThis.process?.env?.APP_ENV !== 'production'
-                ? [{ server: false, paths: ['app/Booking/Resources/js/**', 'app/Properties/Resources/js/**', 'app/Posts/Resources/js/**'] }]
+                ? [{ server: false, paths: ['app/Booking/Resources/js/**', 'app/Properties/Resources/js/**'] }]
                 : []),
         ],
         }),
@@ -26,9 +26,11 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
+            '@dashboard': path.resolve(__dirname, './vendor/nreljed/dashboard-core/resources/js'),
+            '@dashboard-blog': path.resolve(__dirname, './vendor/nreljed/dashboard-core/src/Blog/Resources/js'),
+            '@': path.resolve(__dirname, './vendor/nreljed/dashboard-core/resources/js'),
             '@booking': path.resolve(__dirname, './app/Booking/Resources/js'),
             '@properties': path.resolve(__dirname, './app/Properties/Resources/js'),
-            '@posts': path.resolve(__dirname, './app/Posts/Resources/js'),
         },
     },
     build: {
@@ -39,7 +41,7 @@ export default defineConfig({
                 manualChunks(id) {
                     if (id.includes('Components/ui/')) return 'ui-kit';
                     if (id.includes('node_modules/react')) return 'react-vendor';
-                    if (id.includes('node_modules/@radix-ui')) return 'ui-vendor';
+                    if (id.includes('node_modules/@base-ui')) return 'baseui-vendor';
                     if (id.includes('node_modules/lucide-react')) return 'icons-vendor';
                     if (id.includes('node_modules/@inertiajs')) return 'inertia-vendor';
                     if (id.includes('node_modules/leaflet')) return 'leaflet-vendor';
@@ -48,7 +50,6 @@ export default defineConfig({
                     if (id.includes('node_modules/@zxcvbn-ts')) return 'zxcvbn-vendor';
                     if (id.includes('node_modules/react-phone-number-input') || id.includes('node_modules/libphonenumber-js')) return 'phone-vendor';
                     if (id.includes('node_modules/react-hook-form')) return 'forms-vendor';
-                    if (id.includes('node_modules/@base-ui')) return 'baseui-vendor';
                 },
             },
         },

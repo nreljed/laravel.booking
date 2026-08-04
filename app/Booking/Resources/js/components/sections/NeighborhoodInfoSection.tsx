@@ -1,6 +1,6 @@
 import { Input } from "@/Components/ui/input";
 import { Textarea } from "@/Components/ui/textarea";
-import { NumberInput } from "@/Components/ui/number-input";
+import { NumberInput } from "@/Components/shared/number-input";
 import { Alert, AlertDescription } from "@/Components/ui/alert";
 import { MapPin, Lightbulb } from "lucide-react";
 
@@ -18,7 +18,7 @@ export function NeighborhoodInfoSection({ data, onChange, loading }: BookingSect
         <div>
           <h2 className="text-lg font-semibold">Neighborhood & Practical Info</h2>
           <p className="text-sm text-muted-foreground">
-            Provide parking, transit, local tips, check-in instructions, and WiFi details — all
+            Provide parking, transit, local tips, check-in instructions, and WiFi details â€” all
             shown to confirmed guests to help them prepare for their stay
           </p>
         </div>

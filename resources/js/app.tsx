@@ -6,8 +6,8 @@ import { createInertiaApp, router } from "@inertiajs/react";
 import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/Components/ui/tooltip";
-import { Toaster } from "@/Components/ui/sonner";
-import { toast } from "sonner";
+import { Toaster, toast } from "@/Components/ui/toast";
+import { registerDashboard } from "@dashboard/dashboard";
 
 import "@/Components/ui/sidebar";
 
@@ -24,8 +24,8 @@ function InertiaFlashListener() {
           { props?: { flash?: Record<string, unknown> } } | undefined);
       if (!page) return;
       const flash: Record<string, unknown> = page.props?.flash ?? {};
-      if (flash.status) toast.success(String(flash.status));
-      if (flash.error) toast.error(String(flash.error));
+      if (flash.status) toast.add({ title: String(flash.status), type: "success" });
+      if (flash.error) toast.add({ title: String(flash.error), type: "error" });
     };
     showFlash();
     return router.on("navigate", () => showFlash());
@@ -49,9 +49,9 @@ const bookingPages = import.meta.glob("../../app/Booking/Resources/js/Pages/**/*
   ImportFn
 >;
 
-const postsPages = import.meta.glob("@posts/Pages/**/*.tsx") as Record<string, ImportFn>;
-
-const pageMap: PageMap = {};
+const pageMap: PageMap = {
+  ...registerDashboard(),
+};
 
 for (const [path, importFn] of Object.entries(pages)) {
   const match = path.match(/\.\/Pages\/(.+)\.tsx$/);
@@ -64,7 +64,7 @@ for (const [path, importFn] of Object.entries(pages)) {
 function extractComponentPath(fullPath: string, moduleName: string): string | null {
   const normalized = fullPath.replaceAll("\\", "/");
 
-  const fsMarker = `app/${moduleName === "Posts" ? "Posts" : moduleName}/Resources/js/Pages/`;
+  const fsMarker = `app/${moduleName}/Resources/js/Pages/`;
   const fsIdx = normalized.indexOf(fsMarker);
   if (fsIdx !== -1) {
     const relative = normalized.slice(fsIdx + fsMarker.length);
@@ -74,7 +74,6 @@ function extractComponentPath(fullPath: string, moduleName: string): string | nu
   const aliasPrefixMap: Record<string, string> = {
     Properties: "@properties",
     Booking: "@booking",
-    Posts: "@posts",
   };
   const alias = aliasPrefixMap[moduleName];
   if (alias) {
@@ -103,13 +102,6 @@ for (const [path, importFn] of Object.entries(bookingPages)) {
   }
 }
 
-for (const [path, importFn] of Object.entries(postsPages)) {
-  const componentPath = extractComponentPath(path, "Posts");
-  if (componentPath) {
-    pageMap[`modules/posts/${componentPath}`.toLowerCase()] = importFn;
-  }
-}
-
 createInertiaApp({
   title: (title) => `${title} - ${appName}`,
   resolve: async (name) => {
@@ -129,7 +121,7 @@ createInertiaApp({
         <TooltipProvider>
           <App {...props} />
           <InertiaFlashListener />
-          <Toaster position="top-right" />
+          <Toaster />
         </TooltipProvider>
       </ThemeProvider>,
     );

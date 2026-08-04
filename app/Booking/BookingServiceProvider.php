@@ -10,14 +10,14 @@ use App\Booking\Services\BookingGuestTokenService;
 use App\Booking\Services\BookingPipelineTrace;
 use App\Booking\Services\BookingRefundMailService;
 use App\Models\User;
-use App\Notifications\AppNotification;
 use App\Properties\Models\Property;
-use App\Services\NotificationService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Nreljed\DashboardCore\Notifications\AppNotification;
+use Nreljed\DashboardCore\Services\NotificationService;
 
 class BookingServiceProvider extends ServiceProvider
 {
@@ -110,20 +110,6 @@ class BookingServiceProvider extends ServiceProvider
     public static function getSettingsRoute(): ?string
     {
         return route('dashboard.admin.settings', [], false);
-    }
-
-    public static function getFrontendPages(): array
-    {
-        return [
-            ['path' => '/dashboard/bookings/dashboard', 'component' => 'Bookings/Dashboard', 'name' => 'dashboard.bookings.dashboard'],
-            ['path' => '/dashboard/bookings', 'component' => 'Bookings/Index', 'name' => 'dashboard.bookings.index'],
-            ['path' => '/dashboard/bookings/create', 'component' => 'Bookings/Form', 'name' => 'dashboard.bookings.create'],
-            ['path' => '/dashboard/bookings/{booking}/edit', 'component' => 'Bookings/Form', 'name' => 'dashboard.bookings.edit'],
-            ['path' => '/dashboard/bookings/{booking}', 'component' => 'Bookings/Show', 'name' => 'dashboard.bookings.show'],
-            ['path' => '/dashboard/bookings/calendar', 'component' => 'Bookings/Calendar', 'name' => 'dashboard.bookings.calendar'],
-            ['path' => '/dashboard/bookings/demo', 'component' => 'Bookings/BookingDemo', 'name' => 'dashboard.bookings.demo'],
-            ['path' => '/dashboard/bookings/demo/result/{booking}', 'component' => 'Bookings/BookingDemoResult', 'name' => 'dashboard.bookings.demo.result'],
-        ];
     }
 
     public static function permissions(): array

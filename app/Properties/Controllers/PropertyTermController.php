@@ -2,7 +2,6 @@
 
 namespace App\Properties\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Properties\Models\City;
 use App\Properties\Models\Property;
 use App\Properties\Models\PropertyFeature;
@@ -12,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Nreljed\DashboardCore\Http\Controllers\Controller;
 
 class PropertyTermController extends Controller
 {

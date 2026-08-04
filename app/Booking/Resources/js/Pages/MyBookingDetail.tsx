@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { usePage } from "@inertiajs/react";
 import { toast } from "sonner";
+import type { PageProps as AppPageProps } from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/Components/ui/card";
@@ -103,7 +104,7 @@ interface MyBookingDetailData {
 }
 
 const MyBookingDetail = () => {
-  const pageProps = usePage<{ booking: MyBookingDetailData | null }>().props;
+  const pageProps = usePage<AppPageProps<{ booking: MyBookingDetailData | null }>>().props;
   const { booking } = pageProps;
   const [cancelling, setCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);

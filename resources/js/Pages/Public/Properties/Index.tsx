@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { PageProps as AppPageProps } from "@/types";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Badge } from "@/Components/ui/badge";
@@ -331,13 +332,15 @@ function FilterContent({ column, ctx }: { column?: boolean; ctx: FilterContext }
 }
 
 export default function PropertyIndex() {
-  const { props } = usePage<{
-    properties: PaginatedData;
-    filters: Filters;
-    types: TermItem[];
-    cities: TermItem[];
-    statuses: TermItem[];
-  }>();
+  const { props } = usePage<
+    AppPageProps<{
+      properties: PaginatedData;
+      filters: Filters;
+      types: TermItem[];
+      cities: TermItem[];
+      statuses: TermItem[];
+    }>
+  >();
 
   const { properties, filters, types, cities, statuses } = props;
 

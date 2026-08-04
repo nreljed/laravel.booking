@@ -4,7 +4,7 @@ namespace App\Booking\Services;
 
 use App\Properties\Models\Property;
 use App\Properties\Services\PropertyFormattingService;
-use App\Services\SettingsService;
+use Nreljed\DashboardCore\Services\SettingsService;
 
 class BookingWidgetRenderer
 {

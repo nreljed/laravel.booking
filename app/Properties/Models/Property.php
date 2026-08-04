@@ -4,7 +4,6 @@ namespace App\Properties\Models;
 
 use App\Booking\Models\Booking;
 use App\Models\User;
-use App\Services\SettingsService;
 use Carbon\Carbon;
 use Database\Factories\PropertyFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -16,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Nreljed\DashboardCore\Services\SettingsService;
 
 class Property extends Model
 {

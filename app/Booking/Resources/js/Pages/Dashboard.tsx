@@ -1,6 +1,7 @@
 import { usePage, Link } from "@inertiajs/react"
 import { Head } from "@inertiajs/react"
 import { Plus, Calendar, List } from "lucide-react"
+import type { PageProps as AppPageProps } from "@/types"
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card"
 import { Button } from "@/Components/ui/button"
@@ -30,14 +31,13 @@ interface RecentBooking {
   created_at: string
 }
 
-interface PageProps {
-  [key: string]: unknown
+type PageProps = AppPageProps<{
   stats: BookingStatsData
   todayCheckIns: number
   todayCheckOuts: number
   propertiesCount: number
   recentBookings: RecentBooking[]
-}
+}>
 
 export default function BookingsDashboard() {
   const { stats, todayCheckIns, todayCheckOuts, propertiesCount, recentBookings } = usePage<PageProps>().props

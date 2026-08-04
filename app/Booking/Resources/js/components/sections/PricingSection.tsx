@@ -1,8 +1,8 @@
 import { Input } from "@/Components/ui/input";
-import { NumberInput } from "@/Components/ui/number-input";
+import { NumberInput } from "@/Components/shared/number-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Alert, AlertDescription } from "@/Components/ui/alert";
-import { Repeater } from "@/Components/ui/repeater";
+import { Repeater } from "@/Components/shared/repeater";
 import { useRepeaterConfig } from "@/hooks/use-repeater-config";
 import { Users, Info, DollarSign, Sun, Timer } from "lucide-react";
 import PricePreview from "./PricePreview";
@@ -238,7 +238,7 @@ export function PricingSection({ data, onChange, loading }: BookingSectionProps)
                       type="number"
                       step="0.01"
                       min="0"
-                      placeholder="—"
+                      placeholder="â€”"
                       value={hasValue ? weekdayPrices[day] : ""}
                       onChange={(e) => handlePriceChange(day, e.target.value)}
                       disabled={loading}
@@ -320,9 +320,9 @@ export function PricingSection({ data, onChange, loading }: BookingSectionProps)
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          Pricing priority: Per-Day Price → Weekend Multiplier → Length-of-Stay Tiered Rate →
-          Seasonal Nightly Rate → Base Nightly Rate. Length-of-stay discount % stacks on top. Final:
-          subtotal — discount + cleaning + service + extra guest + pet fees.
+          Pricing priority: Per-Day Price â†’ Weekend Multiplier â†’ Length-of-Stay Tiered Rate â†’
+          Seasonal Nightly Rate â†’ Base Nightly Rate. Length-of-stay discount % stacks on top. Final:
+          subtotal â€” discount + cleaning + service + extra guest + pet fees.
         </AlertDescription>
       </Alert>
     </div>

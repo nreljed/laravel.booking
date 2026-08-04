@@ -11,6 +11,7 @@ use App\Properties\Models\PropertyType;
 use App\Properties\Services\PropertyFormattingService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Nreljed\DashboardCore\Http\Controllers\Controller;
 
 class PublicPropertyController extends Controller
 {

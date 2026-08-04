@@ -3,9 +3,9 @@
 namespace App\Properties\Services;
 
 use App\Properties\Models\Property;
-use App\Services\FormattingService;
-use App\Services\SettingsService;
 use Illuminate\Support\Collection;
+use Nreljed\DashboardCore\Services\FormattingService;
+use Nreljed\DashboardCore\Services\SettingsService;
 
 class PropertyFormattingService
 {

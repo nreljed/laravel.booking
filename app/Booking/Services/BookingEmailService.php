@@ -5,9 +5,9 @@ namespace App\Booking\Services;
 use App\Booking\Enums\BookingStatus;
 use App\Booking\Models\Booking;
 use App\Properties\Models\Property;
-use App\Services\MailService;
-use App\Services\SettingsService;
 use Illuminate\Support\Facades\Log;
+use Nreljed\DashboardCore\Services\MailService;
+use Nreljed\DashboardCore\Services\SettingsService;
 
 class BookingEmailService
 {

@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Section, SectionField } from "@/Components/section";
-import { UrlVideo } from "@/Components/ui/url-video";
+import { Section, SectionField } from "@/Components/shared/section";
+import { UrlVideo } from "@/Components/shared/url-video";
 import { Video } from "lucide-react";
 
 interface VideoSectionData {

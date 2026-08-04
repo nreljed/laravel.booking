@@ -22,7 +22,7 @@ class PermissionSyncTest extends TestCase
         $adminRole->load('permissions');
         $slugs = $adminRole->permissions->pluck('slug')->toArray();
 
-        $this->assertContains('manage_options', $slugs);
+        $this->assertContains('manage-options', $slugs);
     }
 
     public function test_customer_role_does_not_have_admin_permissions(): void
@@ -36,7 +36,7 @@ class PermissionSyncTest extends TestCase
         $slugs = $customerRole->permissions->pluck('slug')->toArray();
 
         $this->assertNotContains('manage_users', $slugs);
-        $this->assertNotContains('manage_options', $slugs);
+        $this->assertNotContains('manage-options', $slugs);
         $this->assertNotContains('manage-settings', $slugs);
         $this->assertNotContains('manage-roles', $slugs);
         $this->assertNotContains('view-system-health', $slugs);
@@ -46,7 +46,7 @@ class PermissionSyncTest extends TestCase
     {
         $this->seed(RolesAndPermissionsSeeder::class);
 
-        $perm = Permission::where('slug', 'manage_options')->first();
+        $perm = Permission::where('slug', 'manage-options')->first();
         $this->assertNotNull($perm);
         $this->assertEquals('Manage Options', $perm->name);
     }
@@ -59,11 +59,11 @@ class PermissionSyncTest extends TestCase
         $customerRole = Role::where('slug', 'customer')->first();
 
         $this->assertTrue(
-            $adminRole->permissions()->where('slug', 'manage_options')->exists()
+            $adminRole->permissions()->where('slug', 'manage-options')->exists()
         );
 
         $this->assertFalse(
-            $customerRole->permissions()->where('slug', 'manage_options')->exists()
+            $customerRole->permissions()->where('slug', 'manage-options')->exists()
         );
     }
 }

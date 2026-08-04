@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { Section } from "@/Components/section"
+import { Section } from "@/Components/shared/section"
 
 const MapSectionInner = lazy(() => import("./MapSectionInner"))
 

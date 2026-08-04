@@ -5,7 +5,7 @@ import { toast } from "sonner"
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/Components/ui/breadcrumb"
 import { BasicInfoSection, AddressSection, MapSection, VideoSection, MediaSection, FeaturesSection, DetailsSection, BookingSection } from "../components"
-import { PublishSection } from "@/Components/ui/publish-section"
+import { PublishSection } from "@/Components/shared/publish-section"
 
 function extractJson(value: unknown): Array<Record<string, unknown>> {
   if (!value) return []

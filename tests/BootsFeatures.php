@@ -2,26 +2,32 @@
 
 namespace Tests;
 
+use App\Booking\BookingServiceProvider;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\PermissionCacheService;
+use App\Properties\PropertiesServiceProvider;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Nreljed\DashboardCore\Services\PermissionCacheService;
 
 trait BootsFeatures
 {
+    /** @var array<int, class-string> */
+    protected array $featureProviders = [
+        PropertiesServiceProvider::class,
+        BookingServiceProvider::class,
+    ];
+
     protected function bootFeatures(): void
     {
-        $registry = app(ModuleRegistry::class);
-
         app(RolesAndPermissionsSeeder::class)->run();
 
         app('router')->getRoutes()->refreshNameLookups();
 
         // Collect permission slugs from all registered feature providers
         $featureSlugs = [];
-        foreach ($registry->all() as $provider) {
-            foreach ($provider->permissions() as $perm) {
+        foreach ($this->featureProviders as $provider) {
+            foreach ($provider::permissions() as $perm) {
                 $featureSlugs[] = $perm['slug'];
             }
         }

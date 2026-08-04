@@ -1,6 +1,7 @@
 import { usePage, Link } from "@inertiajs/react"
 import { Head } from "@inertiajs/react"
 import { Plus, List, Tags } from "lucide-react"
+import type { PageProps as AppPageProps } from "@/types"
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card"
 import { Button } from "@/Components/ui/button"
@@ -23,7 +24,7 @@ interface RecentProperty {
 }
 
 export default function PropertiesDashboard() {
-  const { props } = usePage<{ stats: StatData; recentProperties: RecentProperty[] }>()
+  const { props } = usePage<AppPageProps<{ stats: StatData; recentProperties: RecentProperty[] }>>()
   const { stats, recentProperties } = props
 
   return (

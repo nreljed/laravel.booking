@@ -1,6 +1,6 @@
 import * as React from "react";
 import { usePage } from "@inertiajs/react";
-import { Section, SectionField } from "@/Components/section";
+import { Section, SectionField } from "@/Components/shared/section";
 import { Input } from "@/Components/ui/input";
 import {
   Select,
@@ -14,7 +14,7 @@ import { Button } from "@/Components/ui/button";
 import { Checkbox } from "@/Components/ui/checkbox";
 import { Label } from "@/Components/ui/label";
 import { Spinner } from "@/Components/ui/spinner";
-import { ErrorMessage } from "@/Components/error-message";
+import { ErrorMessage } from "@/Components/shared/error-message";
 import { Separator } from "@/Components/ui/separator";
 import { BOOKING_STATUS } from "../../lib/booking-status";
 import {
@@ -36,15 +36,15 @@ const CANCELLATION_POLICY_OPTIONS = [
   { value: "flexible", label: "Flexible" },
   { value: "moderate", label: "Moderate" },
   { value: "strict", label: "Strict" },
-  { value: "firm", label: "Firm — full refund up to 30 days, 50% 7–30 days" },
-  { value: "limited", label: "Limited — full refund up to 14 days, 50% 7–14 days" },
+  { value: "firm", label: "Firm â€” full refund up to 30 days, 50% 7â€“30 days" },
+  { value: "limited", label: "Limited â€” full refund up to 14 days, 50% 7â€“14 days" },
   { value: "long_term", label: "Long Term (28+ nights)" },
   { value: "non_refundable", label: "Non-Refundable" },
 ] as const;
 
 const BOOKING_STATUS_OPTIONS = [
-  { value: BOOKING_STATUS.Pending, label: "Pending — requires manual confirmation" },
-  { value: BOOKING_STATUS.Confirmed, label: "Confirmed — auto-confirm new bookings" },
+  { value: BOOKING_STATUS.Pending, label: "Pending â€” requires manual confirmation" },
+  { value: BOOKING_STATUS.Confirmed, label: "Confirmed â€” auto-confirm new bookings" },
 ] as const;
 
 const GUEST_CANCEL_STATUS_OPTIONS = [
@@ -380,7 +380,7 @@ export function BookingGlobalSettingsSection({
               label="Grace Period Hours"
               htmlFor="grace_period_hours"
               error={errors?.grace_period_hours}
-              description="Hours after booking during which guest can cancel for full refund (1–72)."
+              description="Hours after booking during which guest can cancel for full refund (1â€“72)."
               required
             >
               <Input
@@ -398,7 +398,7 @@ export function BookingGlobalSettingsSection({
               label="Minimum Advance Notice"
               htmlFor="grace_period_advance_days"
               error={errors?.grace_period_advance_days}
-              description="Minimum days before check-in that the booking must have been made (1–30)."
+              description="Minimum days before check-in that the booking must have been made (1â€“30)."
               required
             >
               <Input
@@ -606,7 +606,7 @@ export function BookingGlobalSettingsSection({
                   label="Check-out Grace Hours"
                   htmlFor="auto_checkout_grace_hours"
                   error={errors?.auto_checkout_grace_hours}
-                  description="Hours after checkout date before auto-transitioning checked_in → checked_out (0-168). 24 = 1 day after checkout."
+                  description="Hours after checkout date before auto-transitioning checked_in â†’ checked_out (0-168). 24 = 1 day after checkout."
                   required
                 >
                   <Input
@@ -642,7 +642,7 @@ export function BookingGlobalSettingsSection({
                   label="No-Show Cancel Grace Hours"
                   htmlFor="auto_cancel_no_show_hours"
                   error={errors?.auto_cancel_no_show_hours}
-                  description="Hours after check-in date before auto-cancelling confirmed → cancelled (0-168). 48 = 2 days after check-in."
+                  description="Hours after check-in date before auto-cancelling confirmed â†’ cancelled (0-168). 48 = 2 days after check-in."
                   required
                 >
                   <Input

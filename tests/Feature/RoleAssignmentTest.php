@@ -48,7 +48,7 @@ class RoleAssignmentTest extends TestCase
         $this->assertTrue($user->hasPermission('manage-users'));
         $this->assertTrue($user->hasPermission('manage-settings'));
         $this->assertTrue($user->hasPermission('manage-roles'));
-        $this->assertTrue($user->hasPermission('manage_options'));
+        $this->assertTrue($user->hasPermission('manage-options'));
         $this->assertTrue($user->hasPermission('view-system-health'));
         $this->assertTrue($user->hasPermission('view-dashboard'));
     }

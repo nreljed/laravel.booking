@@ -13,15 +13,15 @@ use App\Booking\Services\BookingPriceCalculator;
 use App\Booking\Services\BookingService;
 use App\Booking\Services\BookingStatusManager;
 use App\Booking\Services\HostProfileService;
-use App\Enums\AuditAction;
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Properties\Models\Property;
-use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Nreljed\DashboardCore\Enums\AuditAction;
+use Nreljed\DashboardCore\Http\Controllers\Controller;
+use Nreljed\DashboardCore\Services\AuditService;
 
 class BookingController extends Controller
 {

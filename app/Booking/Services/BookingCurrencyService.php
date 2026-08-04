@@ -3,8 +3,8 @@
 namespace App\Booking\Services;
 
 use App\Properties\Models\Property;
-use App\Services\FormattingService;
-use App\Services\SettingsService;
+use Nreljed\DashboardCore\Services\FormattingService;
+use Nreljed\DashboardCore\Services\SettingsService;
 
 class BookingCurrencyService
 {

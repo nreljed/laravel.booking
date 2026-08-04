@@ -1,4 +1,4 @@
-import { Repeater } from "@/Components/ui/repeater";
+import { Repeater } from "@/Components/shared/repeater";
 import { useRepeaterConfig } from "@/hooks/use-repeater-config";
 import { Building2 } from "lucide-react";
 
@@ -19,7 +19,7 @@ export function UnitsSection({ data, onChange, loading }: BookingSectionProps) {
           <h2 className="text-lg font-semibold">Bookable Units</h2>
           <p className="text-sm text-muted-foreground">
             Set up rooms, suites, or dorms within this property for per-unit booking. When units are
-            defined, guests must select a specific unit — the entire property is no longer bookable
+            defined, guests must select a specific unit â€” the entire property is no longer bookable
             as one. Leave empty for standard whole-property booking.
           </p>
         </div>

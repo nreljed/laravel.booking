@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react"
-import { Section, SectionField } from "@/Components/section"
+import { Section, SectionField } from "@/Components/shared/section"
 import { GalleryUploader } from "@/Components/shared/gallery-uploader"
 import type { GalleryImage, UploadResult } from "@/Components/shared/gallery-uploader"
 import { Image } from "lucide-react"
@@ -71,7 +71,7 @@ export function MediaSection({ data, onChange, errors, loading, onSubmit, option
             const result = JSON.parse(xhr.responseText) as UploadResult
             resolve(result)
           } catch {
-            resolve({})
+            resolve({ url: "", path: "" })
           }
         } else {
           reject(new Error("Upload failed"))
