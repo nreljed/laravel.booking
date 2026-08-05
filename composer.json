@@ -97,7 +97,10 @@
         {
             "type": "path",
             "url": "../../laravel/app/packages/dashboard-core",
-            "canonical": true
+            "canonical": true,
+            "options": {
+                "symlink": false
+            }
         }
     ]
 }
