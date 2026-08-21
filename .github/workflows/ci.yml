@@ -18,6 +18,9 @@ permissions:
 jobs:
   validate:
     runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v5
 
@@ -59,54 +62,43 @@ jobs:
           restore-keys: npm-${{ runner.os }}-
 
       - name: Create .env + SQLite database
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: |
           cp .env.example .env
           touch database/database.sqlite
 
       - name: Install Composer dependencies
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: composer install --prefer-dist --no-interaction --no-scripts
 
       - name: Generate application key + migrate
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: php artisan key:generate && php artisan migrate --force
 
       - name: Install npm dependencies
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: npm ci --legacy-peer-deps
 
       - name: ESLint
         if: ${{ !inputs.skip-npm-tests }}
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: npm run lint
 
       - name: TypeScript check
         if: ${{ !inputs.skip-npm-tests }}
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: npm run typecheck
 
       - name: Prettier check
         if: ${{ !inputs.skip-npm-tests }}
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: npm run format:check
 
       - name: Frontend tests
         if: ${{ !inputs.skip-npm-tests }}
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: npm run test
 
       - name: Build frontend assets
         if: ${{ !inputs.skip-npm-tests }}
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: npm run build
 
       - name: PHP tests
         if: ${{ !inputs.skip-php-tests }}
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: php artisan test --compact
 
       - name: Laravel Pint
         if: ${{ !inputs.skip-php-tests }}
-        shell: "C:\\Program Files\\Git\\bin\\bash.exe --login -eo pipefail {0}"
         run: vendor/bin/pint --test
