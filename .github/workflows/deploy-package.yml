@@ -14,7 +14,7 @@ on:
 
 jobs:
   package:
-    runs-on: windows-latest
+    runs-on: self-hosted
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -33,7 +33,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: "24"
 
       - name: Checkout dashboard-core package
         id: core

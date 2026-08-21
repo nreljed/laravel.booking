@@ -6,9 +6,13 @@ use App\Properties\Models\Property;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Nreljed\DashboardCore\Concerns\InteractsWithFeatures;
+use Nreljed\DashboardCore\Contracts\FeatureProvider;
 
-class PropertiesServiceProvider extends ServiceProvider
+class PropertiesServiceProvider extends ServiceProvider implements FeatureProvider
 {
+    use InteractsWithFeatures;
+
     public function register(): void
     {
         //
@@ -24,14 +28,26 @@ class PropertiesServiceProvider extends ServiceProvider
             ->group(fn () => require __DIR__.'/Routes/web.php');
     }
 
-    // ─── Static helpers ───
+    // ─── FeatureProvider required methods ───
 
-    public static function getNavGroupLabel(): ?string
+    public function name(): string
+    {
+        return 'Properties';
+    }
+
+    public function slug(): string
+    {
+        return 'properties';
+    }
+
+    // ─── Helpers ───
+
+    public function getNavGroupLabel(): ?string
     {
         return 'Manage Property';
     }
 
-    public static function getNavItems(): array
+    public function getNavItems(): array
     {
         return [
             'title' => 'Properties',
@@ -53,7 +69,7 @@ class PropertiesServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getMetaFormattingConfig(): array
+    public function getMetaFormattingConfig(): array
     {
         return [
             'price_fields' => ['price'],
@@ -61,7 +77,7 @@ class PropertiesServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getDashboardData(): array
+    public function getDashboardData(): array
     {
         if (! Schema::hasTable('properties')) {
             return [];
@@ -77,17 +93,17 @@ class PropertiesServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getSharedData(): array
+    public function getSharedData(): array
     {
         return [];
     }
 
-    public static function getSettingsRoute(): ?string
+    public function getSettingsRoute(): ?string
     {
         return route('dashboard.admin.settings', [], false);
     }
 
-    public static function permissions(): array
+    public function permissions(): array
     {
         return [
             ['slug' => 'properties.view', 'name' => 'View Properties', 'description' => 'View property listings.'],
@@ -97,12 +113,12 @@ class PropertiesServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function hasSettings(): bool
+    public function hasSettings(): bool
     {
         return true;
     }
 
-    public static function getRepeaterConfig(): array
+    public function getRepeaterConfig(): array
     {
         return [
             'additional_details' => [
@@ -134,7 +150,7 @@ class PropertiesServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getGalleryConfig(): array
+    public function getGalleryConfig(): array
     {
         return [
             'gallery' => [
@@ -151,7 +167,7 @@ class PropertiesServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getProfileFieldsConfig(): array
+    public function getProfileFieldsConfig(): array
     {
         return [
             'phone_numbers' => [
@@ -213,12 +229,12 @@ class PropertiesServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getEmailTemplates(): array
+    public function getEmailTemplates(): array
     {
         return [];
     }
 
-    public static function getNotificationTypes(): array
+    public function getNotificationTypes(): array
     {
         return [
             'property.created' => [
@@ -246,7 +262,7 @@ class PropertiesServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function onUserDelete(int $userId): void
+    public function onUserDelete(int $userId): void
     {
         //
     }

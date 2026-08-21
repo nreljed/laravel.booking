@@ -26,9 +26,12 @@ trait BootsFeatures
 
         // Collect permission slugs from all registered feature providers
         $featureSlugs = [];
-        foreach ($this->featureProviders as $provider) {
-            foreach ($provider::permissions() as $perm) {
-                $featureSlugs[] = $perm['slug'];
+        foreach ($this->featureProviders as $providerClass) {
+            $provider = app()->getProvider($providerClass);
+            if ($provider && method_exists($provider, 'permissions')) {
+                foreach ($provider->permissions() as $perm) {
+                    $featureSlugs[] = $perm['slug'];
+                }
             }
         }
 

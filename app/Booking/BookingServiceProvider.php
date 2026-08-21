@@ -16,11 +16,15 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Nreljed\DashboardCore\Concerns\InteractsWithFeatures;
+use Nreljed\DashboardCore\Contracts\FeatureProvider;
 use Nreljed\DashboardCore\Notifications\AppNotification;
 use Nreljed\DashboardCore\Services\NotificationService;
 
-class BookingServiceProvider extends ServiceProvider
+class BookingServiceProvider extends ServiceProvider implements FeatureProvider
 {
+    use InteractsWithFeatures;
+
     public function register(): void
     {
         //
@@ -53,14 +57,26 @@ class BookingServiceProvider extends ServiceProvider
         Event::listen('booking.saved', fn (int $bookingId) => self::onBookingSaved($bookingId));
     }
 
-    // ─── Static helpers consumed by HandleInertiaRequests & others ───
+    // ─── FeatureProvider required methods ───
 
-    public static function getNavGroupLabel(): ?string
+    public function name(): string
+    {
+        return 'Bookings';
+    }
+
+    public function slug(): string
+    {
+        return 'bookings';
+    }
+
+    // ─── Helpers consumed by HandleInertiaRequests & others ───
+
+    public function getNavGroupLabel(): ?string
     {
         return 'Manage Booking';
     }
 
-    public static function getNavItems(): array
+    public function getNavItems(): array
     {
         return [
             'title' => 'Bookings',
@@ -79,7 +95,7 @@ class BookingServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getMetaFormattingConfig(): array
+    public function getMetaFormattingConfig(): array
     {
         return [
             'price_fields' => ['total_amount'],
@@ -87,7 +103,7 @@ class BookingServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getDashboardData(): array
+    public function getDashboardData(): array
     {
         if (! Schema::hasTable('bookings')) {
             return [];
@@ -102,17 +118,17 @@ class BookingServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getSharedData(): array
+    public function getSharedData(): array
     {
         return [];
     }
 
-    public static function getSettingsRoute(): ?string
+    public function getSettingsRoute(): ?string
     {
         return route('dashboard.admin.settings', [], false);
     }
 
-    public static function permissions(): array
+    public function permissions(): array
     {
         return [
             ['slug' => 'bookings.view', 'name' => 'View Bookings', 'description' => 'View booking records.'],
@@ -122,12 +138,12 @@ class BookingServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function hasSettings(): bool
+    public function hasSettings(): bool
     {
         return true;
     }
 
-    public static function getRepeaterConfig(): array
+    public function getRepeaterConfig(): array
     {
         return [
             'house_rules' => [
@@ -214,7 +230,7 @@ class BookingServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getGalleryConfig(): array
+    public function getGalleryConfig(): array
     {
         return [
             'damage_photos' => [
@@ -231,12 +247,12 @@ class BookingServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getProfileFieldsConfig(): array
+    public function getProfileFieldsConfig(): array
     {
         return [];
     }
 
-    public static function getEmailTemplates(): array
+    public function getEmailTemplates(): array
     {
         return [
             'booking-confirmation' => [
@@ -297,7 +313,7 @@ class BookingServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function getNotificationTypes(): array
+    public function getNotificationTypes(): array
     {
         return [
             'booking.created' => [
@@ -335,7 +351,7 @@ class BookingServiceProvider extends ServiceProvider
         ];
     }
 
-    public static function onUserDelete(int $userId): void
+    public function onUserDelete(int $userId): void
     {
         Booking::where('user_id', $userId)->each(function (Booking $booking) {
             $booking->delete();

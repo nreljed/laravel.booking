@@ -1,5 +1,68 @@
 # CI Pipeline
 
+## Local Testing with `act`
+
+[act](https://github.com/nektos/act) runs GitHub Actions locally using Docker. Installed globally via `winget`, version 0.2.89.
+
+### Prerequisites
+
+- Docker Desktop running (check: `docker info` shows Server Version)
+- `.secrets` file in project root (contains `PACKAGE_TOKEN`)
+- `.actrc` in `C:\Users\nrelj\.actrc` (sets ubuntu:22.04 image, `--reuse`, `--bind`)
+
+### Running from Any Terminal
+
+Works from VS Code terminal, PowerShell, Git Bash, or PhpStorm — just navigate to the project root first:
+
+```powershell
+cd "C:\Users\nrelj\Local Sites\booking-laravel\app"
+```
+
+### Commands
+
+```powershell
+# List all detected workflows
+act -l
+
+# Run PR validation (quickest test — ~2-3 min)
+act pull_request -W ".github/workflows/pr.yml" --secret-file .secrets
+
+# Run develop CI
+act push -W ".github/workflows/develop-ci.yml" --secret-file .secrets
+
+# Run full production deploy pipeline (all 4 stages)
+act push -W ".github/workflows/deploy.yml" --secret-file .secrets
+
+# Dry-run (validate without executing, ~30 sec)
+act pull_request -W ".github/workflows/pr.yml" --secret-file .secrets -n
+
+# Verbose output (debug step failures)
+act push -W ".github/workflows/develop-ci.yml" --secret-file .secrets -v
+```
+
+### Detected Workflows
+
+| Workflow | File | Trigger | Notes |
+|----------|------|---------|-------|
+| CI Validation | `ci.yml` | `workflow_call` | Called by other workflows |
+| Develop CI | `develop-ci.yml` | `push` | Validates on push to develop |
+| Pull Request Checks | `pr.yml` | `pull_request` | PR validation |
+| Manual Deploy Check | `cron-deploy.yml` | `workflow_dispatch` | Manual trigger |
+| Build Deploy Package | `deploy-package.yml` | `workflow_call` | Called by deploy.yml |
+| Deploy to Production | `deploy.yml` | `push` | 4-stage pipeline (validate → package → release → push-deploy) |
+
+> **Note:** `workflow_call` workflows (`ci.yml`, `deploy-package.yml`) can't be triggered directly with `act`. Use `pr.yml`, `develop-ci.yml`, or `deploy.yml` instead.
+
+### Performance
+
+| Scenario | Time | Notes |
+|----------|------|-------|
+| First run | 5-10 min | Downloads ubuntu:22.04, installs PHP/Node |
+| Normal run | 2-3 min | Uses cached containers via `--reuse` |
+| Dry-run | ~30 sec | Validation only, no execution |
+
+---
+
 ## GitHub Actions — Validation Workflow
 
 `.github/workflows/ci-validation.yml` runs on every push and PR:

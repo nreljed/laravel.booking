@@ -121,6 +121,20 @@ gh workflow run deploy.yml
 gh run list --workflow=deploy.yml
 ```
 
+## Local Workflow Testing (`act`)
+
+For testing GitHub Actions locally, see `docs/workflow/ci.md` — "Local Testing with `act`" section. Quick start:
+
+```powershell
+cd "C:\Users\nrelj\Local Sites\booking-laravel\app"
+act -l                                          # List workflows
+act pull_request -W ".github/workflows/pr.yml" --secret-file .secrets  # Run PR checks
+```
+
+Requires Docker Desktop running + `.secrets` file in project root.
+
+---
+
 ## Forking Checklist
 
 When forking this project for a new deployment:
