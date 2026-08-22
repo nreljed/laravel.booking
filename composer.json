@@ -12,13 +12,14 @@
         "laravel/framework": "^13.8",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
-        "minishlink/web-push": "^10.1",
-        "nreljed/dashboard-core": "@dev",
+        "minishlink/web-push": "^11.0",
+        "nreljed/dashboard-core": "^0.1",
         "stripe/stripe-php": "^20.0",
         "barryvdh/laravel-dompdf": "^3.1",
         "tightenco/ziggy": "^2.6"
     },
     "require-dev": {
+        "brianium/paratest": "^7.0",
         "fakerphp/faker": "^1.23",
         "laravel/breeze": "^2.4",
         "laravel/pail": "^1.2.5",
@@ -95,12 +96,8 @@
     "prefer-stable": true,
     "repositories": [
         {
-            "type": "path",
-            "url": "../../laravel/app/packages/dashboard-core",
-            "canonical": true,
-            "options": {
-                "symlink": false
-            }
+            "type": "vcs",
+            "url": "https://github.com/nreljed/dashboard-core.git"
         }
     ]
 }

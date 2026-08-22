@@ -25,7 +25,7 @@ export default function Welcome() {
             <div className="mt-10 flex items-center justify-center gap-4">
               {props.auth?.user ? (
                 <Link
-                  href={route("dashboard")}
+                  href={route("dashboard.index")}
                   className="rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   Go to Dashboard

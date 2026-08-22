@@ -7,7 +7,7 @@ import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/Components/ui/tooltip";
 import { Toaster, toast } from "@/Components/ui/toast";
-import { registerDashboard } from "@dashboard/dashboard";
+import { registerCoreTemplates } from "@dashboard/dashboard";
 
 import "@/Components/ui/sidebar";
 
@@ -50,7 +50,7 @@ const bookingPages = import.meta.glob("../../app/Booking/Resources/js/Pages/**/*
 >;
 
 const pageMap: PageMap = {
-  ...registerDashboard(),
+  ...registerCoreTemplates(),
 };
 
 for (const [path, importFn] of Object.entries(pages)) {

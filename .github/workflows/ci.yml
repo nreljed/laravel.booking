@@ -38,21 +38,12 @@ jobs:
           node-version: "24"
           cache: "npm"
 
-      - name: Checkout dashboard-core package
-        id: core
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path "..\..\laravel" -Force | Out-Null
-          git clone --depth 1 --branch beta "https://x-access-token:${{ secrets.PACKAGE_TOKEN }}@github.com/nreljed/laravel.git" "..\..\laravel\app"
-          $sha = git -C "..\..\laravel\app" rev-parse HEAD
-          echo "sha=$sha" >> $env:GITHUB_OUTPUT
-
       - name: Cache Composer dependencies
         uses: actions/cache@v5
         with:
           path: vendor
-          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}-${{ steps.core.outputs.sha }}
-          restore-keys: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}-
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
 
       - name: Cache npm dependencies
         uses: actions/cache@v5
@@ -67,6 +58,8 @@ jobs:
           touch database/database.sqlite
 
       - name: Install Composer dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GH_TOKEN }}"}}'
         run: composer install --prefer-dist --no-interaction --no-scripts
 
       - name: Generate application key + migrate
