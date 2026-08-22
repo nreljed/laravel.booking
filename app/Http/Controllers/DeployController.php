@@ -157,6 +157,22 @@ class DeployController extends Controller
             $output[] = 'Restored .env';
         }
 
+        // Ensure required runtime directories exist — zips never ship empty dirs,
+        // and Laravel fatals at boot when bootstrap/cache is missing (PackageManifest).
+        foreach ([
+            'bootstrap/cache',
+            'storage/framework/cache/data',
+            'storage/framework/views',
+            'storage/framework/sessions',
+            'storage/logs',
+            'storage/app/public',
+        ] as $dir) {
+            if (! is_dir($path = base_path($dir))) {
+                File::makeDirectory($path, 0775, true);
+                $output[] = "Created $dir";
+            }
+        }
+
         // Remove stale files — files on disk that are NOT in the zip.
         $staleDirs = ['app', 'config', 'database', 'public', 'resources', 'routes', 'bootstrap'];
         $protected = ['bootstrap/cache/'];
