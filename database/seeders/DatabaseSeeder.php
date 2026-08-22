@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
 
         // Admin — full access
         User::factory()->create([
-            'name' => 'nstudio',
+            'name' => 'nstudio webdesign',
             'email' => 'nstudio.webdesign@gmail.com',
             'username' => 'nstudio',
             'password' => $password,

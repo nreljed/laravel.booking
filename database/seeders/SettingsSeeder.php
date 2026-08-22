@@ -12,7 +12,7 @@ class SettingsSeeder extends Seeder
         $settings = [
             // General
             ['key' => 'app_name', 'value' => 'Booking App', 'group' => 'general'],
-            ['key' => 'app_description', 'value' => 'SaaS application for cost management', 'group' => 'general'],
+            ['key' => 'app_description', 'value' => 'Booking & property management platform', 'group' => 'general'],
             ['key' => 'app_url', 'value' => config('app.url'), 'group' => 'general'],
             ['key' => 'app_logo', 'value' => '', 'group' => 'general'],
             ['key' => 'timezone', 'value' => 'UTC', 'group' => 'general'],
@@ -31,10 +31,14 @@ class SettingsSeeder extends Seeder
             ['key' => 'session_lifetime', 'value' => '120', 'group' => 'security'],
             ['key' => 'max_login_attempts', 'value' => '5', 'group' => 'security'],
 
-            // Email
-            ['key' => 'mail_driver', 'value' => config('mail.default', 'log'), 'group' => 'email'],
-            ['key' => 'mail_from_address', 'value' => 'noreply@costbreaker360.com', 'group' => 'email'],
-            ['key' => 'mail_from_name', 'value' => 'Booking App', 'group' => 'email'],
+            // Email — single JSON row, core EmailSettingsService shape.
+            // smtp_* intentionally empty → MailerConfigurator falls back to .env
+            // until SMTP is configured via the admin UI.
+            ['key' => 'email_settings', 'value' => json_encode([
+                'mailer' => 'smtp',
+                'from_email' => 'booking.contact@tunispromo.tn',
+                'from_name' => 'Booking App',
+            ]), 'group' => 'email'],
 
             // Maintenance
             ['key' => 'maintenance_mode', 'value' => '0', 'group' => 'maintenance'],
