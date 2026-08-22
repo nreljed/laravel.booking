@@ -79,18 +79,20 @@ class BookingServiceProvider extends ServiceProvider implements FeatureProvider
     public function getNavItems(): array
     {
         return [
-            'title' => 'Bookings',
-            'groupLabel' => 'Manage Booking',
-            'url' => route('dashboard.bookings.dashboard', [], false),
-            'icon' => 'Calendar',
-            'permission' => 'bookings.view',
-            'module_slug' => 'bookings',
-            'showModeBadge' => true,
-            'items' => [
-                ['title' => 'Dashboard', 'url' => route('dashboard.bookings.dashboard', [], false)],
-                ['title' => 'All Bookings', 'url' => route('dashboard.bookings.index', [], false)],
-                ['title' => 'New Booking', 'url' => route('dashboard.bookings.create', [], false)],
-                ['title' => 'Calendar', 'url' => route('dashboard.bookings.calendar', [], false)],
+            [
+                'title' => 'Bookings',
+                'groupLabel' => 'Manage Booking',
+                'url' => route('dashboard.bookings.dashboard', [], false),
+                'icon' => 'Calendar',
+                'permission' => 'bookings.view',
+                'module_slug' => 'bookings',
+                'showModeBadge' => true,
+                'items' => [
+                    ['title' => 'Dashboard', 'url' => route('dashboard.bookings.dashboard', [], false)],
+                    ['title' => 'All Bookings', 'url' => route('dashboard.bookings.index', [], false)],
+                    ['title' => 'New Booking', 'url' => route('dashboard.bookings.create', [], false)],
+                    ['title' => 'Calendar', 'url' => route('dashboard.bookings.calendar', [], false)],
+                ],
             ],
         ];
     }
@@ -125,7 +127,7 @@ class BookingServiceProvider extends ServiceProvider implements FeatureProvider
 
     public function getSettingsRoute(): ?string
     {
-        return route('dashboard.admin.settings', [], false);
+        return 'dashboard.bookings.settings.index';
     }
 
     public function permissions(): array

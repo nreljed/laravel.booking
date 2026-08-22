@@ -232,6 +232,7 @@ class PropertyController extends Controller
 
         $data = [
             'name' => $request->input('title'),
+            'code' => $request->input('code') ?: null,
             'status' => $status,
             'published_at' => $publishedAt,
             'description' => $meta['description'] ?? null,

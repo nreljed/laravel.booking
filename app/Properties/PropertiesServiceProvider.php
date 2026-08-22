@@ -50,21 +50,23 @@ class PropertiesServiceProvider extends ServiceProvider implements FeatureProvid
     public function getNavItems(): array
     {
         return [
-            'title' => 'Properties',
-            'groupLabel' => 'Manage Property',
-            'url' => route('dashboard.properties.dashboard', [], false),
-            'icon' => 'Building2',
-            'permission' => 'properties.view',
-            'module_slug' => 'properties',
-            'showModeBadge' => false,
-            'items' => [
-                ['title' => 'Dashboard', 'url' => route('dashboard.properties.dashboard', [], false)],
-                ['title' => 'All Properties', 'url' => route('dashboard.properties.index', [], false)],
-                ['title' => 'Add Property', 'url' => route('dashboard.properties.create', [], false)],
-                ['title' => 'Types', 'url' => route('dashboard.properties.terms.types.index', [], false)],
-                ['title' => 'Cities', 'url' => route('dashboard.properties.terms.cities.index', [], false)],
-                ['title' => 'Features', 'url' => route('dashboard.properties.terms.features.index', [], false)],
-                ['title' => 'Statuses', 'url' => route('dashboard.properties.terms.statuses.index', [], false)],
+            [
+                'title' => 'Properties',
+                'groupLabel' => 'Manage Property',
+                'url' => route('dashboard.properties.dashboard', [], false),
+                'icon' => 'Building2',
+                'permission' => 'properties.view',
+                'module_slug' => 'properties',
+                'showModeBadge' => false,
+                'items' => [
+                    ['title' => 'Dashboard', 'url' => route('dashboard.properties.dashboard', [], false)],
+                    ['title' => 'All Properties', 'url' => route('dashboard.properties.index', [], false)],
+                    ['title' => 'Add Property', 'url' => route('dashboard.properties.create', [], false)],
+                    ['title' => 'Types', 'url' => route('dashboard.properties.terms.types.index', [], false)],
+                    ['title' => 'Cities', 'url' => route('dashboard.properties.terms.cities.index', [], false)],
+                    ['title' => 'Features', 'url' => route('dashboard.properties.terms.features.index', [], false)],
+                    ['title' => 'Statuses', 'url' => route('dashboard.properties.terms.statuses.index', [], false)],
+                ],
             ],
         ];
     }
@@ -100,7 +102,7 @@ class PropertiesServiceProvider extends ServiceProvider implements FeatureProvid
 
     public function getSettingsRoute(): ?string
     {
-        return route('dashboard.admin.settings', [], false);
+        return null;
     }
 
     public function permissions(): array
@@ -115,7 +117,7 @@ class PropertiesServiceProvider extends ServiceProvider implements FeatureProvid
 
     public function hasSettings(): bool
     {
-        return true;
+        return false;
     }
 
     public function getRepeaterConfig(): array

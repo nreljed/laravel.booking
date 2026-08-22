@@ -2,6 +2,7 @@
 /vendor
 /.env
 /.env.production
+/.secrets
 /storage/framework/cache/data/*
 /storage/framework/sessions/*
 /storage/framework/views/*
@@ -39,3 +40,5 @@ composer.phar
 /*-mobile.png
 /store-1.png
 *.zip
+
+/storage/debug/

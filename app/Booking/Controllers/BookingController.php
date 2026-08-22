@@ -41,7 +41,7 @@ class BookingController extends Controller
         $bookings = $this->bookingService->search($filters);
         $stats = $this->bookingService->getStats();
 
-        $properties = Property::select('id', 'name')->get();
+        $properties = Property::select('id', 'name', 'code')->orderBy('name')->get();
 
         return Inertia::render('Modules/Bookings/Index', [
             'bookings' => $bookings->items(),
@@ -74,7 +74,7 @@ class BookingController extends Controller
     {
         $this->authorize('create', Booking::class);
 
-        $properties = Property::select('id', 'name')->where('status', 'published')->get();
+        $properties = Property::select('id', 'name', 'code')->where('status', 'published')->orderBy('name')->get();
 
         return Inertia::render('Modules/Bookings/Form', [
             'booking' => null,
@@ -151,7 +151,7 @@ class BookingController extends Controller
     {
         $this->authorize('update', $booking);
 
-        $properties = Property::select('id', 'name')->where('status', 'published')->get();
+        $properties = Property::select('id', 'name', 'code')->where('status', 'published')->orderBy('name')->get();
 
         return Inertia::render('Modules/Bookings/Form', [
             'booking' => $booking->load('property'),
@@ -268,7 +268,7 @@ class BookingController extends Controller
             $data = [];
         }
 
-        $properties = Property::select('id', 'name')->get();
+        $properties = Property::select('id', 'name', 'code')->orderBy('name')->get();
 
         return Inertia::render('Modules/Bookings/Calendar', [
             'calendar' => $data,

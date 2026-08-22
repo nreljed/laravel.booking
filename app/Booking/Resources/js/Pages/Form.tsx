@@ -25,6 +25,7 @@ import { ArrowLeft, Loader2, Building2, Calendar as CalendarIcon, User, Mail, Ph
 interface Property {
   id: number;
   name: string;
+  code?: string | null;
 }
 
 interface Booking {
@@ -133,7 +134,12 @@ export default function BookingForm({ booking, properties }: BookingFormProps) {
                     <SelectContent>
                       {properties.map((p) => (
                         <SelectItem key={p.id} value={p.id.toString()}>
-                          {p.name}
+                          <span className="flex items-center gap-2">
+                            {p.code && (
+                              <span className="font-mono text-xs text-muted-foreground">{p.code}</span>
+                            )}
+                            <span>{p.name}</span>
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>

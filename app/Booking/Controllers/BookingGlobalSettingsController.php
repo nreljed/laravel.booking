@@ -2,26 +2,30 @@
 
 namespace App\Booking\Controllers;
 
+use App\Booking\Services\BookingSettingsService;
 use App\Properties\Models\Property;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Nreljed\DashboardCore\Http\Controllers\Controller;
-use Nreljed\DashboardCore\Services\SettingsService;
 
 class BookingGlobalSettingsController extends Controller
 {
-    private const OPTION_KEY = 'booking_options';
+    public function __construct(private readonly BookingSettingsService $settings) {}
 
     public function isModuleEnabled(): bool
     {
         return true;
     }
 
+    /**
+     * All booking settings merged against defaults (typed).
+     *
+     * @return array<string, mixed>
+     */
     public function getOptions(): array
     {
-        $options = SettingsService::getGroup('booking');
-
-        $merged = array_merge(self::BOOKING_DEFAULTS, $options);
+        $merged = $this->settings->all();
 
         $tz = config('app.timezone', 'UTC');
         $now = new \DateTime('now', new \DateTimeZone($tz));
@@ -39,15 +43,7 @@ class BookingGlobalSettingsController extends Controller
 
     public function getOption(string $key, mixed $default = null): mixed
     {
-        return SettingsService::get('booking_'.$key, $default);
-    }
-
-    public function updateFromRequest(array $data): array
-    {
-        $sanitized = $this->sanitizeBookingSettings($data);
-        SettingsService::setMany($sanitized);
-
-        return $this->getOptions();
+        return $this->settings->get($key, $default);
     }
 
     public function getCurrency(?int $propertyId = null): string
@@ -58,96 +54,40 @@ class BookingGlobalSettingsController extends Controller
                 return strtoupper($property->getMeta()['currency']);
             }
         }
-        $currency = SettingsService::get('property_default_currency');
+        $currency = $this->settings->get('default_currency');
         if (! empty($currency)) {
-            return $currency;
+            return strtoupper((string) $currency);
         }
 
         return 'USD';
     }
 
-    protected const BOOKING_DEFAULTS = [
-        'enable_auto_checkout' => true,
-        'enable_no_show_auto_cancel' => true,
-        'enable_guest_portal' => true,
-        'enable_reviews' => true,
-        'enable_damage_photos' => true,
-        'grace_period_hours' => 24,
-        'grace_period_advance_days' => 7,
-        'allow_guest_cancellation_statuses' => ['pending', 'confirmed'],
-        'allow_guest_modification_statuses' => ['pending', 'confirmed', 'checked_in'],
-        'email_enable_confirmation' => true,
-        'email_enable_pre_arrival' => true,
-        'email_enable_checkin_instructions' => true,
-        'email_enable_checkout_reminder' => true,
-        'email_enable_post_stay' => true,
-        'email_enable_cancellation' => true,
-        'email_enable_modification_request' => true,
-        'default_currency' => 'USD',
-        'default_cancellation_policy' => 'flexible',
-        'default_check_in_time' => '15:00',
-        'default_check_out_time' => '11:00',
-    ];
-
-    protected function sanitizeBookingSettings(array $data): array
+    public function index(): mixed
     {
-        $allowed = array_keys(self::BOOKING_DEFAULTS);
-        $sanitized = [];
-        foreach ($allowed as $key) {
-            if (array_key_exists($key, $data)) {
-                $value = $data[$key];
-                if (is_bool(self::BOOKING_DEFAULTS[$key])) {
-                    $sanitized[$key] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
-                } elseif (is_int(self::BOOKING_DEFAULTS[$key])) {
-                    $sanitized[$key] = (int) $value;
-                } elseif (is_array(self::BOOKING_DEFAULTS[$key])) {
-                    $sanitized[$key] = is_array($value) ? $value : [];
-                } else {
-                    $sanitized[$key] = strip_tags((string) $value);
-                }
-            }
-        }
-
-        return $sanitized;
-    }
-
-    public function edit(): mixed
-    {
-        if (! $this->isModuleEnabled()) {
-            return redirect('/dashboard/settings');
-        }
+        abort_unless($this->isModuleEnabled(), 404);
 
         if (! auth()->user()->can('manage_options')) {
-            return redirect('/dashboard');
+            abort(403);
         }
 
-        $settings = $this->getOptions();
-
-        return Inertia::render('Modules/Bookings/Settings/BookingGlobalSettings', [
-            'settings' => $settings,
-            'page' => [
-                'title' => 'Booking Settings',
-                'breadcrumb' => [
-                    ['label' => 'Dashboard', 'href' => '/dashboard'],
-                    ['label' => 'Settings', 'href' => '/dashboard/settings'],
-                    ['label' => 'Booking Settings', 'href' => null],
-                ],
-            ],
+        return Inertia::render('modules/bookings/settings/index', [
+            'settings' => $this->getOptions(),
         ]);
     }
 
     public function update(Request $request): mixed
     {
         if (! auth()->user()->can('manage_options')) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            abort(403);
         }
 
-        $data = $request->all();
-        $updated = $this->updateFromRequest($data);
+        try {
+            $this->settings->update($request->all());
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        }
 
-        return Inertia::render('Modules/Bookings/Settings/BookingGlobalSettings', [
-            'settings' => $updated,
-            'status' => 'Booking settings saved successfully!',
-        ]);
+        return redirect()->route('dashboard.bookings.settings.index')
+            ->with('status', 'Booking settings saved.');
     }
 }

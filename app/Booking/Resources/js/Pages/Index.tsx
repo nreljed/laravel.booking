@@ -94,7 +94,7 @@ interface BookingRecord {
   status_label?: string;
   property_thumbnail?: string | null;
   property_title?: string;
-  property?: { id: number; name: string } | null;
+  property?: { id: number; name: string; code?: string | null } | null;
   guest_name?: string;
   guest_email?: string;
   guest_phone?: string;
@@ -463,12 +463,19 @@ export default function BookingsIndex({
         accessorKey: "property_title",
         header: ({ column }: any) => <DataTableColumnHeader column={column} title="Property" />,
         cell: ({ row }: any) => (
-          <span
-            className="text-foreground truncate max-w-[200px] block"
-            title={row.original.property_title || row.original.property?.name}
-          >
-            {row.original.property_title || row.original.property?.name || "-"}
-          </span>
+          <div className="truncate max-w-[200px]">
+            <span
+              className="text-foreground block"
+              title={row.original.property_title || row.original.property?.name}
+            >
+              {row.original.property_title || row.original.property?.name || "-"}
+            </span>
+            {row.original.property?.code && (
+              <span className="font-mono text-xs text-muted-foreground">
+                {row.original.property.code}
+              </span>
+            )}
+          </div>
         ),
       },
       {

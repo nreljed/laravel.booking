@@ -19,6 +19,7 @@ class UpdatePropertyRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
+            'code' => ['nullable', 'string', 'max:20', Rule::unique('properties', 'code')->ignore($this->route('property'))],
             'status' => 'nullable|string|in:draft,published,archived',
             'meta' => 'nullable|array',
             'meta.description' => 'nullable|string',

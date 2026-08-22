@@ -24,7 +24,7 @@ class Property extends Model
     protected $table = 'properties';
 
     protected $fillable = [
-        'user_id', 'name', 'slug', 'description', 'address', 'city', 'state',
+        'user_id', 'name', 'slug', 'code', 'description', 'address', 'city', 'state',
         'zip', 'country', 'latitude', 'longitude',
         'price', 'currency', 'surface', 'surface_unit',
         'status', 'published_at', 'featured', 'metadata', 'booking_settings',
@@ -55,6 +55,14 @@ class Property extends Model
         static::creating(function (Property $property) {
             if (! $property->slug) {
                 $property->slug = Str::slug($property->name).'-'.Str::random(6);
+            }
+        });
+
+        static::created(function (Property $property) {
+            if (empty($property->code)) {
+                $property->forceFill([
+                    'code' => 'PR-'.str_pad((string) $property->id, 4, '0', STR_PAD_LEFT),
+                ])->saveQuietly();
             }
         });
     }

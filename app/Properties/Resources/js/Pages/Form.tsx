@@ -21,6 +21,7 @@ interface StatusTerm {
 
 interface PropertyFormData {
   title: string
+  code: string
   status: string
   publish_date: string | null
   _wpnonce: string
@@ -118,6 +119,7 @@ export default function PropertiesForm() {
 
   const { data, setData, post, processing, errors } = useForm<PropertyFormData>({
     title: propertyData.title || "",
+    code: (propertyData as Record<string, string>).code || "",
     status: propertyData.status || defaultStatus,
     publish_date: propertyData.publish_date || null,
     _wpnonce: nonce,

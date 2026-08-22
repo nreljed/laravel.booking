@@ -26,6 +26,7 @@ interface BasicInfoOptions {
 
 interface BasicInfoSectionData {
   title?: string
+  code?: string
   status?: string
   meta?: {
     description?: string
@@ -93,6 +94,10 @@ export function BasicInfoSection({ data, onChange, errors, loading, onSubmit, op
     >
       <SectionField label="Property Title" htmlFor="title" error={errors?.title} required className="md:col-span-2">
         <Input id="title" value={data.title || ""} onChange={(e) => onChange("title", e.target.value)} placeholder="Enter property title" disabled={loading} required />
+      </SectionField>
+
+      <SectionField label="Property Code" htmlFor="code" error={errors?.code} className="md:col-span-2">
+        <Input id="code" value={data.code || ""} onChange={(e) => onChange("code", e.target.value)} placeholder="Auto-generated if left blank (e.g. PR-0001)" maxLength={20} disabled={loading} className="font-mono uppercase" />
       </SectionField>
 
       <SectionField label="Description" htmlFor="description" error={errors?.description} required className="md:col-span-2">

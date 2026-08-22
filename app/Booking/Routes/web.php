@@ -46,8 +46,8 @@ Route::post('/block-dates', [BookingController::class, 'blockDates'])->name('blo
 Route::post('/archive/{booking}', [BookingController::class, 'toggleArchive'])->name('archive');
 
 // ─── Global Booking Settings ───────────────────────────
-Route::get('/global-settings', [BookingGlobalSettingsController::class, 'edit'])->name('global-settings.edit');
-Route::put('/global-settings', [BookingGlobalSettingsController::class, 'update'])->name('global-settings.update');
+Route::get('/settings', [BookingGlobalSettingsController::class, 'index'])->name('settings.index');
+Route::put('/settings', [BookingGlobalSettingsController::class, 'update'])->name('settings.update');
 
 // ─── Demo ───────────────────────────────────────────────
 Route::get('/demo', [BookingDemoController::class, 'demo'])->name('demo');
