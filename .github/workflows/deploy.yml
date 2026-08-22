@@ -1,5 +1,14 @@
 name: Deploy to Production
 
+# All three jobs execute on win-runner-booking (single self-hosted machine,
+# jobs run sequentially). deploy.zip is handed off via a fixed local staging
+# dir instead of GitHub artifacts — artifact storage counts against the
+# account-wide quota and exhausted it (2026-08-22 deploy failure). Hosted
+# runners are billing-blocked account-wide, so release/push-deploy stay
+# self-hosted too.
+env:
+  DEPLOY_STAGING: C:/actions-runner-booking/_staging
+
 on:
   push:
     branches: [master]
@@ -18,64 +27,54 @@ jobs:
 
   release:
     needs: package
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Determine version
-        id: version
-        run: |
-          VER="${{ needs.package.outputs.version }}"
-          if [ -z "$VER" ]; then
-            VER="0.1.0"
-          fi
-          echo "version=$VER" >> $GITHUB_OUTPUT
-
       - name: Generate release notes
+        shell: pwsh
         run: |
-          npm install -g git-cliff
-          git-cliff --unreleased --strip header -o release-notes.md 2>/dev/null || echo "No changes for v${{ steps.version.outputs.version }}" > release-notes.md
-          git-cliff -o CHANGELOG.md 2>/dev/null || true
-
-      - name: Download deploy.zip artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: deploy-package
+          $gcUrl = "https://github.com/orhun/git-cliff/releases/download/v2.8.0/git-cliff-2.8.0-x86_64-pc-windows-msvc.zip"
+          $gcZip = "$env:TEMP\git-cliff-release.zip"
+          Invoke-WebRequest -Uri $gcUrl -OutFile $gcZip -ErrorAction Stop
+          Expand-Archive -Path $gcZip -DestinationPath "$env:TEMP\git-cliff-release" -Force
+          $gc = Get-ChildItem -Path "$env:TEMP\git-cliff-release" -Recurse -Filter "git-cliff.exe" | Select-Object -First 1 -ExpandProperty FullName
+          & $gc --unreleased --strip header -o release-notes.md 2>$null
+          if (-not (Test-Path release-notes.md) -or (Get-Item release-notes.md).Length -eq 0) {
+            Write-Output "No changes for this release" | Set-Content release-notes.md
+          }
+          & $gc -o CHANGELOG.md 2>$null
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-          tag_name: "v${{ steps.version.outputs.version }}"
-          name: "v${{ steps.version.outputs.version }}"
-          body_path: release-notes.md
-          files: deploy.zip
-          fail_on_unmatched_files: true
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          VER="v${{ needs.package.outputs.version }}"
+          gh release create "$VER" "$DEPLOY_STAGING/deploy.zip" \
+            --repo nreljed/laravel.booking \
+            --title "$VER" \
+            --notes-file release-notes.md
 
   push-deploy:
     needs: [package, release]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Determine version
-        id: version
-        run: echo "version=${{ needs.package.outputs.version }}" >> $GITHUB_OUTPUT
-
-      - name: Download deploy.zip artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: deploy-package
-
-      - name: Upload deploy archive to server
+    runs-on: [self-hosted]
+    defaults:
+      run:
         shell: bash
+    steps:
+      - name: Upload deploy archive to server
         run: |
-          VER="v${{ steps.version.outputs.version }}"
+          VER="v${{ needs.package.outputs.version }}"
           echo "Release: $VER"
           # Capture upload response: check for JSON (real app) vs HTML (Cloudflare)
           UPLOAD_RESP=$(curl -s -w "\n%{http_code}" --max-time 300 \
-            -F "file=@deploy.zip;filename=deploy.zip" \
+            -F "file=@$DEPLOY_STAGING/deploy.zip;filename=deploy.zip" \
             "https://booking.laravel.tunispromo.tn/deploy/upload?token=${{ secrets.DEPLOY_TOKEN }}" 2>&1)
           HTTP_CODE=$(echo "$UPLOAD_RESP" | tail -1)
           BODY=$(echo "$UPLOAD_RESP" | sed '$d')
@@ -109,7 +108,7 @@ jobs:
             $ftp.UseBinary = $true
             $ftp.UsePassive = $true
             $ftp.KeepAlive = $false
-            $fileBytes = [System.IO.File]::ReadAllBytes("deploy.zip")
+            $fileBytes = [System.IO.File]::ReadAllBytes("$env:DEPLOY_STAGING/deploy.zip")
             $ftp.ContentLength = $fileBytes.Length
             $rs = $ftp.GetRequestStream()
             $rs.Write($fileBytes, 0, $fileBytes.Length)

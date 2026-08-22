@@ -1,5 +1,12 @@
 name: Build Deploy Package
 
+# Fixed local staging dir on win-runner-booking: downstream jobs (release,
+# push-deploy) run on this same machine, so deploy.zip is handed off via disk
+# instead of GitHub artifacts (artifact storage counts against the account-wide
+# quota and exhausted it — 2026-08-22 deploy failure).
+env:
+  DEPLOY_STAGING: C:/actions-runner-booking/_staging
+
 on:
   workflow_call:
     inputs:
@@ -178,10 +185,9 @@ jobs:
             Move-Item "$src\bootstrap\cache.bak" "$src\bootstrap\cache"
           }
 
-      - name: Upload deploy.zip artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: deploy-package
-          path: deploy.zip
-          retention-days: 3
-          if-no-files-found: error
+      - name: Stage deploy.zip on runner disk
+        shell: bash
+        run: |
+          mkdir -p "$DEPLOY_STAGING"
+          cp deploy.zip "$DEPLOY_STAGING/deploy.zip"
+          ls -la "$DEPLOY_STAGING"
