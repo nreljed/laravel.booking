@@ -18,7 +18,7 @@
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
-        @routes(Illuminate\Support\Facades\Vite::cspNonce())
+        @routes(null, Illuminate\Support\Facades\Vite::cspNonce())
         @viteReactRefresh
         @vite(['resources/js/app.tsx'])
         @inertiaHead
