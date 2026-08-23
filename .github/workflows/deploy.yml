@@ -110,14 +110,16 @@ jobs:
           DEPLOY_TOKEN="${{ secrets.DEPLOY_TOKEN }}"
           CHECK_URL="$APP_URL/deploy/check?token=$DEPLOY_TOKEN"
           UPLOAD_URL="$APP_URL/deploy/upload?token=$DEPLOY_TOKEN"
-          STAGING_ZIP="$(cygpath "$DEPLOY_STAGING")/deploy.zip"
+          # Keep the C:/ form: System32 curl.exe resolves first on the runner
+          # and cannot read MSYS-style /c/... paths (curl exit 26).
+          STAGING_ZIP="$DEPLOY_STAGING/deploy.zip"
           echo "Release: $VER"
 
           # Server pulls deploy.zip from GitHub itself; during extraction it returns
           # HTML/500 transiently ("still busy"). Poll until deployed/current/$VER.
           poll_check() {
             for i in 1 2 3 4 5 6 7 8; do
-              RESP=$(curl -s -X POST --max-time 120 "$CHECK_URL" 2>&1)
+              RESP=$(curl -s -X POST --max-time 120 "$CHECK_URL" 2>&1) || true
               FIRST=$(echo "$RESP" | head -1)
               case "$FIRST" in
                 *'"status":"deployed"'*)
@@ -149,7 +151,7 @@ jobs:
           # Upload response can be lost mid-extract; confirm by polling /deploy/check.
           confirm_deployed() {
             for i in 1 2 3 4 5 6 7 8; do
-              RESP=$(curl -s --max-time 120 "$CHECK_URL" 2>&1)
+              RESP=$(curl -s --max-time 120 "$CHECK_URL" 2>&1) || true
               FIRST=$(echo "$RESP" | head -1)
               case "$FIRST" in
                 *'"status":"deployed"'*)
@@ -183,7 +185,7 @@ jobs:
             echo "check path did not confirm $VER, uploading deploy.zip directly"
             UPLOAD_RESP=$(curl -s -w "\n%{http_code}" --max-time 300 \
               -F "file=@$STAGING_ZIP;filename=deploy.zip" \
-              "$UPLOAD_URL" 2>&1)
+              "$UPLOAD_URL" 2>&1) || UPLOAD_RESP="curl failed with exit $?"
             HTTP_CODE=$(echo "$UPLOAD_RESP" | tail -1)
             BODY=$(echo "$UPLOAD_RESP" | sed '$d')
             echo "Upload HTTP $HTTP_CODE"
