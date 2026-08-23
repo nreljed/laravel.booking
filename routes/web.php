@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\DeployController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\PublicPropertyController;
 use Illuminate\Support\Facades\Route;
@@ -24,12 +23,9 @@ Route::get('/properties', [PublicPropertyController::class, 'index'])->name('pro
 Route::get('/properties/{slug}', [PublicPropertyController::class, 'show'])->name('properties.show');
 
 // ═══════════════════════════════════════════════════
-// DEPLOY Endpoints — token-protected, no CSRF
-// ═══════════════════════════════════════════════════
-Route::post('/deploy/upload', [DeployController::class, 'upload']);
-Route::post('/deploy/update-env', [DeployController::class, 'updateEnv']);
-Route::get('/deploy/cache-clear', [DeployController::class, 'cacheClear']);
-Route::match(['get', 'post'], '/deploy/check', [DeployController::class, 'check']);
+// DEPLOY Endpoints — provided by dashboard-core routes
+// (/deploy/upload, /deploy/check, /deploy/cache-clear,
+//  /deploy/env, /deploy/create-admin, /deploy/migrate, /deploy/reset)
 
 // Feature routes (Bookings, Properties) are loaded by their
 // respective ServiceProviders via Route::group in boot().

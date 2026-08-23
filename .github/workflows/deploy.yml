@@ -67,40 +67,160 @@ jobs:
     defaults:
       run:
         shell: bash
+    # Canonical check-first flow (shared with laravel + shop): /deploy/check makes
+    # the server pull deploy.zip from the GitHub API itself. The host's security
+    # layer may cut long connections (~100s) or block CI IPs mid-extract — hence
+    # polling + confirm loops. If everything fails, the server still self-deploys
+    # via its scheduled deploy:auto within minutes.
     steps:
-      - name: Upload deploy archive to server
+      - name: Push GITHUB_TOKEN to server .env
+        # Runs before the check so the server can authenticate against the GitHub
+        # API when pulling the release itself (/deploy/env merges single values).
+        # Pipe-free: under pipefail, `echo | head` can die SIGPIPE (141) on large
+        # non-JSON bodies, silently skipping the token push.
+        if: always()
+        continue-on-error: true
         run: |
-          VER="v${{ needs.package.outputs.version }}"
-          echo "Release: $VER"
-          # Capture upload response: check for JSON (real app) vs HTML (Cloudflare)
-          UPLOAD_RESP=$(curl -s -w "\n%{http_code}" --max-time 300 \
-            -F "file=@$DEPLOY_STAGING/deploy.zip;filename=deploy.zip" \
-            "https://booking.laravel.tunispromo.tn/deploy/upload?token=${{ secrets.DEPLOY_TOKEN }}" 2>&1)
-          HTTP_CODE=$(echo "$UPLOAD_RESP" | tail -1)
-          BODY=$(echo "$UPLOAD_RESP" | sed '$d')
-          if [ "$HTTP_CODE" = "200" ] && echo "$BODY" | head -1 | grep -q '^{'; then
-            echo "Deployed via /deploy/upload"
-            echo "$BODY" | head -1
-          elif CHECK_RESP=$(curl -s -X POST --max-time 300 \
-            "https://booking.laravel.tunispromo.tn/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}" 2>&1) \
-            && echo "$CHECK_RESP" | head -1 | grep -q '^{'; then
-            echo "Deployed via /deploy/check (GitHub API)"
-            echo "$CHECK_RESP" | head -1
+          ENV_URL="${{ vars.APP_URL }}/deploy/env?token=${{ secrets.DEPLOY_TOKEN }}"
+          PAYLOAD="{\"values\":{\"GITHUB_TOKEN\":\"${{ secrets.GH_TOKEN }}\"}}"
+          CONFIRMED=""
+          for i in 1 2 3; do
+            if RESP=$(curl -sS -X POST --max-time 60 -H "Content-Type: application/json" \
+                 -d "$PAYLOAD" "$ENV_URL" 2>&1); then
+              case "$RESP" in
+                *'"success":true'*) CONFIRMED=yes; break ;;
+              esac
+            else
+              RESP="curl failed: $?"
+            fi
+            echo "[env $i/3] ${RESP:0:160}"
+            [ "$i" -lt 3 ] && sleep 20
+          done
+          if [ -n "$CONFIRMED" ]; then
+            echo "GITHUB_TOKEN pushed to server .env"
           else
-            echo "Deploy failed. Release created at:"
-            echo "https://github.com/nreljed/laravel.booking/releases/tag/$VER"
-            echo "Manual deploy: download deploy.zip from release, upload to server, extract, then visit:"
-            echo "https://booking.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
+            echo "::warning::GITHUB_TOKEN push NOT confirmed after 3 attempts - update manually: POST $ENV_URL with {\"values\":{\"GITHUB_TOKEN\":\"<value>\"}}"
             exit 1
           fi
 
+      - name: Check-first deploy with polling
+        run: |
+          VER="v${{ needs.package.outputs.version }}"
+          APP_URL="${{ vars.APP_URL }}"
+          DEPLOY_TOKEN="${{ secrets.DEPLOY_TOKEN }}"
+          CHECK_URL="$APP_URL/deploy/check?token=$DEPLOY_TOKEN"
+          UPLOAD_URL="$APP_URL/deploy/upload?token=$DEPLOY_TOKEN"
+          STAGING_ZIP="$(cygpath "$DEPLOY_STAGING")/deploy.zip"
+          echo "Release: $VER"
+
+          # Server pulls deploy.zip from GitHub itself; during extraction it returns
+          # HTML/500 transiently ("still busy"). Poll until deployed/current/$VER.
+          poll_check() {
+            for i in 1 2 3 4 5 6 7 8; do
+              RESP=$(curl -s -X POST --max-time 120 "$CHECK_URL" 2>&1)
+              FIRST=$(echo "$RESP" | head -1)
+              case "$FIRST" in
+                *'"status":"deployed"'*)
+                  echo "Deployed via /deploy/check (GitHub API)"
+                  echo "$FIRST"
+                  return 0
+                  ;;
+                *'"status":"current"'*)
+                  if echo "$FIRST" | grep -q "\"tag\":\"$VER\""; then
+                    echo "Confirmed on $VER via /deploy/check"
+                    echo "$FIRST"
+                    return 0
+                  fi
+                  CURRENT_TAG=$(echo "$FIRST" | sed 's/.*"tag":"\([^"]*\)".*/\1/')
+                  echo "[poll $i/8] server on ${CURRENT_TAG:-?}, waiting for $VER"
+                  ;;
+                *'"status":"locked"'*)
+                  echo "[poll $i/8] server still working (locked)"
+                  ;;
+                *)
+                  echo "[poll $i/8] server busy (response not JSON yet)"
+                  ;;
+              esac
+              [ "$i" -lt 8 ] && sleep 45
+            done
+            return 1
+          }
+
+          # Upload response can be lost mid-extract; confirm by polling /deploy/check.
+          confirm_deployed() {
+            for i in 1 2 3 4 5 6 7 8; do
+              RESP=$(curl -s --max-time 120 "$CHECK_URL" 2>&1)
+              FIRST=$(echo "$RESP" | head -1)
+              case "$FIRST" in
+                *'"status":"deployed"'*)
+                  echo "Confirmed deployed via /deploy/check"
+                  echo "$FIRST"
+                  return 0
+                  ;;
+                *'"status":"current"'*)
+                  if echo "$FIRST" | grep -q "\"tag\":\"$VER\""; then
+                    echo "Confirmed on $VER via /deploy/check"
+                    echo "$FIRST"
+                    return 0
+                  fi
+                  echo "[confirm $i/8] tag not yet $VER, retrying"
+                  ;;
+                *'"status":"locked"'*)
+                  echo "[confirm $i/8] server still working (locked), retrying"
+                  ;;
+                *)
+                  echo "[confirm $i/8] server busy, retrying"
+                  ;;
+              esac
+              [ "$i" -lt 8 ] && sleep 45
+            done
+            return 1
+          }
+
+          if poll_check; then
+            echo "push-deploy OK (check path)"
+          else
+            echo "check path did not confirm $VER, uploading deploy.zip directly"
+            UPLOAD_RESP=$(curl -s -w "\n%{http_code}" --max-time 300 \
+              -F "file=@$STAGING_ZIP;filename=deploy.zip" \
+              "$UPLOAD_URL" 2>&1)
+            HTTP_CODE=$(echo "$UPLOAD_RESP" | tail -1)
+            BODY=$(echo "$UPLOAD_RESP" | sed '$d')
+            echo "Upload HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ] && echo "$BODY" | head -1 | grep -q '"status":"deployed"'; then
+              echo "Deployed via /deploy/upload"
+              echo "$BODY" | head -1
+              echo "push-deploy OK (upload path)"
+            else
+              echo "Upload response not clean (HTTP $HTTP_CODE), confirming via /deploy/check..."
+              if confirm_deployed; then
+                echo "push-deploy OK (confirmed after upload)"
+              else
+                echo "Deploy not confirmed after upload. Release created at:"
+                echo "https://github.com/nreljed/laravel.booking/releases/tag/$VER"
+                echo "Manual deploy: download deploy.zip from release, upload to server, extract, then visit:"
+                echo "$APP_URL/deploy/cache-clear?token=$DEPLOY_TOKEN"
+                exit 1
+              fi
+            fi
+          fi
+
       - name: FTP Upload fallback (DirectAdmin)
+        # Only relevant when the hosting FTP account homes to this app's project
+        # root. Skips itself when FTP_* secrets are not defined.
         if: always()
         continue-on-error: true
         shell: pwsh
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
         run: |
-          $ftpUrl = "ftp://${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT }}/deploy.zip"
-          $cred = New-Object System.Net.NetworkCredential("${{ secrets.FTP_USERNAME }}", "${{ secrets.FTP_PASSWORD }}")
+          if ($env:FTP_USERNAME -eq "") { Write-Output "FTP_* secrets not set - skipping FTP fallback"; exit 0 }
+          $ftpPort = if ($env:FTP_PORT) { $env:FTP_PORT } else { "21" }
+          $ftpUrl = "ftp://${env:FTP_SERVER}:${ftpPort}/deploy.zip"
+          $cred = New-Object System.Net.NetworkCredential($env:FTP_USERNAME, $env:FTP_PASSWORD)
           try {
             $ftp = [System.Net.FtpWebRequest]::Create($ftpUrl)
             $ftp.Method = [System.Net.WebRequestMethods+Ftp]::UploadFile
@@ -118,13 +238,8 @@ jobs:
             $resp.Close()
             Write-Output "---"
             Write-Output "Extract via DirectAdmin File Manager, then visit:"
-            Write-Output "https://booking.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
+            Write-Output "${{ vars.APP_URL }}/deploy/cache-clear?token=(DEPLOY_TOKEN)"
           } catch {
             Write-Output "FTP upload failed: $_"
-            $VER = "${{ steps.version.outputs.version }}"
-            Write-Output "Manual steps:"
-            Write-Output "1. Download from: https://github.com/nreljed/laravel.booking/releases/download/v$VER/deploy.zip"
-            Write-Output "2. Upload via DirectAdmin File Manager to public_html/"
-            Write-Output "3. Extract, then visit:"
-            Write-Output "   https://booking.laravel.tunispromo.tn/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
+            Write-Output "Manual steps: download deploy.zip from the GitHub release, upload via File Manager, extract, then visit ${{ vars.APP_URL }}/deploy/cache-clear?token=<DEPLOY_TOKEN>"
           }
