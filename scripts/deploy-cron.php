@@ -12,9 +12,23 @@
  *   GITHUB_TOKEN in .env — GitHub PAT with Contents: Read & Write
  */
 
-require __DIR__.'/../vendor/autoload.php';
+// Resolve app root: works when this file sits at the app root (deploy.php
+// shipped in deploy.zip) or one level deeper (scripts/deploy-cron.php).
+$appRoot = null;
+foreach ([__DIR__, dirname(__DIR__)] as $candidate) {
+    if (is_file($candidate.'/vendor/autoload.php')) {
+        $appRoot = $candidate;
+        break;
+    }
+}
+if ($appRoot === null) {
+    fwrite(STDERR, "Unable to locate app root (no vendor/autoload.php found)\n");
+    exit(1);
+}
 
-$app = require __DIR__.'/../bootstrap/app.php';
+require $appRoot.'/vendor/autoload.php';
+
+$app = require $appRoot.'/bootstrap/app.php';
 $kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
