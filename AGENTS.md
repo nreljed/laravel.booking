@@ -2003,3 +2003,7 @@ Multi-Currency Flow:
 Multi-Language Flow:
   Detect locale → load translations → render storefront in language
 ```
+
+## Test Deploy
+
+- 2026-08-23: v1.0.2 — reset production .env lineage to CI-authoritative version (fossil .env had merged APP_NAME/APP_ENV line causing Dotenv InvalidFileException at boot). dashboard-core v0.1.15 purge logic active since v1.0.1.
