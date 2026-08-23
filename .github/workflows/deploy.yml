@@ -8,153 +8,289 @@ permissions:
   contents: write
 
 concurrency:
-  group: deploy-production
+  group: deploy-booking-production
   cancel-in-progress: false
 
 jobs:
-  ci:
-    uses: ./.github/workflows/ci.yml
-    secrets: inherit
+  build:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout (full history for git-cliff)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-  package:
-    needs: ci
-    uses: ./.github/workflows/deploy-package.yml
-    with:
-      version: ""
-    secrets: inherit
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, fileinfo, sqlite3, pdo_sqlite, bcmath, zip, gd, intl
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-prod-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-prod-${{ runner.os }}-
+
+      - name: Create build .env
+        run: |
+          DB_PATH="$(pwd)/database/database.sqlite"
+          cat > .env << ENVEOF
+          APP_NAME="Booking App"
+          APP_ENV=local
+          APP_KEY=${{ secrets.APP_KEY }}
+          APP_DEBUG=true
+          APP_URL=http://localhost
+          DB_CONNECTION=sqlite
+          DB_DATABASE=$DB_PATH
+          SESSION_DRIVER=file
+          FILESYSTEM_DISK=local
+          QUEUE_CONNECTION=sync
+          CACHE_STORE=file
+          ENVEOF
+          touch database/database.sqlite
+
+      - name: Install Composer dependencies (production)
+        env:
+          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GH_TOKEN }}"}}'
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-scripts
+
+      - name: Install npm dependencies + build
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+
+      - name: Overwrite .env with production settings
+        run: |
+          cat > .env << 'ENVEOF'
+          APP_NAME="Booking App"
+          APP_ENV=production
+          APP_KEY=${{ secrets.APP_KEY }}
+          APP_DEBUG=false
+          APP_URL=${{ vars.APP_URL }}
+          APP_LOCALE=en
+          APP_FALLBACK_LOCALE=en
+          BCRYPT_ROUNDS=12
+          LOG_CHANNEL=stack
+          LOG_LEVEL=error
+          DB_CONNECTION=mysql
+          DB_HOST=localhost
+          DB_PORT=3306
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          SESSION_DRIVER=file
+          SESSION_LIFETIME=120
+          SESSION_DOMAIN=${{ vars.SESSION_DOMAIN }}
+          BROADCAST_CONNECTION=log
+          FILESYSTEM_DISK=local
+          QUEUE_CONNECTION=sync
+          CACHE_STORE=file
+          MAIL_MAILER=smtp
+          MAIL_HOST=mail.tunispromo.tn
+          MAIL_PORT=587
+          MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+          MAIL_ENCRYPTION=tls
+          MAIL_FROM_ADDRESS="booking.contact@tunispromo.tn"
+          MAIL_FROM_NAME="Booking App"
+          GITHUB_REPO=nreljed/laravel.booking
+          DEPLOY_TOKEN=${{ secrets.DEPLOY_TOKEN }}
+          GITHUB_TOKEN=${{ secrets.GH_TOKEN }}
+          DB_MAINTENANCE_ENABLED=${{ vars.DB_MAINTENANCE_ENABLED || 'false' }}
+          ENVEOF
+
+      - name: Copy deploy script
+        run: cp scripts/deploy-cron.php deploy.php
+
+      - name: Record dashboard-core version
+        run: |
+          CORE_VERSION=$(php -r "echo json_decode(file_get_contents('vendor/nreljed/dashboard-core/composer.json'))->version ?? 'unknown';")
+          mkdir -p storage/app
+          echo "{\"name\":\"dashboard-core\",\"version\":\"$CORE_VERSION\",\"sha\":null}" > storage/app/core.json
+          echo "core.json recorded: dashboard-core $CORE_VERSION"
+
+      - name: Create deploy.zip
+        run: |
+          rm -f deploy.zip
+          # bootstrap/cache itself MUST ship in deploy.zip (Laravel refuses to
+          # boot without it on fresh servers). Only generated files are removed;
+          # never move the dir aside — a cache.bak inside bootstrap/ would get
+          # zipped onto the server.
+          rm -f bootstrap/cache/packages.php bootstrap/cache/services.php
+          "C:/Program Files/7-Zip/7z.exe" a -tzip deploy.zip \
+            artisan composer.json composer.lock package.json package-lock.json \
+            app bootstrap config database public resources routes \
+            storage vendor deploy.php .htaccess
+          SIZE=$(du -h deploy.zip | cut -f1)
+          echo "deploy.zip created: $SIZE"
+
+      - name: Determine version
+        id: version
+        run: |
+          VER="0.1.0"
+          LAST_TAG=$(git tag --merged HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          if [ -n "$LAST_TAG" ]; then
+            MAJOR=$(echo "$LAST_TAG" | sed 's/v//' | cut -d. -f1)
+            MINOR=$(echo "$LAST_TAG" | sed 's/v//' | cut -d. -f2)
+            PATCH=$(echo "$LAST_TAG" | sed 's/v//' | cut -d. -f3)
+            COMMITS=$(git log "$LAST_TAG..HEAD" --pretty=format:"%s%B")
+            BUMP="patch"
+            if echo "$COMMITS" | grep -qE 'BREAKING CHANGE|^[a-z]+(\([^)]*\))?!:'; then
+              BUMP="major"
+            elif echo "$COMMITS" | grep -qE '^feat'; then
+              BUMP="minor"
+            fi
+            case "$BUMP" in
+              major) VER="$((MAJOR + 1)).0.0" ;;
+              minor) VER="$MAJOR.$((MINOR + 1)).0" ;;
+              patch) VER="$MAJOR.$MINOR.$((PATCH + 1))" ;;
+            esac
+            echo "Bumping from $LAST_TAG (next: $VER)"
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release notes
+        run: |
+          npm install -g git-cliff
+          BASE_TAG=$(git tag --merged HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          BASE_TAG="${BASE_TAG:-v0.1.0}"
+          git-cliff "$BASE_TAG..HEAD" --strip header -o release-notes.md 2>/dev/null || true
+          [ -f release-notes.md ] || echo "No changes for v${{ steps.version.outputs.version }}" > release-notes.md
+          git-cliff -o CHANGELOG.md 2>/dev/null || true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          body_path: release-notes.md
+          files: deploy.zip
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   push-deploy:
-    needs: package
-    # Self-hosted: hosted runners are billing-blocked account-wide.
-    runs-on: [self-hosted]
-    # Canonical check-first flow (shared with laravel + laravel.shop).
-    # /deploy/check makes the server pull deploy.zip from the GitHub API
-    # itself, avoiding a large upload through the edge (LiteSpeed/Cloudflare
-    # cut connections ~100s). The host's security layer intermittently blocks
-    # CI (datacenter) IPs. If both the check and upload paths fail, the server
-    # still self-deploys via the scheduled deploy:auto within ~5 minutes.
+    needs: build
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Download deploy.zip from release
-        shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VER="v${{ needs.package.outputs.version }}"
+          VER="v${{ needs.build.outputs.version }}"
           echo "Downloading deploy.zip from release $VER"
           gh release download "$VER" \
             --repo "${{ github.repository }}" \
             --pattern "deploy.zip" \
             --clobber
-          ls -la deploy.zip
+          ls -lh deploy.zip
 
       - name: Push GITHUB_TOKEN to server .env
-        # Runs before the check so the server can authenticate /deploy/check
-        # (self-deploy path reads GITHUB_TOKEN from the server .env).
-        #
-        # Pipe-free implementation: under `set -o pipefail`, `echo "$RESP" |
-        # head -1` can die with SIGPIPE (exit 141) when the server answers
-        # with a large non-JSON body (e.g. its 403 HTML page), silently
-        # skipping the token push. Parameter expansion replaces the pipe.
         if: always()
         continue-on-error: true
-        shell: bash
         run: |
           ENV_URL="${{ vars.APP_URL }}/deploy/env?token=${{ secrets.DEPLOY_TOKEN }}"
-          PAYLOAD="{\"values\":{\"GITHUB_TOKEN\":\"${{ secrets.GH_TOKEN }}\"}}"
-          CONFIRMED=""
           for i in 1 2 3; do
-            if RESP=$(curl -sS -X POST --max-time 60 -H "Content-Type: application/json" \
-                 -d "$PAYLOAD" "$ENV_URL" 2>&1); then
-              case "$RESP" in
-                *'"success":true'*) CONFIRMED=yes; break ;;
-              esac
-            else
-              RESP="curl failed: $?"
+            RESP=$(curl -s -X POST --max-time 60 -H "Content-Type: application/json" \
+              -d "{\"values\":{\"GITHUB_TOKEN\":\"${{ secrets.GH_TOKEN }}\"}}" \
+              "$ENV_URL" 2>&1)
+            FIRST=$(echo "$RESP" | head -1)
+            echo "[env $i/3] $FIRST"
+            if echo "$FIRST" | grep -q '"success":true'; then
+              echo "GITHUB_TOKEN pushed to server .env"
+              exit 0
             fi
-            echo "[env $i/3] ${RESP:0:160}"
             [ "$i" -lt 3 ] && sleep 20
           done
-          if [ -n "$CONFIRMED" ]; then
-            echo "GITHUB_TOKEN pushed to server .env"
-          else
-            echo "::warning::GITHUB_TOKEN push NOT confirmed after 3 attempts — update manually: POST $ENV_URL with {\"values\":{\"GITHUB_TOKEN\":\"<value>\"}}"
-            exit 1
-          fi
+          echo "GITHUB_TOKEN push did not confirm; manual: POST $ENV_URL"
 
       - name: Upload deploy archive to server
-        shell: bash
         run: |
-          VER="v${{ needs.package.outputs.version }}"
-          APP_URL="${{ vars.APP_URL }}"
-          DEPLOY_TOKEN="${{ secrets.DEPLOY_TOKEN }}"
-          CHECK_URL="$APP_URL/deploy/check?token=$DEPLOY_TOKEN"
-          UPLOAD_URL="$APP_URL/deploy/upload?token=$DEPLOY_TOKEN"
+          VER="v${{ needs.build.outputs.version }}"
           echo "Release: $VER"
+          CHECK_URL="${{ vars.APP_URL }}/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}"
+          UPLOAD_URL="${{ vars.APP_URL }}/deploy/upload?token=${{ secrets.DEPLOY_TOKEN }}"
 
-          # Prefer /deploy/check: the server pulls deploy.zip from the GitHub API
-          # itself, avoiding a large upload through the edge. Connections are cut
-          # ~100s by the host's security layer, so the server may finish
-          # processing AFTER the response is lost — poll for it. During
-          # extraction it returns HTML/500 transiently — that means "still busy".
           poll_check() {
-            for i in 1 2 3 4 5 6 7 8; do
-              RESP=$(curl -s -X POST --max-time 120 "$CHECK_URL" 2>&1) || true
+            CONSECUTIVE_NON_JSON=0
+            for i in $(seq 1 8); do
+              RESP=$(curl -s -X POST --max-time 30 "$CHECK_URL" 2>&1)
               FIRST=$(echo "$RESP" | head -1)
-              case "$FIRST" in
-                *'"status":"deployed"'*)
-                  echo "Deployed via /deploy/check (GitHub API)"
+              if echo "$FIRST" | grep -q '"status":"deployed"'; then
+                echo "Deployed via /deploy/check (GitHub API)"
+                echo "$FIRST"
+                return 0
+              elif echo "$FIRST" | grep -q '"status":"current"'; then
+                CONSECUTIVE_NON_JSON=0
+                if echo "$FIRST" | grep -q "\"tag\":\"$VER\""; then
+                  echo "Confirmed on $VER via /deploy/check"
                   echo "$FIRST"
                   return 0
-                  ;;
-                *'"status":"current"'*)
-                  if echo "$FIRST" | grep -q "\"tag\":\"$VER\""; then
-                    echo "Confirmed on $VER via /deploy/check"
-                    echo "$FIRST"
-                    return 0
-                  fi
-                  CURRENT_TAG=$(echo "$FIRST" | sed 's/.*"tag":"\([^"]*\)".*/\1/')
-                  echo "[poll $i/8] server on ${CURRENT_TAG:-?}, waiting for $VER"
-                  ;;
-                *'"status":"locked"'*)
-                  echo "[poll $i/8] server still working (locked)"
-                  ;;
-                *)
-                  echo "[poll $i/8] server busy (response not JSON yet)"
-                  ;;
-              esac
-              [ "$i" -lt 8 ] && sleep 45
+                fi
+                echo "[poll $i/8] server waiting for $VER"
+              elif echo "$FIRST" | grep -q '"status":"locked"'; then
+                CONSECUTIVE_NON_JSON=0
+                echo "[poll $i/8] server still working (locked)"
+              else
+                CONSECUTIVE_NON_JSON=$((CONSECUTIVE_NON_JSON + 1))
+                echo "[poll $i/8] server not responding (non-JSON $CONSECUTIVE_NON_JSON/2)"
+                if [ "$CONSECUTIVE_NON_JSON" -ge 2 ]; then
+                  echo "Fast-fail: server is broken, skipping remaining polls"
+                  return 1
+                fi
+              fi
+              [ "$i" -lt 8 ] && sleep 15
             done
             return 1
           }
 
-          # Upload response can be lost mid-extract; confirm the deploy by polling
-          # /deploy/check until it reports current/deployed with the expected tag.
           confirm_deployed() {
-            for i in 1 2 3 4 5 6 7 8; do
-              RESP=$(curl -s --max-time 120 "$CHECK_URL" 2>&1) || true
+            CONSECUTIVE_NON_JSON=0
+            for i in $(seq 1 8); do
+              RESP=$(curl -s --max-time 30 "$CHECK_URL" 2>&1)
               FIRST=$(echo "$RESP" | head -1)
-              case "$FIRST" in
-                *'"status":"deployed"'*)
-                  echo "Confirmed deployed via /deploy/check"
+              if echo "$FIRST" | grep -q '"status":"deployed"'; then
+                echo "Confirmed deployed via /deploy/check"
+                echo "$FIRST"
+                return 0
+              elif echo "$FIRST" | grep -q '"status":"current"'; then
+                CONSECUTIVE_NON_JSON=0
+                if echo "$FIRST" | grep -q "\"tag\":\"$VER\""; then
+                  echo "Confirmed on $VER via /deploy/check"
                   echo "$FIRST"
                   return 0
-                  ;;
-                *'"status":"current"'*)
-                  if echo "$FIRST" | grep -q "\"tag\":\"$VER\""; then
-                    echo "Confirmed on $VER via /deploy/check"
-                    echo "$FIRST"
-                    return 0
-                  fi
-                  echo "[confirm $i/8] tag not yet $VER, retrying"
-                  ;;
-                *'"status":"locked"'*)
-                  echo "[confirm $i/8] server still working (locked), retrying"
-                  ;;
-                *)
-                  echo "[confirm $i/8] server busy, retrying"
-                  ;;
-              esac
-              [ "$i" -lt 8 ] && sleep 45
+                fi
+                echo "[confirm $i/8] tag not yet $VER, retrying"
+              elif echo "$FIRST" | grep -q '"status":"locked"'; then
+                CONSECUTIVE_NON_JSON=0
+                echo "[confirm $i/8] server still working (locked), retrying"
+              else
+                CONSECUTIVE_NON_JSON=$((CONSECUTIVE_NON_JSON + 1))
+                echo "[confirm $i/8] server not responding (non-JSON $CONSECUTIVE_NON_JSON/2)"
+                if [ "$CONSECUTIVE_NON_JSON" -ge 2 ]; then
+                  echo "Fast-fail: server is broken, skipping remaining confirms"
+                  return 1
+                fi
+              fi
+              [ "$i" -lt 8 ] && sleep 15
             done
             return 1
           }
@@ -165,70 +301,47 @@ jobs:
             echo "check path did not confirm $VER, uploading deploy.zip directly"
             UPLOAD_RESP=$(curl -s -w "\n%{http_code}" --max-time 300 \
               -F "file=@deploy.zip;filename=deploy.zip" \
-              "$UPLOAD_URL" 2>&1) || UPLOAD_RESP="curl failed with exit $?"
+              "$UPLOAD_URL" 2>&1)
             HTTP_CODE=$(echo "$UPLOAD_RESP" | tail -1)
             BODY=$(echo "$UPLOAD_RESP" | sed '$d')
             echo "Upload HTTP $HTTP_CODE"
-            if [ "$HTTP_CODE" = "200" ] && echo "$BODY" | head -1 | grep -q '"status":"deployed"'; then
+            if [ "$HTTP_CODE" = "200" ] && echo "$BODY" | grep -q '"status":"deployed"'; then
               echo "Deployed via /deploy/upload"
-              echo "$BODY" | head -1
               echo "push-deploy OK (upload path)"
             else
-              # Response lost or transient HTML mid-extract; the deploy may still be in flight.
               echo "Upload response not clean (HTTP $HTTP_CODE), confirming via /deploy/check..."
               if confirm_deployed; then
                 echo "push-deploy OK (confirmed after upload)"
               else
-                echo "Deploy not confirmed after upload. Release created at:"
-                echo "https://github.com/${{ github.repository }}/releases/tag/$VER"
-                echo "Manual deploy: download deploy.zip from release, upload to server, extract, then visit:"
-                echo "$APP_URL/deploy/cache-clear?token=$DEPLOY_TOKEN"
+                echo "Deploy not confirmed. Release at: https://github.com/${{ github.repository }}/releases/tag/$VER"
+                echo "Manual: download deploy.zip, upload to server, extract, then visit:"
+                echo "${{ vars.APP_URL }}/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
                 exit 1
               fi
             fi
           fi
 
       - name: FTP Upload fallback (DirectAdmin)
-        # Only relevant when the hosting FTP account homes to this app's project
-        # root. Skips itself when the FTP_* secrets are not defined (see script guard).
-        if: always()
+        if: failure()
         continue-on-error: true
-        shell: pwsh
-        env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          FTP_PORT: ${{ secrets.FTP_PORT }}
         run: |
-          if ("$env:FTP_USERNAME" -eq "") { Write-Output "FTP_* secrets not set — skipping FTP fallback"; exit 0 }
-          $ftpPort = if ($env:FTP_PORT) { $env:FTP_PORT } else { "21" }
-          # FTP account home is the Laravel project root (public_html), so upload to root.
-          $ftpUrl = "ftp://$env:FTP_SERVER`:$ftpPort/deploy.zip"
-          $cred = New-Object System.Net.NetworkCredential($env:FTP_USERNAME, $env:FTP_PASSWORD)
-          try {
-            $ftp = [System.Net.FtpWebRequest]::Create($ftpUrl)
-            $ftp.Method = [System.Net.WebRequestMethods+Ftp]::UploadFile
-            $ftp.Credentials = $cred
-            $ftp.UseBinary = $true
-            $ftp.UsePassive = $true
-            $ftp.KeepAlive = $false
-            $fileBytes = [System.IO.File]::ReadAllBytes("deploy.zip")
-            $ftp.ContentLength = $fileBytes.Length
-            $rs = $ftp.GetRequestStream()
-            $rs.Write($fileBytes, 0, $fileBytes.Length)
-            $rs.Close()
-            $resp = $ftp.GetResponse()
-            Write-Output "FTP upload OK: $($resp.StatusDescription)"
-            $resp.Close()
-            Write-Output "---"
-            Write-Output "Extract via DirectAdmin File Manager, then visit:"
-            Write-Output "${{ vars.APP_URL }}/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
-          } catch {
-            Write-Output "FTP upload failed: $_"
-            $VER = "${{ needs.package.outputs.version }}"
-            Write-Output "Manual steps:"
-            Write-Output "1. Download from: https://github.com/${{ github.repository }}/releases/download/v$VER/deploy.zip"
-            Write-Output "2. Upload via DirectAdmin File Manager to public_html/"
-            Write-Output "3. Extract, then visit:"
-            Write-Output "   ${{ vars.APP_URL }}/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
+          FTP_PORT="${{ secrets.FTP_PORT || '21' }}"
+          FTP_URL="ftp://${{ secrets.FTP_SERVER }}:$FTP_PORT/deploy.zip"
+          curl -s --max-time 300 \
+            -T deploy.zip \
+            --ftp-create-dirs \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "$FTP_URL" && {
+            echo "FTP upload OK"
+            echo "---"
+            echo "Extract via DirectAdmin File Manager, then visit:"
+            echo "${{ vars.APP_URL }}/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
+          } || {
+            echo "FTP upload failed"
+            VER="v${{ needs.build.outputs.version }}"
+            echo "Manual steps:"
+            echo "1. Download from: https://github.com/${{ github.repository }}/releases/download/$VER/deploy.zip"
+            echo "2. Upload via DirectAdmin File Manager to public_html/"
+            echo "3. Extract, then visit:"
+            echo "   ${{ vars.APP_URL }}/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
           }
