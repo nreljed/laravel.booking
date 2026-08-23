@@ -2,12 +2,12 @@
 
 namespace Tests;
 
-use App\Booking\BookingServiceProvider;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-use App\Properties\PropertiesServiceProvider;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Nreljed\BookingModule\Booking\BookingServiceProvider;
+use Nreljed\BookingModule\Properties\PropertiesServiceProvider;
 use Nreljed\DashboardCore\Services\PermissionCacheService;
 
 trait BootsFeatures

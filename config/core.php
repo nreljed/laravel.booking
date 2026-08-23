@@ -1,7 +1,7 @@
 <?php
 
-use App\Booking\BookingServiceProvider;
-use App\Properties\PropertiesServiceProvider;
+use Nreljed\BookingModule\Booking\BookingServiceProvider;
+use Nreljed\BookingModule\Properties\PropertiesServiceProvider;
 use Nreljed\DashboardCore\Blog\BlogServiceProvider;
 
 return [

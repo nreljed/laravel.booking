@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\PublicController;
-use App\Http\Controllers\PublicPropertyController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -19,8 +18,7 @@ Route::get('/about', [PublicController::class, 'about'])->name('about');
 Route::get('/services', [PublicController::class, 'services'])->name('services');
 Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
 
-Route::get('/properties', [PublicPropertyController::class, 'index'])->name('properties.index');
-Route::get('/properties/{slug}', [PublicPropertyController::class, 'show'])->name('properties.show');
+// Public /properties routes are loaded by nreljed/booking-module (PropertiesServiceProvider)
 
 // ═══════════════════════════════════════════════════
 // DEPLOY Endpoints — provided by dashboard-core routes

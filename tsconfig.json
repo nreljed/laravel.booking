@@ -18,10 +18,10 @@
             "@/*": ["./vendor/nreljed/dashboard-core/resources/js/*"],
             "@dashboard": ["./vendor/nreljed/dashboard-core/resources/js"],
             "@dashboard/*": ["./vendor/nreljed/dashboard-core/resources/js/*"],
-            "@booking": ["./app/Booking/Resources/js"],
-            "@booking/*": ["./app/Booking/Resources/js/*"],
-            "@properties": ["./app/Properties/Resources/js"],
-            "@properties/*": ["./app/Properties/Resources/js/*"],
+            "@booking": ["./vendor/nreljed/booking-module/src/Booking/Resources/js"],
+            "@booking/*": ["./vendor/nreljed/booking-module/src/Booking/Resources/js/*"],
+            "@properties": ["./vendor/nreljed/booking-module/src/Properties/Resources/js"],
+            "@properties/*": ["./vendor/nreljed/booking-module/src/Properties/Resources/js/*"],
             "ziggy-js": ["./vendor/tightenco/ziggy"]
         }
     },

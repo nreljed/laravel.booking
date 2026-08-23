@@ -1,10 +1,10 @@
 <?php
 
-use App\Booking\BookingServiceProvider;
-use App\Properties\PropertiesServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\TelescopeServiceProvider;
 use Laravel\Telescope\TelescopeApplicationServiceProvider;
+use Nreljed\BookingModule\Booking\BookingServiceProvider;
+use Nreljed\BookingModule\Properties\PropertiesServiceProvider;
 use Nreljed\DashboardCore\Blog\BlogServiceProvider;
 use Nreljed\DashboardCore\DashboardCoreServiceProvider;
 use Nreljed\DashboardCore\Providers\PermissionGateServiceProvider;

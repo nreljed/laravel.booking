@@ -5,10 +5,10 @@ namespace Tests\Feature\Properties;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-use App\Properties\Models\Property;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Nreljed\BookingModule\Properties\Models\Property;
 use Tests\BootsFeatures;
 use Tests\TestCase;
 
