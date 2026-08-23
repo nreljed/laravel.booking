@@ -338,7 +338,8 @@ if (\file_exists($autoloadPath)) {
             '\Illuminate\Contracts\Http\Kernel',
         ];
         foreach ($classesToCheck as $cls) {
-            if (\class_exists($cls)) {
+            // class_exists() returns false for interfaces — Kernel is one
+            if (\class_exists($cls) || \interface_exists($cls)) {
                 check('autoload', 'Class autoload: '.$cls, true);
             } else {
                 check('autoload', 'Class autoload: '.$cls, false, 'Class not found by autoloader');

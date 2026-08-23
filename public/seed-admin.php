@@ -28,20 +28,26 @@ try {
     $app->make(SettingsSeeder::class)->run();
     echo "SettingsSeeder: OK\n";
 
-    if (! User::where('email', 'nstudio.webdesign@gmail.com')->exists()) {
+    $email = (string) $app['config']->get('admin.email', '');
+    $password = (string) $app['config']->get('admin.password', '');
+    $name = (string) $app['config']->get('admin.name', 'Admin');
+
+    if ($email === '' || $password === '') {
+        echo "Admin creation skipped: ADMIN_EMAIL / ADMIN_PASSWORD not configured\n";
+    } elseif (User::where('email', $email)->exists()) {
+        echo "Admin user already exists\n";
+    } else {
         $admin = User::create([
-            'name' => 'nstudio',
-            'email' => 'nstudio.webdesign@gmail.com',
-            'username' => 'nstudio',
-            'password' => Hash::make('azerty123/*'),
+            'name' => $name,
+            'email' => $email,
+            'username' => $name,
+            'password' => Hash::make($password),
         ]);
         $role = Role::where('slug', 'admin')->first();
         if ($role) {
             $admin->roles()->attach($role->id);
         }
-        echo "Admin user created (nstudio.webdesign@gmail.com / azerty123/*)\n";
-    } else {
-        echo "Admin user already exists\n";
+        echo "Admin user created ({$email})\n";
     }
 
     echo "\nDone!\n";
