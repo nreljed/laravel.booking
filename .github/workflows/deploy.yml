@@ -1,17 +1,15 @@
 name: Deploy to Production
 
-# All three jobs execute on win-runner-booking (single self-hosted machine,
-# jobs run sequentially). deploy.zip is handed off via a fixed local staging
-# dir instead of GitHub artifacts — artifact storage counts against the
-# account-wide quota and exhausted it (2026-08-22 deploy failure). Hosted
-# runners are billing-blocked account-wide, so release/push-deploy stay
-# self-hosted too.
-env:
-  DEPLOY_STAGING: C:/actions-runner-booking/_staging
-
 on:
   push:
     branches: [master]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   ci:
@@ -25,61 +23,41 @@ jobs:
       version: ""
     secrets: inherit
 
-  release:
+  push-deploy:
     needs: package
+    # Self-hosted: hosted runners are billing-blocked account-wide.
     runs-on: [self-hosted]
-    defaults:
-      run:
-        shell: bash
+    # Canonical check-first flow (shared with laravel + laravel.shop).
+    # /deploy/check makes the server pull deploy.zip from the GitHub API
+    # itself, avoiding a large upload through the edge (LiteSpeed/Cloudflare
+    # cut connections ~100s). The host's security layer intermittently blocks
+    # CI (datacenter) IPs. If both the check and upload paths fail, the server
+    # still self-deploys via the scheduled deploy:auto within ~5 minutes.
     steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Generate release notes
-        shell: pwsh
-        run: |
-          $gcUrl = "https://github.com/orhun/git-cliff/releases/download/v2.8.0/git-cliff-2.8.0-x86_64-pc-windows-msvc.zip"
-          $gcZip = "$env:TEMP\git-cliff-release.zip"
-          Invoke-WebRequest -Uri $gcUrl -OutFile $gcZip -ErrorAction Stop
-          Expand-Archive -Path $gcZip -DestinationPath "$env:TEMP\git-cliff-release" -Force
-          $gc = Get-ChildItem -Path "$env:TEMP\git-cliff-release" -Recurse -Filter "git-cliff.exe" | Select-Object -First 1 -ExpandProperty FullName
-          & $gc --unreleased --strip header -o release-notes.md 2>$null
-          if (-not (Test-Path release-notes.md) -or (Get-Item release-notes.md).Length -eq 0) {
-            Write-Output "No changes for this release" | Set-Content release-notes.md
-          }
-          & $gc -o CHANGELOG.md 2>$null
-
-      - name: Create GitHub Release
+      - name: Download deploy.zip from release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           VER="v${{ needs.package.outputs.version }}"
-          gh release create "$VER" "$DEPLOY_STAGING/deploy.zip" \
-            --repo nreljed/laravel.booking \
-            --title "$VER" \
-            --notes-file release-notes.md
+          echo "Downloading deploy.zip from release $VER"
+          gh release download "$VER" \
+            --repo "${{ github.repository }}" \
+            --pattern "deploy.zip" \
+            --clobber
+          ls -la deploy.zip
 
-  push-deploy:
-    needs: [package, release]
-    runs-on: [self-hosted]
-    defaults:
-      run:
-        shell: bash
-    # Canonical check-first flow (shared with laravel + shop): /deploy/check makes
-    # the server pull deploy.zip from the GitHub API itself. The host's security
-    # layer may cut long connections (~100s) or block CI IPs mid-extract — hence
-    # polling + confirm loops. If everything fails, the server still self-deploys
-    # via its scheduled deploy:auto within minutes.
-    steps:
       - name: Push GITHUB_TOKEN to server .env
-        # Runs before the check so the server can authenticate against the GitHub
-        # API when pulling the release itself (/deploy/env merges single values).
-        # Pipe-free: under pipefail, `echo | head` can die SIGPIPE (141) on large
-        # non-JSON bodies, silently skipping the token push.
+        # Runs before the check so the server can authenticate /deploy/check
+        # (self-deploy path reads GITHUB_TOKEN from the server .env).
+        #
+        # Pipe-free implementation: under `set -o pipefail`, `echo "$RESP" |
+        # head -1` can die with SIGPIPE (exit 141) when the server answers
+        # with a large non-JSON body (e.g. its 403 HTML page), silently
+        # skipping the token push. Parameter expansion replaces the pipe.
         if: always()
         continue-on-error: true
+        shell: bash
         run: |
           ENV_URL="${{ vars.APP_URL }}/deploy/env?token=${{ secrets.DEPLOY_TOKEN }}"
           PAYLOAD="{\"values\":{\"GITHUB_TOKEN\":\"${{ secrets.GH_TOKEN }}\"}}"
@@ -99,24 +77,25 @@ jobs:
           if [ -n "$CONFIRMED" ]; then
             echo "GITHUB_TOKEN pushed to server .env"
           else
-            echo "::warning::GITHUB_TOKEN push NOT confirmed after 3 attempts - update manually: POST $ENV_URL with {\"values\":{\"GITHUB_TOKEN\":\"<value>\"}}"
+            echo "::warning::GITHUB_TOKEN push NOT confirmed after 3 attempts — update manually: POST $ENV_URL with {\"values\":{\"GITHUB_TOKEN\":\"<value>\"}}"
             exit 1
           fi
 
-      - name: Check-first deploy with polling
+      - name: Upload deploy archive to server
+        shell: bash
         run: |
           VER="v${{ needs.package.outputs.version }}"
           APP_URL="${{ vars.APP_URL }}"
           DEPLOY_TOKEN="${{ secrets.DEPLOY_TOKEN }}"
           CHECK_URL="$APP_URL/deploy/check?token=$DEPLOY_TOKEN"
           UPLOAD_URL="$APP_URL/deploy/upload?token=$DEPLOY_TOKEN"
-          # Keep the C:/ form: System32 curl.exe resolves first on the runner
-          # and cannot read MSYS-style /c/... paths (curl exit 26).
-          STAGING_ZIP="$DEPLOY_STAGING/deploy.zip"
           echo "Release: $VER"
 
-          # Server pulls deploy.zip from GitHub itself; during extraction it returns
-          # HTML/500 transiently ("still busy"). Poll until deployed/current/$VER.
+          # Prefer /deploy/check: the server pulls deploy.zip from the GitHub API
+          # itself, avoiding a large upload through the edge. Connections are cut
+          # ~100s by the host's security layer, so the server may finish
+          # processing AFTER the response is lost — poll for it. During
+          # extraction it returns HTML/500 transiently — that means "still busy".
           poll_check() {
             for i in 1 2 3 4 5 6 7 8; do
               RESP=$(curl -s -X POST --max-time 120 "$CHECK_URL" 2>&1) || true
@@ -148,7 +127,8 @@ jobs:
             return 1
           }
 
-          # Upload response can be lost mid-extract; confirm by polling /deploy/check.
+          # Upload response can be lost mid-extract; confirm the deploy by polling
+          # /deploy/check until it reports current/deployed with the expected tag.
           confirm_deployed() {
             for i in 1 2 3 4 5 6 7 8; do
               RESP=$(curl -s --max-time 120 "$CHECK_URL" 2>&1) || true
@@ -184,7 +164,7 @@ jobs:
           else
             echo "check path did not confirm $VER, uploading deploy.zip directly"
             UPLOAD_RESP=$(curl -s -w "\n%{http_code}" --max-time 300 \
-              -F "file=@$STAGING_ZIP;filename=deploy.zip" \
+              -F "file=@deploy.zip;filename=deploy.zip" \
               "$UPLOAD_URL" 2>&1) || UPLOAD_RESP="curl failed with exit $?"
             HTTP_CODE=$(echo "$UPLOAD_RESP" | tail -1)
             BODY=$(echo "$UPLOAD_RESP" | sed '$d')
@@ -194,12 +174,13 @@ jobs:
               echo "$BODY" | head -1
               echo "push-deploy OK (upload path)"
             else
+              # Response lost or transient HTML mid-extract; the deploy may still be in flight.
               echo "Upload response not clean (HTTP $HTTP_CODE), confirming via /deploy/check..."
               if confirm_deployed; then
                 echo "push-deploy OK (confirmed after upload)"
               else
                 echo "Deploy not confirmed after upload. Release created at:"
-                echo "https://github.com/nreljed/laravel.booking/releases/tag/$VER"
+                echo "https://github.com/${{ github.repository }}/releases/tag/$VER"
                 echo "Manual deploy: download deploy.zip from release, upload to server, extract, then visit:"
                 echo "$APP_URL/deploy/cache-clear?token=$DEPLOY_TOKEN"
                 exit 1
@@ -209,7 +190,7 @@ jobs:
 
       - name: FTP Upload fallback (DirectAdmin)
         # Only relevant when the hosting FTP account homes to this app's project
-        # root. Skips itself when FTP_* secrets are not defined.
+        # root. Skips itself when the FTP_* secrets are not defined (see script guard).
         if: always()
         continue-on-error: true
         shell: pwsh
@@ -219,9 +200,10 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
           FTP_PORT: ${{ secrets.FTP_PORT }}
         run: |
-          if ($env:FTP_USERNAME -eq "") { Write-Output "FTP_* secrets not set - skipping FTP fallback"; exit 0 }
+          if ("$env:FTP_USERNAME" -eq "") { Write-Output "FTP_* secrets not set — skipping FTP fallback"; exit 0 }
           $ftpPort = if ($env:FTP_PORT) { $env:FTP_PORT } else { "21" }
-          $ftpUrl = "ftp://${env:FTP_SERVER}:${ftpPort}/deploy.zip"
+          # FTP account home is the Laravel project root (public_html), so upload to root.
+          $ftpUrl = "ftp://$env:FTP_SERVER`:$ftpPort/deploy.zip"
           $cred = New-Object System.Net.NetworkCredential($env:FTP_USERNAME, $env:FTP_PASSWORD)
           try {
             $ftp = [System.Net.FtpWebRequest]::Create($ftpUrl)
@@ -230,7 +212,7 @@ jobs:
             $ftp.UseBinary = $true
             $ftp.UsePassive = $true
             $ftp.KeepAlive = $false
-            $fileBytes = [System.IO.File]::ReadAllBytes("$env:DEPLOY_STAGING/deploy.zip")
+            $fileBytes = [System.IO.File]::ReadAllBytes("deploy.zip")
             $ftp.ContentLength = $fileBytes.Length
             $rs = $ftp.GetRequestStream()
             $rs.Write($fileBytes, 0, $fileBytes.Length)
@@ -240,8 +222,13 @@ jobs:
             $resp.Close()
             Write-Output "---"
             Write-Output "Extract via DirectAdmin File Manager, then visit:"
-            Write-Output "${{ vars.APP_URL }}/deploy/cache-clear?token=(DEPLOY_TOKEN)"
+            Write-Output "${{ vars.APP_URL }}/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
           } catch {
             Write-Output "FTP upload failed: $_"
-            Write-Output "Manual steps: download deploy.zip from the GitHub release, upload via File Manager, extract, then visit ${{ vars.APP_URL }}/deploy/cache-clear?token=<DEPLOY_TOKEN>"
+            $VER = "${{ needs.package.outputs.version }}"
+            Write-Output "Manual steps:"
+            Write-Output "1. Download from: https://github.com/${{ github.repository }}/releases/download/v$VER/deploy.zip"
+            Write-Output "2. Upload via DirectAdmin File Manager to public_html/"
+            Write-Output "3. Extract, then visit:"
+            Write-Output "   ${{ vars.APP_URL }}/deploy/cache-clear?token=${{ secrets.DEPLOY_TOKEN }}"
           }

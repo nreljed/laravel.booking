@@ -1,12 +1,5 @@
 name: Build Deploy Package
 
-# Fixed local staging dir on win-runner-booking: downstream jobs (release,
-# push-deploy) run on this same machine, so deploy.zip is handed off via disk
-# instead of GitHub artifacts (artifact storage counts against the account-wide
-# quota and exhausted it — 2026-08-22 deploy failure).
-env:
-  DEPLOY_STAGING: C:/actions-runner-booking/_staging
-
 on:
   workflow_call:
     inputs:
@@ -19,9 +12,14 @@ on:
         description: "The version used"
         value: ${{ jobs.package.outputs.version }}
 
+permissions:
+  contents: write
+
 jobs:
   package:
-    runs-on: self-hosted
+    # Self-hosted (win-runner-booking): hosted runners are billing-blocked
+    # account-wide.
+    runs-on: [self-hosted]
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -40,7 +38,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version: "22"
 
       - name: Determine version
         id: version
@@ -50,16 +48,30 @@ jobs:
             $ver = "${{ inputs.version }}"
           } else {
             $ver = "0.1.0"
-            $gcUrl = "https://github.com/orhun/git-cliff/releases/download/v2.8.0/git-cliff-2.8.0-x86_64-pc-windows-msvc.zip"
-            $gcZip = "$env:TEMP\git-cliff.zip"
-            Invoke-WebRequest -Uri $gcUrl -OutFile $gcZip -ErrorAction Stop
-            Expand-Archive -Path $gcZip -DestinationPath "$env:TEMP\git-cliff" -Force
-            $gc = Get-ChildItem -Path "$env:TEMP\git-cliff" -Recurse -Filter "git-cliff.exe" | Select-Object -First 1 -ExpandProperty FullName
-            try {
-              & $gc --bumped-version | Set-Content version.txt -NoNewline -ErrorAction Stop
-              $ver = (Get-Content version.txt -Raw -ErrorAction Stop).Trim().TrimStart('v')
-            } catch {
-              Write-Output "git-cliff version detection failed, using 0.1.0: $_"
+            # Deterministic bump from the highest reachable semver tag.
+            # NOTE: git-cliff --bumped-version misresolves on this repo's merge
+            # topology, so we compute the next version directly from git.
+            $lastTag = git tag --merged HEAD |
+              Where-Object { $_ -match '^v[0-9]+\.[0-9]+\.[0-9]+$' } |
+              Sort-Object { [version]($_ -replace '^v', '') } |
+              Select-Object -Last 1
+            if ($lastTag) {
+              $seg = $lastTag.TrimStart('v').Split('.')
+              $major = [int]$seg[0]; $minor = [int]$seg[1]; $patch = [int]$seg[2]
+              $commits = git log "$lastTag..HEAD" --pretty=format:"%s%B"
+              $bump = "patch"
+              foreach ($c in $commits) {
+                if ($c -match 'BREAKING CHANGE' -or $c -match '^[a-z]+(\([^)]*\))?!:') { $bump = "major"; break }
+                if ($c -match '^feat') { $bump = "minor" }
+              }
+              switch ($bump) {
+                "major" { $ver = "$($major + 1).0.0" }
+                "minor" { $ver = "$major.$($minor + 1).0" }
+                default { $ver = "$major.$minor.$($patch + 1)" }
+              }
+              Write-Output "Bumping from $lastTag (next: $ver)"
+            } else {
+              Write-Output "No semver tags found, starting at 0.1.0"
             }
           }
           echo "version=$ver" >> $env:GITHUB_OUTPUT
@@ -71,7 +83,7 @@ jobs:
           @"
           APP_NAME="Booking App"
           APP_ENV=local
-          APP_KEY=base64:pHIa377aV0cusfWxNM2X3bpkWnRpztIQFwBGevG2DaY=
+          APP_KEY=${{ secrets.APP_KEY }}
           APP_DEBUG=true
           APP_URL=http://localhost
           DB_CONNECTION=sqlite
@@ -91,10 +103,13 @@ jobs:
           path: vendor
           key: composer-${{ hashFiles('composer.lock') }}
 
-      - name: Install Composer dependencies (dev)
+      - name: Install Composer dependencies (no-dev)
+        # --no-dev keeps dev-only packages (telescope, pint, pail...) out of
+        # the deploy.zip. A dev-built vendor caused production boot failures
+        # ("Target class [view] does not exist" via stale packages.php).
         env:
           COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GH_TOKEN }}"}}'
-        run: composer install --prefer-dist --no-interaction --no-scripts
+        run: composer install --no-dev --prefer-dist --no-interaction --no-scripts
 
       - name: Package Discover
         run: php artisan package:discover --ansi
@@ -109,16 +124,13 @@ jobs:
           key: npm-${{ hashFiles('package-lock.json') }}
 
       - name: Install npm dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Typecheck
         run: npm run typecheck
 
       - name: Build frontend assets
         run: npm run build
-
-      - name: Strip dev dependencies
-        run: composer install --no-dev --optimize-autoloader --no-scripts
 
       - name: Overwrite .env with production settings
         shell: pwsh
@@ -128,7 +140,7 @@ jobs:
           APP_ENV=production
           APP_KEY=${{ secrets.APP_KEY }}
           APP_DEBUG=false
-          APP_URL=https://booking.laravel.tunispromo.tn
+          APP_URL=${{ vars.APP_URL }}
           APP_LOCALE=en
           APP_FALLBACK_LOCALE=en
           BCRYPT_ROUNDS=12
@@ -142,7 +154,7 @@ jobs:
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
           SESSION_DRIVER=file
           SESSION_LIFETIME=120
-          SESSION_DOMAIN=.tunispromo.tn
+          SESSION_DOMAIN=${{ vars.SESSION_DOMAIN }}
           BROADCAST_CONNECTION=log
           FILESYSTEM_DISK=local
           QUEUE_CONNECTION=sync
@@ -157,6 +169,9 @@ jobs:
           MAIL_FROM_NAME="Booking App"
           DEPLOY_TOKEN=${{ secrets.DEPLOY_TOKEN }}
           GITHUB_TOKEN=${{ secrets.GH_TOKEN }}
+          DB_MAINTENANCE_ENABLED=${{ vars.DB_MAINTENANCE_ENABLED || 'false' }}
+          # Shared host: no persistent Node process, so Inertia SSR stays OFF.
+          INERTIA_SSR_ENABLED=false
           '@ | Set-Content -Path .env -Encoding UTF8
 
       - name: Copy deploy script
@@ -165,10 +180,11 @@ jobs:
       - name: Record dashboard-core version
         shell: pwsh
         run: |
-          $core = php -r "echo json_decode(file_get_contents('vendor/nreljed/dashboard-core/composer.json'))->version ?? 'unknown';"
-          New-Item -ItemType Directory -Force -Path storage/app | Out-Null
-          "{""name"":""dashboard-core"",""version"":""$core"",""sha"":null}" | Set-Content storage/app/core.json
-          Write-Output "core.json recorded: dashboard-core $core"
+          $coreMeta = Get-Content "vendor\nreljed\dashboard-core\composer.json" -Raw | ConvertFrom-Json
+          $coreVersion = $coreMeta.version
+          New-Item -ItemType Directory -Path "storage\app" -Force | Out-Null
+          @{ name = "dashboard-core"; version = $coreVersion; repo = "nreljed/dashboard-core" } | ConvertTo-Json | Set-Content -Path "storage\app\core.json" -Encoding UTF8
+          Write-Output "core.json recorded: dashboard-core $coreVersion"
 
       - name: Create deploy.zip
         shell: pwsh
@@ -176,8 +192,15 @@ jobs:
           $src = Get-Location
           $zip = "$src\deploy.zip"
           Remove-Item -Force $zip -ErrorAction SilentlyContinue
-          if (Test-Path "$src\bootstrap\cache") {
-            Move-Item "$src\bootstrap\cache" "$src\bootstrap\cache.bak"
+          # Laravel refuses to boot without bootstrap/cache existing, so the
+          # directory itself MUST ship in deploy.zip (fresh servers have nothing).
+          # Only the generated files are removed — they are rebuilt server-side by
+          # package:discover after extraction — while cache/.gitignore stays so the
+          # archive recreates the directory on fresh installs. Never move the dir
+          # aside: a .bak inside bootstrap/ gets zipped and lands on the server.
+          $cacheDir = "$src\bootstrap\cache"
+          if (Test-Path $cacheDir) {
+            Remove-Item "$cacheDir\packages.php", "$cacheDir\services.php" -Force -ErrorAction SilentlyContinue
           }
           $items = @(
             "artisan", "composer.json", "composer.lock", "package.json", "package-lock.json",
@@ -188,14 +211,31 @@ jobs:
           Compress-Archive -Path $fullPaths -DestinationPath $zip -CompressionLevel Optimal
           $size = [Math]::Round((Get-Item $zip).Length / 1MB, 1)
           Write-Output "deploy.zip created: $size MB"
-          if (Test-Path "$src\bootstrap\cache.bak") {
-            Remove-Item "$src\bootstrap\cache" -Recurse -Force -ErrorAction SilentlyContinue
-            Move-Item "$src\bootstrap\cache.bak" "$src\bootstrap\cache"
-          }
 
-      - name: Stage deploy.zip on runner disk
-        shell: bash
+      - name: Generate release notes
+        shell: pwsh
         run: |
-          mkdir -p "$DEPLOY_STAGING"
-          cp deploy.zip "$DEPLOY_STAGING/deploy.zip"
-          ls -la "$DEPLOY_STAGING"
+          npm install -g git-cliff
+          $baseTag = git tag --merged HEAD |
+            Where-Object { $_ -match '^v[0-9]+\.[0-9]+\.[0-9]+$' } |
+            Sort-Object { [version]($_ -replace '^v', '') } |
+            Select-Object -Last 1
+          if (-not $baseTag) { $baseTag = "v0.1.0" }
+          Write-Output "Release notes base: $baseTag"
+          git-cliff "$baseTag..HEAD" --strip header -o release-notes.md 2>$null
+          if (-not (Test-Path release-notes.md)) {
+            Set-Content release-notes.md "No changes for v${{ steps.version.outputs.version }}"
+          }
+          git-cliff -o CHANGELOG.md 2>$null
+
+      - name: Create GitHub Release (release assets, not Actions artifacts)
+        # Creating the release here keeps deploy.zip in release storage, which
+        # is NOT billed against the Actions artifact storage quota.
+        uses: softprops/action-gh-release@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          tag_name: "v${{ steps.version.outputs.version }}"
+          name: "v${{ steps.version.outputs.version }}"
+          body_path: release-notes.md
+          files: deploy.zip
+          fail_on_unmatched_files: true
