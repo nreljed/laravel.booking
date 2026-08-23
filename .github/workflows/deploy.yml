@@ -52,6 +52,7 @@ jobs:
           cat > .env << ENVEOF
           APP_NAME="Booking App"
           APP_ENV=local
+          VITE_APP_NAME="Booking App"
           APP_KEY=${{ secrets.APP_KEY }}
           APP_DEBUG=true
           APP_URL=http://localhost
