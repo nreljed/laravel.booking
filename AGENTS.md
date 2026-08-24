@@ -2,6 +2,26 @@
 
 A SaaS application built with Laravel + Inertia.js + React 19.
 
+## Package Model & Source of Truth (2026-08-24)
+
+Shared packages are **products**; this repo is a **consumer**. Golden rules:
+
+| Package | Source of truth (edit here) | Consumed as |
+|---------|----------------------------|-------------|
+| `dashboard-core` | `nreljed/dashboard-core` repo, developed directly | composer `^0.1` from `vendor/` |
+| `booking-module` | `nreljed/booking-module` repo | composer `^0.1` from `vendor/` |
+
+- **Never edit `vendor/`, and never push feature code to a package repo from
+  inside an app checkout.** Core changes happen via PRs in the package repo,
+  released with a semver tag.
+- Releases fan out automatically: tag → GitHub Release → `core-updated`
+  repository_dispatch → this repo's `core-update.yml`.
+- `core-update.yml` bumps `composer.lock`, runs the FULL ci suite on the
+  updated tree, opens a lock-only PR and squash-merges it immediately
+  (no branch protection exists; PR-check approval would stall). Merging fires
+  `deploy.yml`. Weekly Monday cron is the fallback trigger.
+- `composer.lock` is the pin of record — commit it whenever packages update.
+
 > **Important:** If this project was copied from another app (e.g., `shop-laravel` → `booking-laravel`), read `docs/project-setup-after-copy.md` first — the copy leaves stale APP_KEY, APP_NAME, URLs, and can confuse opencode Desktop's project registry.
 
 ## Tech Stack
