@@ -130,7 +130,7 @@ function ImageGallery({ images }: { images: PropertyImage[] }) {
       <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-muted">
         <img
           src={current.url}
-          alt={current.alt_text || currentIdx === 0 ? "Featured" : `Photo ${currentIdx}`}
+          alt={current.alt_text || (currentIdx === 0 ? "Featured" : `Photo ${currentIdx}`)}
           className="h-full w-full object-cover"
         />
         {images.length > 1 && (
