@@ -22,7 +22,7 @@ jobs:
       skip: ${{ steps.version.outputs.skip }}
     steps:
       - name: Checkout (full history for git-cliff)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
