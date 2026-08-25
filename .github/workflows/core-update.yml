@@ -36,7 +36,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # PHP 8.4 + composer are preinstalled on the self-hosted runner;
       # setup-php only makes sense on GitHub-hosted machines.
