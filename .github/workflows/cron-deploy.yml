@@ -6,13 +6,19 @@ on:
 jobs:
   check:
     runs-on: [self-hosted]
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Trigger deploy check on server
         run: |
           echo "Checking for new release on server..."
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 180 \
+          BODY=$(curl -s --max-time 180 -w "\n%{http_code}" \
             "${{ vars.APP_URL }}/deploy/check?token=${{ secrets.DEPLOY_TOKEN }}")
+          HTTP_CODE=$(echo "$BODY" | tail -1)
+          RESP=$(echo "$BODY" | sed '$d')
           echo "Server responded with HTTP $HTTP_CODE"
+          echo "$RESP"
           if [ "$HTTP_CODE" != "200" ]; then
             echo "::warning::Deploy check returned $HTTP_CODE - investigate manually"
           fi
