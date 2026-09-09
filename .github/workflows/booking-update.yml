@@ -1,0 +1,131 @@
+name: Booking Update (booking-module)
+
+on:
+  schedule:
+    # Weekly: Tuesday 09:15 UTC, matching the module publish cadence.
+    - cron: "15 9 * * 2"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [booking-updated]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: booking-update
+  cancel-in-progress: true
+
+# Flow: bump composer.lock -> FULL local validation (same suite as ci.yml)
+# -> open lock-only PR -> squash-merge immediately.
+#
+# Why validate here instead of relying on PR checks: identical rationale to
+# core-update.yml (bot PRs land in "action_required" limbo, no branch
+# protection on these repos). Validation in this job makes instant merge safe.
+
+jobs:
+  booking-update:
+    # Self-hosted runner: free minutes, immune to hosted billing blocks.
+    # Runner is Windows - pin bash explicitly.
+    runs-on: [self-hosted]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup PHP
+        if: runner.os == 'Linux'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, xml, ctype, fileinfo, sqlite3, pdo_sqlite, bcmath, zip, gd, intl
+          coverage: none
+          tools: composer:v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Update booking-module
+        env:
+          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GH_TOKEN }}"}}'
+        run: composer update nreljed/booking-module --with-dependencies --no-scripts --no-interaction
+
+      - name: Check for changes
+        id: check
+        run: |
+          if git diff --exit-code -- composer.lock > /dev/null; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "booking-module is already up to date."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "New booking-module version available."
+          fi
+
+      - name: Read resolved booking-module version
+        if: steps.check.outputs.changed == 'true'
+        id: version
+        run: |
+          VER=$(php -r 'echo json_decode(file_get_contents("vendor/nreljed/booking-module/composer.json"), true)["version"] ?? "unknown";')
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Validate - composer install
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          cp .env.example .env
+          touch database/database.sqlite
+          composer install --prefer-dist --no-interaction
+
+      - name: Validate - key generate + migrate
+        if: steps.check.outputs.changed == 'true'
+        run: php artisan key:generate && php artisan migrate --force
+
+      - name: Validate - npm install + typecheck + build
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund
+          npm run typecheck
+          npm run build
+
+      - name: Validate - PHP tests
+        if: steps.check.outputs.changed == 'true'
+        shell: bash
+        run: php -d memory_limit=512M artisan test --compact
+
+      - name: Create pull request
+        if: steps.check.outputs.changed == 'true'
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH="booking/update-v${{ steps.version.outputs.version }}"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+          git push origin --delete "$BRANCH" 2>/dev/null || true
+
+          git checkout -b "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add composer.lock
+          git commit -m "chore: update booking-module to v${{ steps.version.outputs.version }}"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --base master \
+            --head "$BRANCH" \
+            --title "chore: update booking-module to v${{ steps.version.outputs.version }}" \
+            --body "Automated update of \`nreljed/booking-module\` (\`booking-update.yml\`).
+
+            - Resolved version: v${{ steps.version.outputs.version }}
+            - Only \`composer.lock\` changed; full validation (tests, typecheck, build) ran on this exact tree before merge.
+            "
+
+      # Use the PAT (secrets.GH_TOKEN), NOT github.token: pushes made with
+      # GITHUB_TOKEN do NOT emit a `push` event (GitHub suppresses recursive
+      # workflow runs), so a github.token merge would silently skip deploy.yml.
+      - name: Merge pull request
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: gh pr merge --squash --delete-branch "${{ steps.pr.outputs.branch }}"
