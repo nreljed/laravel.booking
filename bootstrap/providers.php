@@ -8,6 +8,7 @@ use Nreljed\BookingModule\Properties\PropertiesServiceProvider;
 use Nreljed\DashboardCore\DashboardCoreServiceProvider;
 use Nreljed\DashboardCore\Posts\PostsServiceProvider;
 use Nreljed\DashboardCore\Providers\PermissionGateServiceProvider;
+use Nreljed\DashboardCore\PublicSite\PublicSiteServiceProvider;
 
 return array_filter([
 
@@ -15,9 +16,10 @@ return array_filter([
      * Package Service Providers...
      */
     DashboardCoreServiceProvider::class,
+    PostsServiceProvider::class,
+    PublicSiteServiceProvider::class,
     BookingServiceProvider::class,
     PropertiesServiceProvider::class,
-    PostsServiceProvider::class,
     PermissionGateServiceProvider::class,
 
     /*

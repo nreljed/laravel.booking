@@ -3,6 +3,7 @@
 use Nreljed\BookingModule\Booking\BookingServiceProvider;
 use Nreljed\BookingModule\Properties\PropertiesServiceProvider;
 use Nreljed\DashboardCore\Posts\PostsServiceProvider;
+use Nreljed\DashboardCore\PublicSite\PublicSiteServiceProvider;
 
 return [
 
@@ -18,6 +19,7 @@ return [
     */
 
     'providers' => [
+        PublicSiteServiceProvider::class,
         PostsServiceProvider::class,
         BookingServiceProvider::class,
         PropertiesServiceProvider::class,
@@ -37,6 +39,7 @@ return [
     */
 
     'enabled' => [
+        'public-site' => true,
         'posts' => true,
         'bookings' => true,
         'properties' => true,

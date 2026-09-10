@@ -25,6 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Middleware aliases, web-group appends and the CSRF exception list
+        // below layer project extras above the core wiring.
+        // Core middleware is wired by Nreljed\DashboardCore\DashboardCoreServiceProvider.
         $middleware->web(append: [
             ContentSecurityPolicy::class,
             HandleInertiaRequests::class,
