@@ -1,0 +1,135 @@
+name: repair-extract
+on:
+  workflow_dispatch:
+
+jobs:
+  repair:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    env:
+      FTP_PORT: ${{ secrets.FTP_PORT || '21' }}
+    steps:
+      - name: Download v1.1.0 deploy.zip asset
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          gh release download "v1.1.0" --repo "${{ github.repository }}" -p deploy.zip -D . -O deploy.zip
+          ls -la deploy.zip
+
+      - name: Write repair.php (plain PHP extractor)
+        run: |
+          cat > repair.php <<'PHPEOF'
+          <?php
+          header('Content-Type: text/plain');
+          set_time_limit(600);
+          $root = dirname(__DIR__);
+
+          function load_env_key($file, $key) {
+              if (!is_file($file)) return null;
+              foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+                  $line = trim($line);
+                  if (str_starts_with($line, $key . '=')) {
+                      return trim(trim(substr($line, strlen($key) + 1), '"\''));
+                  }
+              }
+              return null;
+          }
+
+          $expected = load_env_key($root . '/.env', 'DEPLOY_TOKEN');
+          $given = $_GET['key'] ?? '';
+          if ($expected === null || $expected === '' || !hash_equals($expected, $given)) {
+              http_response_code(403);
+              echo 'forbidden';
+              exit;
+          }
+
+          $zipPath = $root . '/deploy.zip';
+          if (!is_file($zipPath)) {
+              http_response_code(500);
+              echo 'deploy.zip missing at ' . $zipPath;
+              exit;
+          }
+
+          if (class_exists('ZipArchive')) {
+              $zip = new ZipArchive();
+              if ($zip->open($zipPath) !== true) {
+                  http_response_code(500);
+                  echo 'zip open failed';
+                  exit;
+              }
+              $ok = $zip->extractTo($root);
+              $num = $zip->numFiles;
+              $zip->close();
+          } else {
+              $cmd = 'cd ' . escapeshellarg($root) . ' && unzip -o ' . escapeshellarg($zipPath);
+              exec($cmd . ' 2>&1', $out, $rc);
+              $ok = ($rc === 0);
+              $num = count($out);
+          }
+          if (!$ok) {
+              http_response_code(500);
+              echo 'extract failed';
+              exit;
+          }
+
+          foreach (glob($root . '/bootstrap/cache/*.php') as $f) { @unlink($f); }
+          foreach (glob($root . '/storage/framework/views/*.php') as $f) { @unlink($f); }
+          foreach (glob($root . '/storage/framework/cache/data/*') as $f) { if (is_file($f)) @unlink($f); }
+
+          @unlink(__FILE__);
+          echo 'OK extracted to ' . $root . ' entries=' . $num;
+          PHPEOF
+          ls -la repair.php
+
+      - name: Upload deploy.zip + repair.php via FTP
+        run: |
+          curl -s --max-time 600 -T deploy.zip --ftp-create-dirs \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_SERVER }}:$FTP_PORT/deploy.zip" && echo "deploy.zip uploaded"
+          curl -s --max-time 120 -T repair.php --ftp-create-dirs \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_SERVER }}:$FTP_PORT/public/repair.php" && echo "public/repair.php uploaded"
+          curl -s --max-time 120 -T repair.php --ftp-create-dirs \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_SERVER }}:$FTP_PORT/repair.php" && echo "root repair.php uploaded"
+
+      - name: Execute repair.php over HTTP
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          TOKEN="${{ secrets.DEPLOY_TOKEN }}"
+          DONE=""
+          for URL in "$BASE/repair.php?key=$TOKEN" "$BASE/public/repair.php?key=$TOKEN"; do
+            RESP=$(curl -s --max-time 900 -w "\n%{http_code}" "$URL" 2>&1)
+            CODE=$(echo "$RESP" | tail -1)
+            BODY=$(echo "$RESP" | sed '$d')
+            echo "[$URL] HTTP $CODE :: $(echo "$BODY" | head -c 300)"
+            if [ "$CODE" = "200" ] && echo "$BODY" | grep -q "OK extracted"; then
+              echo "EXTRACT SUCCESS via $URL"
+              DONE="true"
+              break
+            fi
+          done
+          [ -n "$DONE" ] || { echo "::error::extraction failed on all urls"; exit 1; }
+
+      - name: Finalize via /deploy/check
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          TOKEN="${{ secrets.DEPLOY_TOKEN }}"
+          RESP=$(curl -s --max-time 900 -w "\n%{http_code}" "$BASE/deploy/check?token=$TOKEN" 2>&1)
+          CODE=$(echo "$RESP" | tail -1)
+          BODY=$(echo "$RESP" | sed '$d')
+          echo "[/deploy/check] HTTP $CODE :: $(echo "$BODY" | head -c 600)"
+
+      - name: Verify homepage
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          for i in $(seq 1 6); do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$BASE/" 2>&1)
+            echo "[poll $i] homepage HTTP $CODE"
+            if [ "$CODE" = "200" ]; then exit 0; fi
+            sleep 15
+          done
+          echo "::error::homepage did not recover"
+          exit 1
