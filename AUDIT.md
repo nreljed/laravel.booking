@@ -47,7 +47,7 @@ Also synced repo-local docs that referenced the removed workflows: `laravel`'s `
 ## 4. Warnings & Notices (what the logs actually show)
 
 1. **`::warning::Tag v$VER already exists …`** and **`::warning::GITHUB_TOKEN push NOT confirmed …`** — **false positives** (see headline). Observed on booking deploy `34516563254` which deployed v1.1.5 successfully *despite* the warning. Fix F1 removes them.
-2. **Composer deprecation: "The source-fallback option is deprecated … removed in Composer 2.11"** — real, informational. Fires for private vcs packages (no dist), e.g. dashboard-core via `vcs` installs. No action before Composer 2.11; expect it in future Composer output.
+2. **Composer deprecation: "The source-fallback option is deprecated … removed in Composer 2.11"** — real, but only `laravel.shop` enabled it: `"source-fallback": true` in its `composer.json`, which Composer 2.10+ warns about on every install (all nreljed private packages *do* have `dist` zipball URLs in the lock). **FIXED 2026-09-10**: removed the key from `laravel.shop` (`097c418`). Verified: full `composer install` of all 145 packages (incl. `nreljed/dashboard-core` 0.1.35 + `nreljed/shop-module` 0.1.11) downloads dist archives with token auth, exit 0, no warning. booking + laravel never had it.
 3. **`npm warn deprecated git-raw-commits@5.0.1`** — transitive via commitlint/conventional-changelog; harmless.
 
 ## 5. Relevant Artifacts / Discrepancies Noticed
