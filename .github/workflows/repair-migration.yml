@@ -1,0 +1,203 @@
+name: repair-migration
+on:
+  workflow_dispatch:
+
+jobs:
+  fixmigrate:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    env:
+      FTP_PORT: ${{ secrets.FTP_PORT || '21' }}
+    steps:
+      - name: Write fixdb.php (plain PHP migration bookkeeping repair)
+        run: |
+          cat > fixdb.php <<'PHPEOF'
+          <?php
+          header('Content-Type: text/plain');
+          set_time_limit(300);
+          $root = dirname(__DIR__);
+
+          function load_env_key($file, $key) {
+              if (!is_file($file)) return null;
+              foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+                  $line = trim($line);
+                  if (str_starts_with($line, $key . '=')) {
+                      return trim(trim(substr($line, strlen($key) + 1), '"\''));
+                  }
+              }
+              return null;
+          }
+
+          $expected = load_env_key($root . '/.env', 'DEPLOY_TOKEN');
+          $given = $_GET['key'] ?? '';
+          if ($expected === null || $expected === '' || !hash_equals($expected, $given)) {
+              http_response_code(403);
+              echo 'forbidden';
+              exit;
+          }
+
+          $env = $root . '/.env';
+          $host = load_env_key($env, 'DB_HOST') ?: '127.0.0.1';
+          $port = load_env_key($env, 'DB_PORT') ?: '3306';
+          $name = load_env_key($env, 'DB_DATABASE');
+          $user = load_env_key($env, 'DB_USERNAME');
+          $pass = load_env_key($env, 'DB_PASSWORD');
+          if (!$name || !$user) {
+              http_response_code(500);
+              echo 'missing DB env keys';
+              exit;
+          }
+
+          try {
+              $pdo = new PDO(
+                  "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
+                  $user,
+                  $pass,
+                  [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+              );
+          } catch (\Throwable $e) {
+              http_response_code(500);
+              echo 'db connect failed: ' . $e->getMessage();
+              exit;
+          }
+
+          function tableExists(PDO $pdo, string $table): bool {
+              try {
+                  $q = $pdo->prepare("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?");
+                  $q->execute([$table]);
+                  return (int) $q->fetchColumn() > 0;
+              } catch (\Throwable) { return false; }
+          }
+
+          function columnExists(PDO $pdo, string $table, string $column): bool {
+              if (!tableExists($pdo, $table)) return false;
+              try {
+                  $q = $pdo->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+                  $q->execute([$table, $column]);
+                  return (int) $q->fetchColumn() > 0;
+              } catch (\Throwable) { return false; }
+          }
+
+          // collect migration files shipped in this release
+          $migrationFiles = [];
+          foreach ([$root . '/database/migrations'] as $dir) {
+              if (is_dir($dir)) foreach (glob($dir . '/*.php') as $f) $migrationFiles[basename($f)] = $f;
+          }
+          $vendorCore = $root . '/vendor/nreljed/dashboard-core/src';
+          foreach (glob($vendorCore . '/*/database/migrations/*.php') as $f) $migrationFiles[basename($f)] = $f;
+          $vendorMods = glob($root . '/vendor/nreljed/*/src/*/database/migrations/*.php');
+          foreach ($vendorMods as $f) $migrationFiles[basename($f)] = $f;
+          ksort($migrationFiles);
+
+          $recorded = [];
+          foreach ($pdo->query("SELECT migration FROM migrations") as $row) $recorded[$row['migration']] = true;
+
+          $pending = array_diff_key($migrationFiles, $recorded);
+          $marked = 0;
+          $leftPending = [];
+
+          foreach ($pending as $base => $file) {
+              $code = is_file($file) ? file_get_contents($file) : '';
+              $allPresent = true;
+
+              // CREATE TABLE check
+              if (preg_match_all('/Schema::create\(\s*[\'"]([^\'"]+)[\'"]/', $code, $m)) {
+                  foreach ($m[1] as $tbl) {
+                      if (!tableExists($pdo, $tbl)) { $allPresent = false; }
+                  }
+              }
+              // ADD COLUMN checks
+              if (preg_match('/Schema::table\(\s*[\'"]([^\'"]+)[\'"]/', $code, $m) && $allPresent) {
+                  $tbl = $m[1];
+                  if (!tableExists($pdo, $tbl)) {
+                      $allPresent = false;
+                  } elseif (preg_match_all('/->(addColumn|add)\s*\([^\'"]*[\'"]([^\'"]+)[\'"]/', $code, $cm)) {
+                      foreach ($cm[2] as $col) {
+                          if (!columnExists($pdo, $tbl, $col)) { $allPresent = false; }
+                      }
+                  } elseif (preg_match_all('/\$table->(string|integer|text|boolean|decimal|unsignedInteger|datetime|timestamp|json|bigInteger|unsignedBigInteger|float|date|softDeletes|uuid|nullableMorphs)\(\s*[\'"]([^\'"]+)[\'"]/', $code, $cm)) {
+                      foreach ($cm[2] as $col) {
+                          if (!columnExists($pdo, $tbl, $col)) { $allPresent = false; }
+                      }
+                  }
+              }
+
+              if ($allPresent && trim($code) !== '') {
+                  $next = (int) $pdo->query("SELECT COALESCE(MAX(batch), 0) + 1 FROM migrations")->fetchColumn();
+                  $pdo->prepare("INSERT INTO migrations (migration, batch) VALUES (?, ?)")->execute([$base, $next]);
+                  $marked++;
+                  echo "MARKED $base (schema already present)\n";
+              } else {
+                  $leftPending[] = $base;
+                  echo "LEAVE  $base (genuinely pending)\n";
+              }
+          }
+
+          echo "---\n";
+          echo "pending_total=" . count($pending) . " marked=$marked left=" . count($leftPending) . "\n";
+          foreach ($leftPending as $l) echo "PENDING $l\n";
+          PHPEOF
+          ls -la fixdb.php
+
+      - name: Upload fixdb.php via FTP
+        run: |
+          curl -s --max-time 120 -T fixdb.php --ftp-create-dirs \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_SERVER }}:$FTP_PORT/public/fixdb.php" && echo "public/fixdb.php uploaded"
+          curl -s --max-time 120 -T fixdb.php --ftp-create-dirs \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_SERVER }}:$FTP_PORT/fixdb.php" && echo "root fixdb.php uploaded"
+
+      - name: Execute fixdb.php over HTTP
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          TOKEN="${{ secrets.DEPLOY_TOKEN }}"
+          DONE=""
+          for URL in "$BASE/fixdb.php?key=$TOKEN" "$BASE/public/fixdb.php?key=$TOKEN"; do
+            RESP=$(curl -s --max-time 120 -w "\n%{http_code}" "$URL" 2>&1)
+            CODE=$(echo "$RESP" | tail -1)
+            BODY=$(echo "$RESP" | sed '$d')
+            echo "[$URL] HTTP $CODE"
+            echo "$BODY" | head -c 2400
+            if [ "$CODE" = "200" ]; then
+              echo ""
+              echo "DB FIX RAN via $URL"
+              DONE="true"
+              break
+            fi
+          done
+          [ -n "$DONE" ] || { echo "::error::db fix failed"; exit 1; }
+
+      - name: Run /deploy/migrate
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          TOKEN="${{ secrets.DEPLOY_TOKEN }}"
+          RESP=$(curl -s --max-time 600 -w "\n%{http_code}" "$BASE/deploy/migrate?token=$TOKEN" 2>&1)
+          CODE=$(echo "$RESP" | tail -1)
+          BODY=$(echo "$RESP" | sed '$d')
+          echo "[/deploy/migrate] HTTP $CODE"
+          echo "$BODY" | head -c 800
+
+      - name: Run /deploy/cache-clear to finalize session/cache/admin
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          TOKEN="${{ secrets.DEPLOY_TOKEN }}"
+          RESP=$(curl -s --max-time 600 -w "\n%{http_code}" "$BASE/deploy/cache-clear?token=$TOKEN" 2>&1)
+          CODE=$(echo "$RESP" | tail -1)
+          BODY=$(echo "$RESP" | sed '$d')
+          echo "[/deploy/cache-clear] HTTP $CODE"
+          echo "$BODY" | head -c 1200
+
+      - name: Verify homepage
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          for i in $(seq 1 6); do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$BASE/" 2>&1)
+            echo "[poll $i] homepage HTTP $CODE"
+            if [ "$CODE" = "200" ]; then exit 0; fi
+            sleep 15
+          done
+          echo "::error::homepage did not recover"
+          exit 1
