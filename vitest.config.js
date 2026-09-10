@@ -16,6 +16,7 @@ export default defineConfig({
     test: {
         environment: "jsdom",
         globals: true,
+        passWithNoTests: true,
         include: [
             "resources/js/**/*.test.{ts,tsx}",
         ],
@@ -37,12 +38,22 @@ export default defineConfig({
         alias: {
             "@": path.resolve(__dirname, core),
             "@dashboard": path.resolve(__dirname, core),
+            "@dashboard-posts": path.resolve(
+                __dirname,
+                "./vendor/nreljed/dashboard-core/src/Posts/Resources/js"
+            ),
             "@dashboard-blog": path.resolve(
                 __dirname,
                 "./vendor/nreljed/dashboard-core/src/Blog/Resources/js"
             ),
-            "@booking": path.resolve(__dirname, "./app/Booking/Resources/js"),
-            "@properties": path.resolve(__dirname, "./app/Properties/Resources/js"),
+            "@booking": path.resolve(
+                __dirname,
+                "./vendor/nreljed/booking-module/src/Booking/Resources/js"
+            ),
+            "@properties": path.resolve(
+                __dirname,
+                "./vendor/nreljed/booking-module/src/Properties/Resources/js"
+            ),
         },
     },
 });
