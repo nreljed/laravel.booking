@@ -1,0 +1,202 @@
+name: repair-marks
+on:
+  workflow_dispatch:
+
+jobs:
+  fixmark:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    env:
+      FTP_PORT: ${{ secrets.FTP_PORT || '21' }}
+    steps:
+      - name: Write fixmark.php (deterministic migration bookkeeping repair)
+        run: |
+          cat > fixmark.php <<'PHPEOF'
+          <?php
+          header('Content-Type: text/plain');
+          set_time_limit(300);
+          $root = dirname(__DIR__);
+
+          function load_env_key($file, $key) {
+              if (!is_file($file)) return null;
+              foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+                  $line = trim($line);
+                  if (str_starts_with($line, $key . '=')) {
+                      return trim(trim(substr($line, strlen($key) + 1), '"\''));
+                  }
+              }
+              return null;
+          }
+
+          $expected = load_env_key($root . '/.env', 'DEPLOY_TOKEN');
+          $given = $_GET['key'] ?? '';
+          if ($expected === null || $expected === '' || !hash_equals($expected, $given)) {
+              http_response_code(403);
+              echo 'forbidden';
+              exit;
+          }
+
+          $env = $root . '/.env';
+          $host = load_env_key($env, 'DB_HOST') ?: '127.0.0.1';
+          $port = load_env_key($env, 'DB_PORT') ?: '3306';
+          $name = load_env_key($env, 'DB_DATABASE');
+          $user = load_env_key($env, 'DB_USERNAME');
+          $pass = load_env_key($env, 'DB_PASSWORD');
+          if (!$name || !$user) { http_response_code(500); echo 'missing DB env keys'; exit; }
+
+          try {
+              $pdo = new PDO(
+                  "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
+                  $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+              );
+          } catch (\Throwable $e) { http_response_code(500); echo 'db connect failed: ' . $e->getMessage(); exit; }
+
+          function tableExists(PDO $pdo, string $table): bool {
+              try {
+                  $q = $pdo->prepare("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?");
+                  $q->execute([$table]);
+                  return (int) $q->fetchColumn() > 0;
+              } catch (\Throwable) { return false; }
+          }
+          function columnExists(PDO $pdo, string $table, string $column): bool {
+              if (!tableExists($pdo, $table)) return false;
+              try {
+                  $q = $pdo->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+                  $q->execute([$table, $column]);
+                  return (int) $q->fetchColumn() > 0;
+              } catch (\Throwable) { return false; }
+          }
+
+          // ---- ground truth dump ----
+          $checks = [
+              ['post_tags', null],
+              ['post_tags', 'order'],
+              ['post_tags', 'description'],
+              ['post_categories', null],
+              ['post_categories', 'depth'],
+              ['posts', null],
+          ];
+          foreach ($checks as [$t, $c]) {
+              $ok = $c === null ? tableExists($pdo, $t) : columnExists($pdo, $t, $c);
+              $label = $c === null ? "TABLE $t" : "COLUMN $t.$c";
+              echo ($ok ? "PRESENT  " : "MISSING  ") . $label . "\n";
+          }
+
+          // ---- which of the blog/post migrations are recorded? ----
+          $recorded = [];
+          foreach ($pdo->query("SELECT migration, batch FROM migrations ORDER BY batch, migration") as $row) {
+              $recorded[$row['migration']] = true;
+          }
+          echo "---recorded blog/post/posts migrations---\n";
+          foreach ($recorded as $m => $_) {
+              if (str_contains($m, 'post_') || str_contains($m, 'posts_') || str_starts_with($m, '2026_07_26') || str_starts_with($m, '2026_07_23')) {
+                  echo "  " . $m . "\n";
+              }
+          }
+
+          // ---- deterministic marks ----
+          echo "---deterministic mark pass---\n";
+          $marks = [
+              // migration basename => check (table, column) required to exist BEFORE running
+              '2026_07_26_000003_add_order_to_post_tags_table.php' => ['post_tags', 'order'],
+          ];
+
+          // collect all shipped migration files, then for each *pending* (unrecorded) file that
+          // is a Schema::table ADD column whose target column already exists, mark it.
+          $migrationFiles = [];
+          if (is_dir($root . '/database/migrations')) foreach (glob($root . '/database/migrations/*.php') as $f) $migrationFiles[basename($f)] = $f;
+          foreach (glob($root . '/vendor/nreljed/dashboard-core/src/*/database/migrations/*.php') as $f) $migrationFiles[basename($f)] = $f;
+          foreach (glob($root . '/vendor/nreljed/*/src/*/database/migrations/*.php') as $f) $migrationFiles[basename($f)] = $f;
+          ksort($migrationFiles);
+
+          $pending = array_diff_key($migrationFiles, $recorded);
+          foreach ($pending as $base => $file) {
+              // explicit rules first
+              if (isset($marks[$base])) {
+                  [$t, $c] = $marks[$base];
+                  if (tableExists($pdo, $t) && columnExists($pdo, $t, $c)) {
+                      $next = (int) $pdo->query("SELECT COALESCE(MAX(batch), 0) + 1 FROM migrations")->fetchColumn();
+                      $pdo->prepare("INSERT INTO migrations (migration, batch) VALUES (?, ?)")->execute([$base, $next]);
+                      echo "MARKED (rule) $base\n";
+                  } else {
+                      echo "NOT MARKED (rule fails check) $base\n";
+                  }
+                  continue;
+              }
+
+              // generic rule: Schema::table ADD-COLUMN migrations only; if the table exists and ALL
+              // typed columns already exist, record it without running (it is a no-op rename artifact).
+              $code = @file_get_contents($file) ?: '';
+              if (preg_match('/Schema::table\(\s*[\'"]([^\'"]+)[\'"]/', $code, $m)) {
+                  $tbl = $m[1];
+                  if (tableExists($pdo, $tbl)
+                      && preg_match_all('/\$table->(string|integer|text|boolean|decimal|unsignedInteger|datetime|timestamp|json|bigInteger|unsignedBigInteger|float|date)\(\s*[\'"]([^\'"]+)[\'"]/', $code, $cm)) {
+                      $colsOk = true;
+                      foreach ($cm[2] as $col) { if (!columnExists($pdo, $tbl, $col)) { $colsOk = false; break; } }
+                      if ($colsOk) {
+                          $next = (int) $pdo->query("SELECT COALESCE(MAX(batch), 0) + 1 FROM migrations")->fetchColumn();
+                          $pdo->prepare("INSERT INTO migrations (migration, batch) VALUES (?, ?)")->execute([$base, $next]);
+                          echo "MARKED (generic) $base\n";
+                          continue;
+                      }
+                  }
+              }
+              echo "PENDING  $base\n";
+          }
+
+          echo "---done---\n";
+          PHPEOF
+          ls -la fixmark.php
+
+      - name: Upload fixmark.php via FTP
+        run: |
+          curl -s --max-time 120 -T fixmark.php --ftp-create-dirs \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_SERVER }}:$FTP_PORT/public/fixmark.php" && echo "public/fixmark.php uploaded"
+          curl -s --max-time 120 -T fixmark.php --ftp-create-dirs \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_SERVER }}:$FTP_PORT/fixmark.php" && echo "root fixmark.php uploaded"
+
+      - name: Execute fixmark.php over HTTP
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          TOKEN="${{ secrets.DEPLOY_TOKEN }}"
+          DONE=""
+          for URL in "$BASE/fixmark.php?key=$TOKEN" "$BASE/public/fixmark.php?key=$TOKEN"; do
+            RESP=$(curl -s --max-time 120 -w "\n%{http_code}" "$URL" 2>&1)
+            CODE=$(echo "$RESP" | tail -1)
+            BODY=$(echo "$RESP" | sed '$d')
+            echo "[$URL] HTTP $CODE"
+            echo "$BODY" | head -c 6000
+            if [ "$CODE" = "200" ]; then
+              echo ""
+              echo "FIX RAN via $URL"
+              DONE="true"
+              break
+            fi
+          done
+          [ -n "$DONE" ] || { echo "::error::fixmark failed"; exit 1; }
+
+      - name: Run /deploy/cache-clear to finalize (runs migrate --force)
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          TOKEN="${{ secrets.DEPLOY_TOKEN }}"
+          RESP=$(curl -s --max-time 600 -w "\n%{http_code}" "$BASE/deploy/cache-clear?token=$TOKEN" 2>&1)
+          CODE=$(echo "$RESP" | tail -1)
+          BODY=$(echo "$RESP" | sed '$d')
+          echo "[/deploy/cache-clear] HTTP $CODE"
+          echo "$BODY" | head -c 3000
+
+      - name: Verify homepage
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          for i in $(seq 1 6); do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$BASE/" 2>&1)
+            echo "[poll $i] homepage HTTP $CODE"
+            if [ "$CODE" = "200" ]; then exit 0; fi
+            sleep 15
+          done
+          echo "::error::homepage did not recover"
+          exit 1
