@@ -127,7 +127,7 @@ jobs:
           git commit -m "chore: update dashboard-core to v${{ steps.version.outputs.version }}"
           git push -u origin "$BRANCH"
           gh pr create \
-            --base master \
+            --base main \
             --head "$BRANCH" \
             --title "chore: update dashboard-core to v${{ steps.version.outputs.version }}" \
             --body "Automated update of \`nreljed/dashboard-core\` (\`core-update.yml\`).

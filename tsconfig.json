@@ -14,27 +14,46 @@
         "forceConsistentCasingInFileNames": false,
         "skipLibCheck": true,
         "noEmit": true,
+        "typeRoots": [
+            "./node_modules/@types"
+        ],
         "paths": {
             "@/*": ["./vendor/nreljed/dashboard-core/resources/js/*"],
             "@dashboard": ["./vendor/nreljed/dashboard-core/resources/js"],
             "@dashboard/*": ["./vendor/nreljed/dashboard-core/resources/js/*"],
+            "@dashboard-posts": ["./vendor/nreljed/dashboard-core/src/Posts/Resources/js"],
+            "@dashboard-posts/*": ["./vendor/nreljed/dashboard-core/src/Posts/Resources/js/*"],
+            "@dashboard-themes": ["./vendor/nreljed/dashboard-core/resources/themes"],
+            "@dashboard-themes/*": ["./vendor/nreljed/dashboard-core/resources/themes/*"],
             "@booking": ["./vendor/nreljed/booking-module/src/Booking/Resources/js"],
             "@booking/*": ["./vendor/nreljed/booking-module/src/Booking/Resources/js/*"],
             "@properties": ["./vendor/nreljed/booking-module/src/Properties/Resources/js"],
             "@properties/*": ["./vendor/nreljed/booking-module/src/Properties/Resources/js/*"],
-            "ziggy-js": ["./vendor/tightenco/ziggy"]
+            "ziggy-js": ["./vendor/tightenco/ziggy"],
+            "@inertiajs/core": ["./node_modules/@inertiajs/core"],
+            "@inertiajs/react": ["./node_modules/@inertiajs/react"],
+            "@inertiajs/vite": ["./node_modules/@inertiajs/vite"],
+            "react": ["./node_modules/@types/react/index.d.ts"],
+            "react/*": ["./node_modules/@types/react/*"],
+            "react-dom": ["./node_modules/@types/react-dom/index.d.ts"],
+            "react-dom/*": ["./node_modules/@types/react-dom/*"]
         }
     },
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.tsx",
         "resources/js/**/*.d.ts",
-        "app/Booking/Resources/js/**/*.ts",
-        "app/Booking/Resources/js/**/*.tsx",
-        "app/Booking/Resources/js/**/*.d.ts",
-        "app/Properties/Resources/js/**/*.ts",
-        "app/Properties/Resources/js/**/*.tsx",
-        "app/Properties/Resources/js/**/*.d.ts",
-        "vendor/nreljed/dashboard-core/resources/js/**/*.d.ts"
+        "vendor/nreljed/dashboard-core/resources/js/**/*.ts",
+        "vendor/nreljed/dashboard-core/resources/js/**/*.tsx",
+        "vendor/nreljed/dashboard-core/resources/js/**/*.d.ts",
+        "vendor/nreljed/dashboard-core/resources/themes/**/*.ts",
+        "vendor/nreljed/dashboard-core/resources/themes/**/*.tsx",
+        "vendor/nreljed/dashboard-core/resources/themes/**/*.d.ts",
+        "vendor/nreljed/dashboard-core/src/**/Resources/js/**/*.ts",
+        "vendor/nreljed/dashboard-core/src/**/Resources/js/**/*.tsx",
+        "vendor/nreljed/dashboard-core/src/**/Resources/js/**/*.d.ts",
+        "vendor/nreljed/booking-module/src/**/Resources/js/**/*.ts",
+        "vendor/nreljed/booking-module/src/**/Resources/js/**/*.tsx",
+        "vendor/nreljed/booking-module/src/**/Resources/js/**/*.d.ts"
     ]
 }

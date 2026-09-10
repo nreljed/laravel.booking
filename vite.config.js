@@ -16,7 +16,7 @@ export default defineConfig({
             ],
         refresh: [
             ...(typeof globalThis !== 'undefined' && globalThis.process?.env?.APP_ENV !== 'production'
-                ? [{ server: false, paths: ['app/Booking/Resources/js/**', 'app/Properties/Resources/js/**'] }]
+                ? [{ server: false, paths: ['vendor/nreljed/booking-module/src/**/Resources/js/**', 'vendor/nreljed/dashboard-core/resources/js/**', 'vendor/nreljed/dashboard-core/src/**/Resources/js/**'] }]
                 : []),
         ],
         }),
@@ -27,7 +27,8 @@ export default defineConfig({
     resolve: {
         alias: {
             '@dashboard': path.resolve(__dirname, './vendor/nreljed/dashboard-core/resources/js'),
-            '@dashboard-blog': path.resolve(__dirname, './vendor/nreljed/dashboard-core/src/Blog/Resources/js'),
+            '@dashboard-posts': path.resolve(__dirname, './vendor/nreljed/dashboard-core/src/Posts/Resources/js'),
+            '@dashboard-themes': path.resolve(__dirname, './vendor/nreljed/dashboard-core/resources/themes'),
             '@': path.resolve(__dirname, './vendor/nreljed/dashboard-core/resources/js'),
             '@booking': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Booking/Resources/js'),
             '@properties': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Properties/Resources/js'),
