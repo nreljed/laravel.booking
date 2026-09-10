@@ -5,6 +5,19 @@ on:
     # Weekly: Monday 09:30 UTC, offset from the dashboard-core cadence.
     - cron: "30 9 * * 1"
   workflow_dispatch:
+    # Inputs are accepted for parity with the booking-module repo's notification
+    # dispatch (it posts inputs[tag]/inputs[branch]); the lock bump is derived
+    # from composer.lock resolution, so these are informational only.
+    inputs:
+      tag:
+        description: "booking-module release tag that triggered this run"
+        required: false
+        type: string
+      branch:
+        description: "booking-module branch to update from"
+        required: false
+        type: string
+        default: main
   repository_dispatch:
     types: [booking-updated]
 
