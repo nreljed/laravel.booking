@@ -1,0 +1,204 @@
+name: repair-now
+on:
+  workflow_dispatch:
+
+jobs:
+  fixnow:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    env:
+      FTP_PORT: ${{ secrets.FTP_PORT || '21' }}
+    steps:
+      - name: Write fixnow.php (insert missing no-ext migration rows, clean bogus .php rows)
+        run: |
+          cat > fixnow.php <<'PHPEOF'
+          <?php
+          header('Content-Type: text/plain');
+          set_time_limit(300);
+          $root = dirname(__DIR__);
+
+          function load_env_key($file, $key) {
+              if (!is_file($file)) return null;
+              foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+                  $line = trim($line);
+                  if (str_starts_with($line, $key . '=')) {
+                      return trim(trim(substr($line, strlen($key) + 1), '"\''));
+                  }
+              }
+              return null;
+          }
+
+          $expected = load_env_key($root . '/.env', 'DEPLOY_TOKEN');
+          $given = $_GET['key'] ?? '';
+          if ($expected === null || $expected === '' || !hash_equals($expected, $given)) {
+              http_response_code(403); echo 'forbidden'; exit;
+          }
+
+          $env = $root . '/.env';
+          $host = load_env_key($env, 'DB_HOST') ?: '127.0.0.1';
+          $port = load_env_key($env, 'DB_PORT') ?: '3306';
+          $name = load_env_key($env, 'DB_DATABASE');
+          $user = load_env_key($env, 'DB_USERNAME');
+          $pass = load_env_key($env, 'DB_PASSWORD');
+          if (!$name || !$user) { http_response_code(500); echo 'missing DB env keys'; exit; }
+
+          try {
+              $pdo = new PDO("mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
+                  $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+          } catch (\Throwable $e) { http_response_code(500); echo 'db connect failed: ' . $e->getMessage(); exit; }
+
+          function tableExists(PDO $pdo, string $table): bool {
+              try {
+                  $q = $pdo->prepare("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?");
+                  $q->execute([$table]);
+                  return (int) $q->fetchColumn() > 0;
+              } catch (\Throwable) { return false; }
+          }
+          function columnExists(PDO $pdo, string $table, string $column): bool {
+              if (!tableExists($pdo, $table)) return false;
+              try {
+                  $q = $pdo->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+                  $q->execute([$table, $column]);
+                  return (int) $q->fetchColumn() > 0;
+              } catch (\Throwable) { return false; }
+          }
+
+          // ---- 1. clean bogus .php rows (my earlier miskeyed inserts) ----
+          $del = $pdo->exec("DELETE FROM migrations WHERE migration LIKE '%.php'");
+          echo "deleted_php_rows=$del\n";
+
+          // ---- 2. current recorded set (no-ext names) ----
+          $recorded = [];
+          foreach ($pdo->query("SELECT migration FROM migrations") as $row) $recorded[trim($row['migration'])] = true;
+          echo "recorded_count=" . count($recorded) . "\n";
+
+          // ---- 3. all shipped migration files (host + vendor packages) ----
+          $migrationFiles = [];
+          if (is_dir($root . '/database/migrations')) foreach (glob($root . '/database/migrations/*.php') as $f) $migrationFiles[$f] = true;
+          foreach (glob($root . '/vendor/nreljed/dashboard-core/src/*/database/migrations/*.php') as $f) $migrationFiles[$f] = true;
+          foreach (glob($root . '/vendor/nreljed/*/src/*/database/migrations/*.php') as $f) $migrationFiles[$f] = true;
+
+          // ---- 4. Laravel-compatible pending: basename minus .php vs recorded ----
+          echo "---laravel-pending scan---\n";
+          $inserts = [];
+          foreach (array_keys($migrationFiles) as $f) {
+              $name = basename($f, '.php'); // Laravel stores names WITHOUT .php
+              $code = @file_get_contents($f) ?: '';
+              if (isset($recorded[$name])) continue;
+
+              // decide whether its effect already exists
+              $effectExists = true;
+              if ($effectExists && preg_match_all('/Schema::create\(\s*[\'"]([^\'"]+)[\'"]/', $code, $m)) {
+                  foreach ($m[1] as $tbl) { if (!tableExists($pdo, $tbl)) { $effectExists = false; break; } }
+              }
+              if ($effectExists && preg_match('/Schema::table\(\s*[\'"]([^\'"]+)[\'"]/', $code, $m)) {
+                  $tbl = $m[1];
+                  if (!tableExists($pdo, $tbl)) {
+                      $effectExists = false;
+                  } else {
+                      $cols = [];
+                      if (preg_match_all('/->(addColumn|add)\s*\([^\'"]*[\'"]([^\'"]+)[\'"]/', $code, $cm)) $cols = $cm[2];
+                      elseif (preg_match_all('/\$table->(string|integer|text|boolean|decimal|unsignedInteger|datetime|timestamp|json|bigInteger|unsignedBigInteger|float|date|softDeletes|uuid)\(\s*[\'"]([^\'"]+)[\'"]/', $code, $cm)) $cols = $cm[2];
+                      foreach ($cols as $col) {
+                          if (!columnExists($pdo, $tbl, $col)) { $effectExists = false; break; }
+                          if ($tbl === 'post_tags' && $col === 'order' && !columnExists($pdo, $tbl, $col)) { $effectExists = false; break; }
+                      }
+                  }
+              }
+
+              if ($effectExists && trim($code) !== '') {
+                  $inserts[] = $name;
+                  echo "MARKED $name\n";
+              } else {
+                  echo "PENDING $name\n";
+              }
+          }
+
+          if ($inserts) {
+              $next = (int) $pdo->query("SELECT COALESCE(MAX(batch), 0) + 1 FROM migrations")->fetchColumn();
+              $st = $pdo->prepare("INSERT INTO migrations (migration, batch) VALUES (?, ?)");
+              foreach ($inserts as $name) $st->execute([$name, $next]);
+              echo "inserted=" . count($inserts) . " batch=$next\n";
+          } else {
+              echo "inserted=0\n";
+          }
+
+          // ---- 5. explicit guarantee for the known culprit ----
+          $culprit = '2026_07_26_000003_add_order_to_post_tags_table';
+          if (!isset($recorded[$culprit]) && columnExists($pdo, 'post_tags', 'order')) {
+              $next = (int) $pdo->query("SELECT COALESCE(MAX(batch), 0) + 1 FROM migrations")->fetchColumn();
+              $pdo->prepare("INSERT INTO migrations (migration, batch) VALUES (?, ?)")->execute([$culprit, $next]);
+              echo "GUARANTEED_MARKED $culprit (batch=$next)\n";
+          } elseif (isset($recorded[$culprit])) {
+              echo "CULPRIT_ALREADY_RECORDED $culprit\n";
+          } else {
+              echo "CULPRIT_CHECK_FAILED (order column absent?)\n";
+          }
+
+          // ---- 6. reprint pending in Laravel terms ----
+          $recorded2 = [];
+          foreach ($pdo->query("SELECT migration FROM migrations") as $row) $recorded2[trim($row['migration'])] = true;
+          $left = [];
+          foreach (array_keys($migrationFiles) as $f) {
+              $name = basename($f, '.php');
+              if (!isset($recorded2[$name])) $left[] = $name;
+          }
+          echo "---final pending (Laravel terms)---\n";
+          echo "pending_count=" . count($left) . "\n";
+          foreach ($left as $l) echo "PENDING $l\n";
+          echo "---done---\n";
+          PHPEOF
+          ls -la fixnow.php
+
+      - name: Upload fixnow.php via FTP
+        run: |
+          curl -s --max-time 120 -T fixnow.php --ftp-create-dirs \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_SERVER }}:$FTP_PORT/public/fixnow.php" && echo "public/fixnow.php uploaded"
+          curl -s --max-time 120 -T fixnow.php --ftp-create-dirs \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_SERVER }}:$FTP_PORT/fixnow.php" && echo "root fixnow.php uploaded"
+
+      - name: Execute fixnow.php over HTTP
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          TOKEN="${{ secrets.DEPLOY_TOKEN }}"
+          DONE=""
+          for URL in "$BASE/fixnow.php?key=$TOKEN" "$BASE/public/fixnow.php?key=$TOKEN"; do
+            RESP=$(curl -s --max-time 120 -w "\n%{http_code}" "$URL" 2>&1)
+            CODE=$(echo "$RESP" | tail -1)
+            BODY=$(echo "$RESP" | sed '$d')
+            echo "[$URL] HTTP $CODE"
+            echo "$BODY" | head -c 8000
+            if [ "$CODE" = "200" ]; then
+              echo ""
+              echo "FIX RAN via $URL"
+              DONE="true"
+              break
+            fi
+          done
+          [ -n "$DONE" ] || { echo "::error::fixnow failed"; exit 1; }
+
+      - name: Run /deploy/cache-clear to finalize (runs migrate --force)
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          TOKEN="${{ secrets.DEPLOY_TOKEN }}"
+          RESP=$(curl -s --max-time 600 -w "\n%{http_code}" "$BASE/deploy/cache-clear?token=$TOKEN" 2>&1)
+          CODE=$(echo "$RESP" | tail -1)
+          BODY=$(echo "$RESP" | sed '$d')
+          echo "[/deploy/cache-clear] HTTP $CODE"
+          echo "$BODY" | head -c 4000
+
+      - name: Verify homepage
+        run: |
+          BASE="${{ vars.APP_URL }}"
+          for i in $(seq 1 6); do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$BASE/" 2>&1)
+            echo "[poll $i] homepage HTTP $CODE"
+            if [ "$CODE" = "200" ]; then exit 0; fi
+            sleep 15
+          done
+          echo "::error::homepage did not recover"
+          exit 1
