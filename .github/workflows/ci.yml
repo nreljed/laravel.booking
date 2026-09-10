@@ -17,81 +17,10 @@ permissions:
 
 jobs:
   validate:
-    runs-on: self-hosted
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.4"
-          extensions: fileinfo, gd, mbstring, pdo_mysql, pdo_sqlite, intl, bcmath, zip
-          coverage: none
-          tools: composer:v2
-
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: "24"
-          cache: "npm"
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v6
-        with:
-          path: vendor
-          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
-          restore-keys: composer-${{ runner.os }}-
-
-      - name: Cache npm dependencies
-        uses: actions/cache@v6
-        with:
-          path: node_modules
-          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: npm-${{ runner.os }}-
-
-      - name: Create .env + SQLite database
-        run: |
-          cp .env.example .env
-          touch database/database.sqlite
-
-      - name: Install Composer dependencies
-        env:
-          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GH_TOKEN }}"}}'
-        run: composer install --prefer-dist --no-interaction --no-scripts
-
-      - name: Generate application key + migrate
-        run: php artisan key:generate && php artisan migrate --force
-
-      - name: Install npm dependencies
-        run: npm ci --legacy-peer-deps
-
-      - name: ESLint
-        if: ${{ !inputs.skip-npm-tests }}
-        run: npm run lint
-
-      - name: TypeScript check
-        if: ${{ !inputs.skip-npm-tests }}
-        run: npm run typecheck
-
-      - name: Prettier check
-        if: ${{ !inputs.skip-npm-tests }}
-        run: npm run format:check
-
-      - name: Frontend tests
-        if: ${{ !inputs.skip-npm-tests }}
-        run: npm run test
-
-      - name: Build frontend assets
-        if: ${{ !inputs.skip-npm-tests }}
-        run: npm run build
-
-      - name: PHP tests
-        if: ${{ !inputs.skip-php-tests }}
-        run: php -d memory_limit=512M artisan test --compact
-
-      - name: Laravel Pint
-        if: ${{ !inputs.skip-php-tests }}
-        run: vendor/bin/pint --test
+    uses: nreljed/dashboard-core/.github/workflows/consumer-ci.yml@main
+    with:
+      skip-php-tests: ${{ inputs.skip-php-tests || false }}
+      skip-npm-tests: ${{ inputs.skip-npm-tests || false }}
+      php-tests-parallel: false
+      pass-with-no-tests: false
+    secrets: inherit

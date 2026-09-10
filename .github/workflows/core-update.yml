@@ -52,7 +52,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: "26"
 
       # dashboard-core + booking-module are private vcs repos; the single
       # GH_TOKEN authenticates both clones. --no-scripts avoids booting
@@ -90,6 +90,10 @@ jobs:
           touch database/database.sqlite
           composer install --prefer-dist --no-interaction
 
+      - name: Validate — foundation check
+        if: steps.check.outputs.changed == 'true'
+        run: php scripts/foundation-check.php
+
       - name: Validate — key generate + migrate
         if: steps.check.outputs.changed == 'true'
         run: php artisan key:generate && php artisan migrate --force
@@ -98,6 +102,7 @@ jobs:
         if: steps.check.outputs.changed == 'true'
         run: |
           npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund
+          npm run check:core-deps
           npm run typecheck
           npm run build
 

@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import inertia from '@inertiajs/vite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { packageDedupes } from './vendor/nreljed/dashboard-core/vite.dedupe.js';
 
 const __dirname = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,6 +26,7 @@ export default defineConfig({
         tailwindcss(),
     ],
     resolve: {
+        dedupe: packageDedupes,
         alias: {
             '@dashboard': path.resolve(__dirname, './vendor/nreljed/dashboard-core/resources/js'),
             '@dashboard-posts': path.resolve(__dirname, './vendor/nreljed/dashboard-core/src/Posts/Resources/js'),
