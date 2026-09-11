@@ -62,16 +62,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.394.11",
+            "version": "3.395.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "0a16c43453b30b5ec4025293f33028e299cf448e"
+                "reference": "c8f42d03b697a61b4910d162d753b13d2de297fc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/0a16c43453b30b5ec4025293f33028e299cf448e",
-                "reference": "0a16c43453b30b5ec4025293f33028e299cf448e",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/c8f42d03b697a61b4910d162d753b13d2de297fc",
+                "reference": "c8f42d03b697a61b4910d162d753b13d2de297fc",
                 "shasum": ""
             },
             "require": {
@@ -153,9 +153,9 @@
             "support": {
                 "forum": "https://github.com/aws/aws-sdk-php/discussions",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.394.11"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.395.0"
             },
-            "time": "2026-09-09T18:06:19+00:00"
+            "time": "2026-09-11T18:07:54+00:00"
         },
         {
             "name": "barryvdh/laravel-dompdf",
@@ -3542,16 +3542,16 @@
         },
         {
             "name": "nreljed/dashboard-core",
-            "version": "0.1.36",
+            "version": "0.1.37",
             "source": {
                 "type": "git",
                 "url": "git@github.com:nreljed/dashboard-core.git",
-                "reference": "2914d2ca98503a6462cbf106a061ad0100306691"
+                "reference": "d66cbbe8bc280db4b9736c1155f537ca35befe6d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nreljed/dashboard-core/zipball/2914d2ca98503a6462cbf106a061ad0100306691",
-                "reference": "2914d2ca98503a6462cbf106a061ad0100306691",
+                "url": "https://api.github.com/repos/nreljed/dashboard-core/zipball/d66cbbe8bc280db4b9736c1155f537ca35befe6d",
+                "reference": "d66cbbe8bc280db4b9736c1155f537ca35befe6d",
                 "shasum": ""
             },
             "require": {
@@ -3596,7 +3596,11 @@
                 }
             ],
             "description": "Shared dashboard core platform for Laravel apps (dashboard, admin, auth, blog, AI, deploy).",
-            "time": "2026-09-11T13:35:55+00:00"
+            "support": {
+                "source": "https://github.com/nreljed/dashboard-core/tree/v0.1.37",
+                "issues": "https://github.com/nreljed/dashboard-core/issues"
+            },
+            "time": "2026-09-11T21:54:43+00:00"
         },
         {
             "name": "nunomaduro/termwind",
