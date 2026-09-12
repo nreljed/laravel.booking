@@ -9,15 +9,18 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('schedule:publish')->everyMinute();
-
 foreach (app(FeatureRegistry::class)->getAllScheduledTasks() as $task) {
+    if ($task['command'] === 'schedule:publish') {
+        continue;
+    }
+
     $schedule = Schedule::command($task['command']);
 
     $frequency = $task['frequency'];
 
     if (str_starts_with($frequency, 'every:')) {
-        $schedule->everyMinutes((int) substr($frequency, 6));
+        $minutes = (int) substr($frequency, 6);
+        $schedule->cron($minutes === 1 ? '* * * * *' : "*/{$minutes} * * * *");
     } else {
         match ($frequency) {
             'everyMinute' => $schedule->everyMinute(),
