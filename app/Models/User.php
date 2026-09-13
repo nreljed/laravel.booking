@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Nreljed\DashboardCore\Models\User as BaseUser;
+use Nreljed\Platform\Models\User as BaseUser;
 
 class User extends BaseUser
 {

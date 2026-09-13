@@ -2,7 +2,7 @@ name: Booking Update (booking-module)
 
 on:
   schedule:
-    # Weekly: Monday 09:30 UTC, offset from the dashboard-core cadence.
+    # Weekly: Monday 09:30 UTC, offset from the platform cadence.
     - cron: "30 9 * * 1"
   workflow_dispatch:
     # Inputs are accepted for parity with the booking-module repo's notification
@@ -66,7 +66,7 @@ jobs:
         with:
           node-version: "26"
 
-      # dashboard-core + booking-module are private vcs repos; the single
+      # platform + booking-module are private vcs repos; the single
       # GH_TOKEN (Contents: Read on all nreljed repos, see AGENTS.md)
       # authenticates both clones. --no-scripts avoids booting Laravel in a
       # bare checkout (no .env needed for the lock update).

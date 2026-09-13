@@ -1,9 +1,9 @@
 <?php
 
+use Nreljed\Blog\BlogServiceProvider;
 use Nreljed\BookingModule\Booking\BookingServiceProvider;
 use Nreljed\BookingModule\Properties\PropertiesServiceProvider;
-use Nreljed\DashboardCore\Posts\PostsServiceProvider;
-use Nreljed\DashboardCore\PublicSite\PublicSiteServiceProvider;
+use Nreljed\Platform\PublicSite\PublicSiteServiceProvider;
 
 return [
 
@@ -13,14 +13,14 @@ return [
     |--------------------------------------------------------------------------
     |
     | Self-contained features discovered by the shared FeatureRegistry.
-    | Posts is provided by dashboard-core; Bookings and Properties by the
+    | Posts is provided by the blog package; Bookings and Properties by the
     | booking-module package.
     |
     */
 
     'providers' => [
         PublicSiteServiceProvider::class,
-        PostsServiceProvider::class,
+        BlogServiceProvider::class,
         BookingServiceProvider::class,
         PropertiesServiceProvider::class,
     ],

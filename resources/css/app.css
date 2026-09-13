@@ -1,12 +1,12 @@
 @import "tailwindcss" source(none);
 @source "../";
-@source "../../app/Booking/Resources/js/";
-@source "../../app/Properties/Resources/js/";
-@source "../../vendor/nreljed/dashboard-core/resources/js/";
-@source "../../vendor/nreljed/dashboard-core/src/Blog/Resources/js/";
+@source "../../vendor/nreljed/platform/resources/js/";
+@source "../../vendor/nreljed/platform/resources/themes/";
+@source "../../vendor/nreljed/blog/src/Resources/js/";
+@source "../../vendor/nreljed/booking-module/src/**/Resources/js/";
 
 @import "tw-animate-css";
-@import "../../vendor/nreljed/dashboard-core/resources/css/core.css";
+@import "../../vendor/nreljed/platform/resources/css/core.css";
 
 /* Booking-specific tokens — everything else (colors, sidebar, link, cell fills,
    map markers, radii, font, prose/editor/code-block styling) lives in

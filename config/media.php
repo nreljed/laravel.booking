@@ -1,8 +1,8 @@
 <?php
 
+use Nreljed\Blog\Models\Post;
 use Nreljed\BookingModule\Properties\Models\Property;
-use Nreljed\DashboardCore\Models\User;
-use Nreljed\DashboardCore\Posts\Models\Post;
+use Nreljed\Platform\Models\User;
 
 return [
 

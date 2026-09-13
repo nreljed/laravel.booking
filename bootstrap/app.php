@@ -7,13 +7,13 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Nreljed\DashboardCore\Http\Middleware\AdminMiddleware;
-use Nreljed\DashboardCore\Http\Middleware\CheckIpAccess;
-use Nreljed\DashboardCore\Http\Middleware\CheckMaintenanceMode;
-use Nreljed\DashboardCore\Http\Middleware\CheckPermission;
-use Nreljed\DashboardCore\Http\Middleware\CheckRole;
-use Nreljed\DashboardCore\Http\Middleware\ConfigureSessionLifetime;
-use Nreljed\DashboardCore\Http\Middleware\ContentSecurityPolicy;
+use Nreljed\Platform\Http\Middleware\AdminMiddleware;
+use Nreljed\Platform\Http\Middleware\CheckIpAccess;
+use Nreljed\Platform\Http\Middleware\CheckMaintenanceMode;
+use Nreljed\Platform\Http\Middleware\CheckPermission;
+use Nreljed\Platform\Http\Middleware\CheckRole;
+use Nreljed\Platform\Http\Middleware\ConfigureSessionLifetime;
+use Nreljed\Platform\Http\Middleware\ContentSecurityPolicy;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -27,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Middleware aliases, web-group appends and the CSRF exception list
         // below layer project extras above the core wiring.
-        // Core middleware is wired by Nreljed\DashboardCore\DashboardCoreServiceProvider.
+        // Core middleware is wired by Nreljed\Platform\PlatformServiceProvider.
         $middleware->web(append: [
             ContentSecurityPolicy::class,
             HandleInertiaRequests::class,

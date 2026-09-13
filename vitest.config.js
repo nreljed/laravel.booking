@@ -2,15 +2,15 @@ import { defineConfig } from "vitest/config";
 import path from "node:path";
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { platformAliases } from "./vendor/nreljed/platform/platform.aliases.js";
+import { blogAliases } from "./vendor/nreljed/blog/blog.aliases.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const core = "./vendor/nreljed/dashboard-core/resources/js";
 
 export default defineConfig({
     server: {
         fs: {
-            allow: [realpathSync("./vendor/nreljed/dashboard-core")],
+            allow: [realpathSync("./vendor/nreljed/platform")],
         },
     },
     test: {
@@ -36,16 +36,8 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            "@": path.resolve(__dirname, core),
-            "@dashboard": path.resolve(__dirname, core),
-            "@dashboard-posts": path.resolve(
-                __dirname,
-                "./vendor/nreljed/dashboard-core/src/Posts/Resources/js"
-            ),
-            "@dashboard-blog": path.resolve(
-                __dirname,
-                "./vendor/nreljed/dashboard-core/src/Blog/Resources/js"
-            ),
+            ...platformAliases(),
+            ...blogAliases(),
             "@booking": path.resolve(
                 __dirname,
                 "./vendor/nreljed/booking-module/src/Booking/Resources/js"

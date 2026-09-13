@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Nreljed\DashboardCore\Models\Role as BaseRole;
+use Nreljed\Platform\Models\Role as BaseRole;
 
 class Role extends BaseRole
 {
