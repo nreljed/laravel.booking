@@ -2,6 +2,6 @@
 
 namespace App\Services;
 
-use Nreljed\DashboardCore\Services\SettingsService as BaseSettingsService;
+use Nreljed\Platform\Services\SettingsService as BaseSettingsService;
 
 class SettingsService extends BaseSettingsService {}

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Nreljed\DashboardCore\Models\Permission as BasePermission;
+use Nreljed\Platform\Models\Permission as BasePermission;
 
 class Permission extends BasePermission
 {

@@ -3,7 +3,7 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
-use Nreljed\DashboardCore\Services\FeatureRegistry;
+use Nreljed\Platform\Services\FeatureRegistry;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());

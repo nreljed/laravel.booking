@@ -6,15 +6,16 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "inertiajs/inertia-laravel": "^3.1",
         "intervention/image-laravel": "^4.0",
         "laravel/framework": "^13.8",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "minishlink/web-push": "^11.0",
+        "nreljed/blog": "^0.1",
         "nreljed/booking-module": "^0.1",
-        "nreljed/dashboard-core": "^0.1",
+        "nreljed/platform": "^0.1",
         "stripe/stripe-php": "^20.0",
         "barryvdh/laravel-dompdf": "^3.1",
         "tightenco/ziggy": "^2.6"
@@ -98,7 +99,11 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/nreljed/dashboard-core.git"
+            "url": "https://github.com/nreljed/platform.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/nreljed/blog.git"
         },
         {
             "type": "vcs",

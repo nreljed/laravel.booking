@@ -1,6 +1,6 @@
 import type { FoundationAppConfig, PageImport } from "@dashboard/app";
 import { registerCoreTemplates } from "@dashboard/dashboard";
-import { registerPostsPages } from "@dashboard-posts/pages";
+import { registerBlogPages } from "@blog/pages";
 import { registerBookingPages } from "@booking/pages";
 import { registerPropertiesPages } from "@properties/pages";
 
@@ -27,7 +27,7 @@ const localPages: Record<string, PageImport> = Object.fromEntries(
 export const pageConfig: FoundationAppConfig = {
   basePages: {
     ...registerCoreTemplates(),
-    ...registerPostsPages(),
+    ...registerBlogPages(),
     ...registerBookingPages(),
     ...registerPropertiesPages(),
     ...localPages,

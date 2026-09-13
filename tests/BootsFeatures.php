@@ -8,7 +8,7 @@ use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Nreljed\BookingModule\Booking\BookingServiceProvider;
 use Nreljed\BookingModule\Properties\PropertiesServiceProvider;
-use Nreljed\DashboardCore\Services\PermissionCacheService;
+use Nreljed\Platform\Services\PermissionCacheService;
 
 trait BootsFeatures
 {
