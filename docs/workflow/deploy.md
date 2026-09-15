@@ -131,7 +131,7 @@ The server will:
 3. Download `deploy.zip` from the release asset
 4. Extract over the project root
 5. Restore `.env` from backup
-6. Run: `package:discover`, `migrate --force`, `app:create-admin`, `permissions:sync`, `config:cache`, `route:cache`, `view:cache`, `storage:link`
+6. Run: `package:discover`, `migrate --force`, `app:create-admin`, `db:seed --class=RolesAndPermissionsSeeder`, `config:cache`, `route:cache`, `view:cache`, `storage:link`
 7. Create the admin user from `X-Admin-Email` / `X-Admin-Password` headers
 8. Write `.deployed-version` with the release tag
 
@@ -141,7 +141,6 @@ cd /home/USER/domains/example.com/public_html
 php artisan key:generate
 php artisan migrate --force
 php artisan db:seed --class=RolesAndPermissionsSeeder
-php artisan permissions:sync
 php artisan storage:link --force
 php artisan config:cache
 php artisan route:cache

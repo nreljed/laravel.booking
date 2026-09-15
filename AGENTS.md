@@ -8,7 +8,8 @@ Shared packages are **products**; this repo is a **consumer**. Golden rules:
 
 | Package | Source of truth (edit here) | Consumed as |
 |---------|----------------------------|-------------|
-| `dashboard-core` | `nreljed/dashboard-core` repo, developed directly | composer `^0.1` from `vendor/` |
+| `platform` | `nreljed/platform` repo, developed directly | composer `^0.1` from `vendor/` |
+| `blog` | `nreljed/blog` repo | composer `^0.1` from `vendor/` |
 | `booking-module` | `nreljed/booking-module` repo | composer `^0.1` from `vendor/` |
 
 - **Never edit `vendor/`, and never push feature code to a package repo from
@@ -52,92 +53,44 @@ Shared packages are **products**; this repo is a **consumer**. Golden rules:
 ## Architecture
 
 ```
-app/                          # Core Laravel application
+app/                          # Core Laravel application (thin host shell)
   Http/
-    Controllers/              # Core controllers (auth, admin, account, dashboard)
-      Admin/                  # User, Role, Permission, Impersonation, BulkUser, AuditLog, Session
-      Api/                    # NotificationPollController (JSON endpoints)
-      Auth/                   # Login, Register, Password, Email verification
-      AccountController.php   # Email, password, notification prefs, delete
-      AdminController.php     # Settings, System Health
-      AvatarController.php
-      DashboardController.php # Index, Stats, Notifications, switchMode
-      DeployController.php    # check, cacheClear, updateEnv
-      EmailSettingsController.php
-      NotificationTestController.php
-      ProfileController.php   # Edit, update, destroy (delegates to AccountService)
-      PublicController.php    # About, Services, Contact
-      SettingsController.php  # Edit, update, upload/delete logo
     Middleware/
       HandleInertiaRequests.php  # Shares auth, notifications, flash, userMode, canSwitchMode, sharedData, featureNavItems, userCapabilities
-      AdminMiddleware.php        # 403 if not admin
-      CheckPermission.php       # user.permission:slug middleware
-      CheckRole.php             # user.role:slug middleware
-      ContentSecurityPolicy.php
-      ForceInertiaCacheHeaders.php
   Models/
     User.php              # getDisplayNameOptions(), isAdmin(), role/permission checks, hasPermission()
-  Policies/               # Gate-based authorization
-    PostPolicy.php        # viewAny/view/create/update/delete (owner or admin)
-    ProductPolicy.php     # viewAny/view/create/update/delete (permission-based)
-    OrderPolicy.php       # viewAny/view/update (permission-based)
-    CouponPolicy.php, ProductReviewPolicy.php, ShippingMethodPolicy.php, ShippingZonePolicy.php, TaxRatePolicy.php
+    Permission.php, Role.php, Setting.php, NotificationPreference.php
   Services/
-    FeatureRegistry.php   # Lightweight aggregator of Shop/Blog service providers
-    AccountService.php    # deleteAccount()
     SettingsService.php   # DB-driven app config
-    NotificationService.php
-    DashboardService.php  # Stats + Analytics cache (5-min TTL)
-    FormattingService.php # Price formatting
-  Shop/                   # Shop domain (namespace App\Shop)
-    ShopServiceProvider.php  # Registers nav, permissions, email templates, notification types, shared data
-    Models/               # Product, Order, Cart, Coupon, Shipping*, TaxRate, Webhook, etc.
-    Controllers/          # CartController, CheckoutController, OrdersController, ProductsController, etc.
-    Services/             # InventoryService, CheckoutService, CouponService, ShippingService, TaxService, WebhookService, CurrencyService
-    Resources/js/Pages/   # Inertia page components (aliased as @shop/Pages/...)
-    Resources/js/components/  # Module-specific React components (aliased as @shop/components/...)
-    database/migrations/  # Shop-specific migrations
-  Blog/                   # Blog domain (namespace App\Blog)
-    BlogServiceProvider.php   # Registers nav, permissions, email templates, notification types, shared data
-    Models/               # Post, PostCategory, PostTag, ContentBlock
-    Controllers/          # PostController, PostCategoryController, PostTagController
-    Resources/js/Pages/   # Inertia page components (aliased as @blog/Pages/...)
-    database/migrations/  # Blog-specific migrations
+  Traits/
+    EditorContentSanitizer.php, PasswordValidationTrait.php
+  Providers/
+    AppServiceProvider.php    # Gate policies, container bindings
+    TelescopeServiceProvider.php
+
+> Everything else (controllers, middleware, policies, services, migrations, seeders,
+> dashboard/booking/blog resources) lives in the `nreljed/platform`, `nreljed/blog`
+> and `nreljed/booking-module` packages (see Feature Architecture). The host
+> `app/Http/Controllers`, `app/Shop`, `app/Blog` trees are gone —
+> edit the packages, not the host.
+
 database/
   migrations/             # Core app migrations (settings, roles, permissions, users, etc.)
-  seeders/                # DatabaseSeeder, RolesAndPermissionsSeeder, SettingsSeeder, DemoGenerator
+  seeders/                # DatabaseSeeder, RolesAndPermissionsSeeder, SettingsSeeder
 resources/js/
   Components/
-    ui/                   # shadcn/ui components + PublishSection, DateTimePicker, Field
-    shared/               # FeaturedImageSelector, TermsSelector, GalleryUploader
-    dashboard/            # KpiCard, Sparkline, RevenueChart, RecentOrdersTable, TopProductsTable
-    app-sidebar.tsx       # Sidebar from featureNavItems + groupLabel
-    nav-main.tsx          # Collapsible nav
-    nav-user.tsx          # User dropdown: theme toggle, logout
-    command-search.tsx    # Ctrl+K palette (includes nav items dynamically)
-    ThemeSwitcher.tsx     # Light/dark toggle
-    NotificationBell.tsx  # 20s polling
-  hooks/
-    use-auth.ts           # user, isAdmin, getUserInitials
-    use-notifications.ts  # Axios-based polling (not Inertia router)
+    ui/                   # shadcn/ui components (host-local)
   Layouts/
-    AuthenticatedLayout.tsx
-    AdminLayout.tsx
-    GuestLayout.tsx
-    PublicLayout.tsx
-    StoreLayout.tsx
-  Pages/
-    Dashboard/            # Index (stats/analytics), Notifications, Stats
-    Account/Edit.tsx      # Name, email, password, delete, address
-    Admin/                # Settings (tabs), System Health
-    Auth/                 # Login, Register
-    Welcome.tsx           # Landing page
+    AuthenticatedLayout.tsx, AdminLayout.tsx, GuestLayout.tsx, PublicLayout.tsx
+  Pages/                  # Host-local marketing templates; feature pages come from packages
+  page-config.ts          # pageMap = registerCoreTemplates() + registerBlogPages() + registerBookingPages() + registerPropertiesPages() + localPages
 routes/
-  web.php                 # Dashboard, admin, public, deploy routes
-  auth.php                # Breeze auth routes + profile + switch-mode
-  shop.php                # Shop dashboard routes (loaded by ShopServiceProvider)
-  shop-api.php            # Shop JSON API routes
-  blog.php                # Blog dashboard routes (loaded by BlogServiceProvider)
+  web.php                 # Host-only routes (dashboard/admin/public lives in the packages)
+  api.php, channels.php, console.php
+
+> Dashboard/admin/auth/public + feature routes are self-loaded by their package
+> providers (`nreljed/platform`, `nreljed/blog`, `nreljed/booking-module`); there
+> are no `routes/shop*.php` or `routes/blog.php` files in the host.
 
 ## Routes
 
@@ -147,17 +100,16 @@ routes/
 | `/dashboard` | auth+verified | Dashboard, Stats, Notifications, Account, Profile |
 | `/dashboard/admin` | auth+verified+admin+throttle:60,1 | Users, Roles, Permissions, Settings, System Health, Audit Logs |
 | `/dashboard/posts` | auth+verified+permission:posts.view | Posts CRUD, Categories, Tags |
-| `/dashboard/shop` | auth+verified+permission:shop.view | Products, Orders, Cart, Customers, Coupons, Reviews, Shipping, Tax, Reports, Webhooks, Attributes, Categories, Tags, Brands |
-| `/store` | none (guest) | Storefront (product grid, detail, category, cart, checkout) |
+| `/dashboard/bookings` | auth+verified+permission:bookings.view | Bookings pipeline, calendar |
+| `/dashboard/properties` | auth+verified+permission:properties.view | Property listings, terms |
 | `/deploy/...` | token | Deploy endpoints |
 | `/api/notifications/...` | auth | Notification JSON endpoints |
-| `/api/...` | auth | JSON API (products) |
 
 ## Key Patterns
 
 - **Shared props**: `HandleInertiaRequests` shares `auth.user`, `latestNotifications`, `notificationUnreadCount`, `flash`, `userMode`, `canSwitchMode`, `sharedData` (from FeatureRegistry), `featureNavItems` (with `groupLabel`), `userCapabilities`, `repeaterConfigs`, `profileFieldConfigs`, `emailSettings`, `brand`, `impersonating`
 - **Admin check**: `useAuth().isAdmin` + `admin` middleware + `User::isAdmin()`
-- **Component imports**: Use `@/Components/...` alias (NOT `@/components/...`) — Windows case-insensitive FS workaround; use `@shop` for Shop modules, `@blog` for Blog modules
+- **Component imports**: Use `@/Components/...` alias (NOT `@/components/...`) — Windows case-insensitive FS workaround; use `@nreljed/booking-module/booking/...` and `@nreljed/booking-module/properties/...` for Booking module components, `@nreljed/blog/...` for Blog (all mapped in vite.config.js + tsconfig.json)
 - **No ShadCN `asChild`**: Avoid `Slot` pattern when possible; use plain `<Link>` instead
 - **Authorization**: Route groups use `permission:{slug}` middleware. Individual create/edit/delete actions are authorized via Policy + `$this->authorize()` in controllers or FormRequest `authorize()`
 - **Policies**: Registered in `AppServiceProvider` via `Gate::policy()`
@@ -170,30 +122,39 @@ routes/
 
 ## Feature Architecture
 
-The old `app/Modules/*/` module system has been consolidated into two first-class Laravel domains:
+The old `app/Modules/*/` and `App\Shop`/`App\Blog` domains have been consolidated into three feature providers shipped by packages:
 
-| Domain | Namespace | Directory | Service Provider | Slug |
-|--------|-----------|-----------|-----------------|------|
-| Shop | `App\Shop` | `app/Shop/` | `ShopServiceProvider` | `shop` |
-| Blog | `App\Blog` | `app/Blog/` | `BlogServiceProvider` | `posts` |
+| Feature | Namespace | Directory | Service Provider | Slug |
+|---------|-----------|-----------|------------------|------|
+| Blog | `Nreljed\Blog` | `vendor/nreljed/blog/src/` (private GitHub repo `nreljed/blog`, composer pkg `nreljed/blog`, installed via VCS) | `BlogServiceProvider` | `posts` |
+| Bookings | `Nreljed\BookingModule\Booking` | `vendor/nreljed/booking-module/src/Booking/` | `BookingServiceProvider` | `bookings` |
+| Properties | `Nreljed\BookingModule\Properties` | `vendor/nreljed/booking-module/src/Properties/` | `PropertiesServiceProvider` | `properties` |
 
-Each service provider implements provider methods (`name()`, `slug()`, `version()`, `permissions()`, `getNavItems()`, `getSharedData()`, `getEmailTemplates()`, `getNotificationTypes()`, `getDashboardData()`, `onUserDelete()`) that are aggregated by `FeatureRegistry`.
+Each service provider implements `Nreljed\Platform\Contracts\FeatureProvider`: `name()`, `slug()`, `permissions()`, `getNavItems()`, `getSharedData()`, `getEmailTemplates()`, `getNotificationTypes()`, `getDashboardData()`, `onUserDelete()`, etc., aggregated by the platform `FeatureRegistry`.
 
 ### FeatureRegistry
-`App\Services\FeatureRegistry` replaces the old `ModuleRegistry`. It:
-- Collects `ShopServiceProvider` + `BlogServiceProvider` in its constructor via `app()->getProvider()`
-- Exposes `all()`, `get(string $slug)`, `getAllNavItems()`, `getAllSharedData()`, `permissions()`, etc.
+`Nreljed\Platform\Services\FeatureRegistry` (in the `nreljed/platform` package) replaces the old `ModuleRegistry`. It:
+- Collects the feature providers listed in `config/features.php` `providers` (host adds `BookingServiceProvider`/`PropertiesServiceProvider` alongside the `PublicSiteServiceProvider`/`PostsServiceProvider`/`AiServiceProvider` from the `nreljed/platform` and `nreljed/blog` packages)
+- Exposes `allProviders()`, `getModuleList()`, `getAllNavItems()`, `getAllSharedData()`, `permissions()`, `missingDependencies()`, etc. **There is NO public `get(string $slug)` method** — build slug→provider maps from `allProviders()` instead
 - Used by `HandleInertiaRequests`, `PermissionGateServiceProvider`, `DashboardService`, `FormattingService`, `NotificationTypeRegistry`, `EmailSettingsController`, and other services
 
 ### Route Loading
-Routes are loaded via conventional route files (`routes/shop.php`, `routes/blog.php`, `routes/shop-api.php`, `routes/api.php`), loaded by the providers' `boot()` method or directly via `bootstrap/app.php`. No more `HasRoutes` trait or `ModuleInterface`.
+Each feature provider self-loads its own routes from its own `Routes/` directory in `boot()`:
+- Blog: `Nreljed\Blog\BlogServiceProvider::boot()` (prefix `dashboard/posts`, name `dashboard.posts.`) + public routes (prefix `blog`)
+- Bookings: `vendor/nreljed/booking-module/src/Booking/Routes/*.php`, loaded by `BookingServiceProvider::boot()`, group `web` middleware + `permission:bookings.view` + prefixes `dashboard.bookings.`
+- Properties: `vendor/nreljed/booking-module/src/Properties/Routes/*.php`, loaded by `PropertiesServiceProvider::boot()`, prefixes `dashboard.properties.` + public (prefix `properties`)
 
 ### Frontend Page Loading
-Inertia pages are loaded via Vite glob imports in `app.tsx`:
-- `@shop/Pages/**/*.tsx` → registered under `shop/*` page keys
-- `@blog/Pages/**/*.tsx` → registered under `blog/*` page keys
+Inertia pages are loaded from package `pages.ts` kits, spread explicitly in `resources/js/page-config.ts`:
+- Core control-panel pages: `registerCoreTemplates()` from `@nreljed/platform/dashboard`
+- Blog pages: `registerBlogPages()` from `@nreljed/blog/pages` (registered under `posts/*`)
+- Booking pages: `registerBookingPages()` from `@nreljed/booking-module/booking/pages` (under `bookings/*`)
+- Properties pages: `registerPropertiesPages()` from `@nreljed/booking-module/properties/pages` (under `properties/*` + `properties/public/*`)
+- Host-local forked templates: `localPages` gathered via `import.meta.glob("./Pages/**/*.tsx")`
 
-Alias mappings: `@shop` → `app/Shop/Resources/js/`, `@blog` → `app/Blog/Resources/js/`
+The entry (`app.tsx`) imports `pageConfig` and calls `createFoundationApp(pageConfig)` — the config block is never duplicated.
+
+Alias mappings (`vite.config.js` + `tsconfig.json`): `@nreljed/platform` → `vendor/nreljed/platform/resources/js`; `@nreljed/blog` → `vendor/nreljed/blog/src/Resources/js`; `@nreljed/booking-module/booking` → `vendor/nreljed/booking-module/src/Booking/Resources/js`; `@nreljed/booking-module/properties` → `vendor/nreljed/booking-module/src/Properties/Resources/js`.
 
 ## Dev Environment
 
@@ -211,7 +172,6 @@ php artisan migrate      # Run migrations
 php artisan test         # PHPUnit
 npm run typecheck        # tsc --noEmit
 vendor/bin/pint          # Laravel Pint (PSR-12)
-php artisan permissions:sync         # Sync feature permissions to DB
 php artisan permissions:list         # List all permissions
 php artisan demo:generate            # Create realistic demo data (--fresh to clear first)
 php artisan demo:generate --fresh    # Clear all demo data and regenerate
@@ -223,7 +183,7 @@ php artisan demo:generate --fresh    # Clear all demo data and regenerate
 
 Deploys automatically on every push to `main`:
 
-**Workflow 1 — `deploy.yml`** (GitHub-hosted `windows-latest` runner):
+**Workflow 1 — `deploy.yml`** (runs-on via `RUNNER_CI`/`RUNNER_PACKAGE` Actions variables — `self-hosted` by default, flip to `ubuntu-latest`/`windows-latest` for cloud):
 1. Checkout with full depth + tags
 2. Setup PHP 8.4 (extensions: fileinfo, gd, mbstring, pdo_mysql, pdo_sqlite, intl, bcmath, zip) + Node 22 (npm cache on)
 3. git-cliff: parse commits → bump semver → generate CHANGELOG.md + release-notes.md
@@ -377,7 +337,6 @@ See also: `app/Console/Commands/CreateAdmin.php`, `DEPLOY.md`
 ```bash
 php artisan migrate
 php artisan db:seed --class=RolesAndPermissionsSeeder
-php artisan permissions:sync
 ```
 
 Then run typecheck + build + phpunit and deliver the results. Do not wait for user approval to deploy — automate the full pipeline.
