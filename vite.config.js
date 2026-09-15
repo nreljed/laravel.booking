@@ -5,8 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 import inertia from '@inertiajs/vite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { platformAliases, platformRefreshGlobs } from './vendor/nreljed/platform/platform.aliases.js';
-import { blogAliases, blogRefreshGlobs } from './vendor/nreljed/blog/blog.aliases.js';
+import { platformRefreshGlobs } from './vendor/nreljed/platform/platform.aliases.js';
+import { blogRefreshGlobs } from './vendor/nreljed/blog/blog.aliases.js';
 import { packageDedupes } from './vendor/nreljed/platform/vite.dedupe.js';
 
 const __dirname = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
@@ -32,15 +32,14 @@ export default defineConfig({
     resolve: {
         dedupe: packageDedupes,
         alias: {
-            ...platformAliases(),
-            ...blogAliases(),
-            '@dashboard-themes': path.resolve(__dirname, './vendor/nreljed/platform/resources/themes'),
-            '@booking': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Booking/Resources/js'),
-            '@properties': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Properties/Resources/js'),
             '@nreljed/platform': path.resolve(__dirname, './vendor/nreljed/platform/resources/js'),
             '@nreljed/platform/*': path.resolve(__dirname, './vendor/nreljed/platform/resources/js'),
             '@nreljed/blog': path.resolve(__dirname, './vendor/nreljed/blog/src/Resources/js'),
             '@nreljed/blog/*': path.resolve(__dirname, './vendor/nreljed/blog/src/Resources/js'),
+            '@nreljed/booking-module/booking': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Booking/Resources/js'),
+            '@nreljed/booking-module/booking/*': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Booking/Resources/js'),
+            '@nreljed/booking-module/properties': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Properties/Resources/js'),
+            '@nreljed/booking-module/properties/*': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Properties/Resources/js'),
         },
     },
     build: {
@@ -51,7 +50,6 @@ export default defineConfig({
                 manualChunks(id) {
                     if (id.includes('Components/ui/')) return 'ui-kit';
                     if (id.includes('node_modules/react')) return 'react-vendor';
-                    if (id.includes('node_modules/@base-ui')) return 'baseui-vendor';
                     if (id.includes('node_modules/lucide-react')) return 'icons-vendor';
                     if (id.includes('node_modules/@inertiajs')) return 'inertia-vendor';
                     if (id.includes('node_modules/leaflet')) return 'leaflet-vendor';
@@ -60,6 +58,7 @@ export default defineConfig({
                     if (id.includes('node_modules/@zxcvbn-ts')) return 'zxcvbn-vendor';
                     if (id.includes('node_modules/react-phone-number-input') || id.includes('node_modules/libphonenumber-js')) return 'phone-vendor';
                     if (id.includes('node_modules/react-hook-form')) return 'forms-vendor';
+                    if (id.includes('node_modules/@base-ui')) return 'baseui-vendor';
                 },
             },
         },
