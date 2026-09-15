@@ -37,6 +37,10 @@ export default defineConfig({
             '@dashboard-themes': path.resolve(__dirname, './vendor/nreljed/platform/resources/themes'),
             '@booking': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Booking/Resources/js'),
             '@properties': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Properties/Resources/js'),
+            '@nreljed/platform': path.resolve(__dirname, './vendor/nreljed/platform/resources/js'),
+            '@nreljed/platform/*': path.resolve(__dirname, './vendor/nreljed/platform/resources/js'),
+            '@nreljed/blog': path.resolve(__dirname, './vendor/nreljed/blog/src/Resources/js'),
+            '@nreljed/blog/*': path.resolve(__dirname, './vendor/nreljed/blog/src/Resources/js'),
         },
     },
     build: {

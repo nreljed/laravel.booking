@@ -29,6 +29,8 @@
             "@booking/*": ["./vendor/nreljed/booking-module/src/Booking/Resources/js/*"],
             "@properties": ["./vendor/nreljed/booking-module/src/Properties/Resources/js"],
             "@properties/*": ["./vendor/nreljed/booking-module/src/Properties/Resources/js/*"],
+            "@nreljed/platform/*": ["./vendor/nreljed/platform/resources/js/*"],
+            "@nreljed/blog/*": ["./vendor/nreljed/blog/src/Resources/js/*"],
             "ziggy-js": ["./vendor/tightenco/ziggy"],
             "@inertiajs/core": ["./node_modules/@inertiajs/core"],
             "@inertiajs/react": ["./node_modules/@inertiajs/react"],
