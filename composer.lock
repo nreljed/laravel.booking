@@ -3552,16 +3552,16 @@
         },
         {
             "name": "nreljed/booking-module",
-            "version": "0.1.40",
+            "version": "0.1.41",
             "source": {
                 "type": "git",
                 "url": "git@github.com:nreljed/booking-module.git",
-                "reference": "c60220d2354e8f48baa173603616bb33763edf8e"
+                "reference": "678b3abd61192a01cebce5914b73388b847b1bab"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nreljed/booking-module/zipball/c60220d2354e8f48baa173603616bb33763edf8e",
-                "reference": "c60220d2354e8f48baa173603616bb33763edf8e",
+                "url": "https://api.github.com/repos/nreljed/booking-module/zipball/678b3abd61192a01cebce5914b73388b847b1bab",
+                "reference": "678b3abd61192a01cebce5914b73388b847b1bab",
                 "shasum": ""
             },
             "require": {
@@ -3570,6 +3570,7 @@
                 "php": "^8.4"
             },
             "require-dev": {
+                "fakerphp/faker": "^1.24",
                 "mockery/mockery": "^1.6",
                 "nunomaduro/collision": "^8.6",
                 "phpunit/phpunit": "^13.0"
@@ -3603,10 +3604,10 @@
             ],
             "description": "Booking & properties feature for the Nreljed dashboard platform (property listings, availability calendar, bookings pipeline, guest portal, iCal sync, payments).",
             "support": {
-                "source": "https://github.com/nreljed/booking-module/tree/v0.1.40",
+                "source": "https://github.com/nreljed/booking-module/tree/v0.1.41",
                 "issues": "https://github.com/nreljed/booking-module/issues"
             },
-            "time": "2026-09-15T17:37:47+00:00"
+            "time": "2026-09-21T18:34:15+00:00"
         },
         {
             "name": "nreljed/platform",
