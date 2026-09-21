@@ -3556,12 +3556,12 @@
             "source": {
                 "type": "git",
                 "url": "git@github.com:nreljed/booking-module.git",
-                "reference": "ec9b4ad9ff9f085bd87b6ccc08e4d115308d8280"
+                "reference": "c60220d2354e8f48baa173603616bb33763edf8e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nreljed/booking-module/zipball/ec9b4ad9ff9f085bd87b6ccc08e4d115308d8280",
-                "reference": "ec9b4ad9ff9f085bd87b6ccc08e4d115308d8280",
+                "url": "https://api.github.com/repos/nreljed/booking-module/zipball/c60220d2354e8f48baa173603616bb33763edf8e",
+                "reference": "c60220d2354e8f48baa173603616bb33763edf8e",
                 "shasum": ""
             },
             "require": {
@@ -3606,7 +3606,7 @@
                 "source": "https://github.com/nreljed/booking-module/tree/v0.1.40",
                 "issues": "https://github.com/nreljed/booking-module/issues"
             },
-            "time": "2026-09-15T17:09:04+00:00"
+            "time": "2026-09-15T17:37:47+00:00"
         },
         {
             "name": "nreljed/platform",
