@@ -2,21 +2,21 @@
 
 A SaaS booking application built with Laravel 13 + Inertia.js 3 + React 19 — a
 **thin consumer** of the `nreljed/platform` shared platform with the
-`nreljed/blog` + `nreljed/booking-module` feature packages.
+`nreljed/booking-module` feature package.
 
 ## Architecture: package consumer
 
-- **PHP side:** `nreljed/platform`, `nreljed/blog` and `nreljed/booking-module`
+- **PHP side:** `nreljed/platform` and `nreljed/booking-module`
   are Composer vcs installs from GitHub into `vendor/`, pinned by
   `composer.lock` (the pin of record — commit it whenever packages update).
 - The dashboard, admin panel, auth, account, notifications, settings, deploy
   pipeline and the feature-provider layer all live in the platform package;
-  blog (posts) and booking (bookings + properties) features ship as packages.
+  booking (bookings + properties) features ship as a package.
 - The host keeps only thin-shell wiring: `app/` (Models, Services, Traits,
   Providers), public marketing templates in `resources/js/Pages/`, and the
   `page-config.ts` page map.
 - **Never edit `vendor/`** — package sources live in their own repos
-  (`nreljed/platform`, `nreljed/blog`, `nreljed/booking-module`). Changes go
+  (`nreljed/platform`, `nreljed/booking-module`). Changes go
   through PRs + semver tags there; consumers pull via `composer update`.
 
 ## Requirements
@@ -97,12 +97,11 @@ permissions, nav items, dashboard data and frontend pages.
 
 | Feature    | Slug         | Permissions                          | Frontend Pages                                        |
 | ---------- | ------------ | ------------------------------------ | ----------------------------------------------------- |
-| Blog       | `posts`      | `posts.view`, `posts.create`, `posts.edit`, `posts.delete` | Posts, Categories, Tags              |
 | Bookings   | `bookings`   | `bookings.view`, ...                 | Bookings pipeline, Calendar, Guest portal             |
 | Properties | `properties` | `properties.view`, ...               | Listings, Terms, Public storefront pages              |
 
 Frontend page kits are registered in `resources/js/page-config.ts`:
-`registerCoreTemplates()` (platform), `registerBlogPages()`, `registerBookingPages()`,
+`registerCoreTemplates()` (platform), `registerBookingPages()`,
 `registerPropertiesPages()`, spread into a single `basePages` map in the order above.
 
 ## Development Commands
@@ -126,7 +125,7 @@ test --parallel --compact` (parallel PHPUnit via paratest).
 
 Deploys automatically on push to `main` via the shared check-first pipeline
 (GitHub Actions → Release → token-protected `/deploy/*` endpoints). The unified
-GH_TOKEN covers platform/blog/booking-module clones so package updates flow
+GH_TOKEN covers platform/booking-module clones so package updates flow
 through `composer update` PRs. See `DEPLOY.md` and `AGENTS.md`.
 
 ## License

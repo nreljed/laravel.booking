@@ -1,4 +1,4 @@
-name: Core Update (nreljed/platform + blog)
+name: Core Update (nreljed/platform + booking-module)
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
     - cron: "0 9 * * 1"
   workflow_dispatch:
   repository_dispatch:
-    types: [core-updated, blog-updated]
+    types: [core-updated]
 
 permissions:
   contents: write
@@ -56,13 +56,13 @@ jobs:
         with:
           node-version: "26"
 
-      # nreljed/platform + nreljed/blog are private vcs repos; the single
-      # GH_TOKEN authenticates the clone. --no-scripts avoids booting Laravel
-      # in a bare checkout (no .env needed for the lock update).
-      - name: Update nreljed/platform + nreljed/blog
+      # nreljed/platform + nreljed/booking-module are private vcs repos; the
+      # single GH_TOKEN authenticates the clone. --no-scripts avoids booting
+      # Laravel in a bare checkout (no .env needed for the lock update).
+      - name: Update nreljed/platform + nreljed/booking-module
         env:
           COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GH_TOKEN }}"}}'
-        run: composer update nreljed/platform nreljed/blog --with-dependencies --no-scripts --no-interaction
+        run: composer update nreljed/platform nreljed/booking-module --with-dependencies --no-scripts --no-interaction
 
       - name: Check for changes
         id: check
@@ -151,7 +151,7 @@ jobs:
             --base main \
             --head "$BRANCH" \
             --title "chore: update nreljed/platform to v${{ steps.version.outputs.version }}" \
-            --body "Automated update of \`nreljed/platform\` + \`nreljed/blog\` (\`core-update.yml\`).
+            --body "Automated update of \`nreljed/platform\` + \`nreljed/booking-module\` (\`core-update.yml\`).
 
             - Resolved platform version: v${{ steps.version.outputs.version }}
             - Only \`composer.lock\` changed; full validation (tests, typecheck, build) ran on this exact tree before merge.

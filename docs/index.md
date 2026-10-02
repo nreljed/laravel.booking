@@ -23,7 +23,6 @@
 |--------|-----------|------|-------------|
 | [Properties](modules/properties.md) | Full module reference | `properties` | none |
 | [Booking](modules/booking.md) | Full module reference | `bookings` | `properties` |
-| [Posts](modules/posts/index.md) | [Controllers](modules/posts/controllers.md) · [Frontend](modules/posts/frontend.md) | `posts` | none |
 
 ## Frontend
 

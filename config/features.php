@@ -1,6 +1,5 @@
 <?php
 
-use Nreljed\Blog\BlogServiceProvider;
 use Nreljed\BookingModule\Booking\BookingServiceProvider;
 use Nreljed\BookingModule\Properties\PropertiesServiceProvider;
 use Nreljed\Platform\PublicSite\PublicSiteServiceProvider;
@@ -13,14 +12,12 @@ return [
     |--------------------------------------------------------------------------
     |
     | Self-contained features discovered by the shared FeatureRegistry.
-    | Posts is provided by the blog package; Bookings and Properties by the
-    | booking-module package.
+    | Bookings and Properties are provided by the booking-module package.
     |
     */
 
     'providers' => [
         PublicSiteServiceProvider::class,
-        BlogServiceProvider::class,
         BookingServiceProvider::class,
         PropertiesServiceProvider::class,
     ],
@@ -40,7 +37,6 @@ return [
 
     'enabled' => [
         'public-site' => true,
-        'posts' => true,
         'bookings' => true,
         'properties' => true,
     ],

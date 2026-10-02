@@ -6,7 +6,6 @@ import inertia from '@inertiajs/vite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { platformRefreshGlobs } from './vendor/nreljed/platform/platform.aliases.js';
-import { blogRefreshGlobs } from './vendor/nreljed/blog/blog.aliases.js';
 import { packageDedupes } from './vendor/nreljed/platform/vite.dedupe.js';
 
 const __dirname = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
@@ -21,7 +20,6 @@ export default defineConfig({
                 'resources/js/**',
                 'app/**/Resources/js/**',
                 ...platformRefreshGlobs(),
-                ...blogRefreshGlobs(),
                 'vendor/nreljed/booking-module/src/**/Resources/js/**',
             ],
         }),
@@ -34,8 +32,6 @@ export default defineConfig({
         alias: {
             '@nreljed/platform': path.resolve(__dirname, './vendor/nreljed/platform/resources/js'),
             '@nreljed/platform/*': path.resolve(__dirname, './vendor/nreljed/platform/resources/js'),
-            '@nreljed/blog': path.resolve(__dirname, './vendor/nreljed/blog/src/Resources/js'),
-            '@nreljed/blog/*': path.resolve(__dirname, './vendor/nreljed/blog/src/Resources/js'),
             '@nreljed/booking-module/booking': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Booking/Resources/js'),
             '@nreljed/booking-module/booking/*': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Booking/Resources/js'),
             '@nreljed/booking-module/properties': path.resolve(__dirname, './vendor/nreljed/booking-module/src/Properties/Resources/js'),

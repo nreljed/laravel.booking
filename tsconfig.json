@@ -19,7 +19,6 @@
         ],
         "paths": {
             "@nreljed/platform/*": ["./vendor/nreljed/platform/resources/js/*"],
-            "@nreljed/blog/*": ["./vendor/nreljed/blog/src/Resources/js/*"],
             "@nreljed/booking-module/booking/*": ["./vendor/nreljed/booking-module/src/Booking/Resources/js/*"],
             "@nreljed/booking-module/properties/*": ["./vendor/nreljed/booking-module/src/Properties/Resources/js/*"],
             "ziggy-js": ["./vendor/tightenco/ziggy"],
@@ -41,9 +40,6 @@
         "vendor/nreljed/platform/resources/js/**/*.d.ts",
         "vendor/nreljed/platform/src/**/Resources/js/**/*.ts",
         "vendor/nreljed/platform/src/**/Resources/js/**/*.tsx",
-        "vendor/nreljed/platform/src/**/Resources/js/**/*.d.ts",
-        "vendor/nreljed/blog/src/Resources/js/**/*.ts",
-        "vendor/nreljed/blog/src/Resources/js/**/*.tsx",
-        "vendor/nreljed/blog/src/Resources/js/**/*.d.ts"
+        "vendor/nreljed/platform/src/**/Resources/js/**/*.d.ts"
     ]
 }

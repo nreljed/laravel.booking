@@ -9,7 +9,6 @@ Shared packages are **products**; this repo is a **consumer**. Golden rules:
 | Package | Source of truth (edit here) | Consumed as |
 |---------|----------------------------|-------------|
 | `platform` | `nreljed/platform` repo, developed directly | composer `^0.1` from `vendor/` |
-| `blog` | `nreljed/blog` repo | composer `^0.1` from `vendor/` |
 | `booking-module` | `nreljed/booking-module` repo | composer `^0.1` from `vendor/` |
 
 - **Never edit `vendor/`, and never push feature code to a package repo from
@@ -69,9 +68,9 @@ app/                          # Core Laravel application (thin host shell)
     TelescopeServiceProvider.php
 
 > Everything else (controllers, middleware, policies, services, migrations, seeders,
-> dashboard/booking/blog resources) lives in the `nreljed/platform`, `nreljed/blog`
-> and `nreljed/booking-module` packages (see Feature Architecture). The host
-> `app/Http/Controllers`, `app/Shop`, `app/Blog` trees are gone —
+> dashboard/booking resources) lives in the `nreljed/platform` and
+> `nreljed/booking-module` packages (see Feature Architecture). The host
+> `app/Http/Controllers` and `app/Shop` trees are gone —
 > edit the packages, not the host.
 
 database/
@@ -83,13 +82,13 @@ resources/js/
   Layouts/
     AuthenticatedLayout.tsx, AdminLayout.tsx, GuestLayout.tsx, PublicLayout.tsx
   Pages/                  # Host-local marketing templates; feature pages come from packages
-  page-config.ts          # pageMap = registerCoreTemplates() + registerBlogPages() + registerBookingPages() + registerPropertiesPages() + localPages
+  page-config.ts          # pageMap = registerCoreTemplates() + registerBookingPages() + registerPropertiesPages() + localPages
 routes/
   web.php                 # Host-only routes (dashboard/admin/public lives in the packages)
   api.php, channels.php, console.php
 
 > Dashboard/admin/auth/public + feature routes are self-loaded by their package
-> providers (`nreljed/platform`, `nreljed/blog`, `nreljed/booking-module`); there
+> providers (`nreljed/platform`, `nreljed/booking-module`); there
 > are no `routes/shop*.php` or `routes/blog.php` files in the host.
 
 ## Routes
@@ -99,7 +98,6 @@ routes/
 | `/` | none (guest) | Welcome, About, Services, Contact |
 | `/dashboard` | auth+verified | Dashboard, Stats, Notifications, Account, Profile |
 | `/dashboard/admin` | auth+verified+admin+throttle:60,1 | Users, Roles, Permissions, Settings, System Health, Audit Logs |
-| `/dashboard/posts` | auth+verified+permission:posts.view | Posts CRUD, Categories, Tags |
 | `/dashboard/bookings` | auth+verified+permission:bookings.view | Bookings pipeline, calendar |
 | `/dashboard/properties` | auth+verified+permission:properties.view | Property listings, terms |
 | `/deploy/...` | token | Deploy endpoints |
@@ -109,7 +107,7 @@ routes/
 
 - **Shared props**: `HandleInertiaRequests` shares `auth.user`, `latestNotifications`, `notificationUnreadCount`, `flash`, `userMode`, `canSwitchMode`, `sharedData` (from FeatureRegistry), `featureNavItems` (with `groupLabel`), `userCapabilities`, `repeaterConfigs`, `profileFieldConfigs`, `emailSettings`, `brand`, `impersonating`
 - **Admin check**: `useAuth().isAdmin` + `admin` middleware + `User::isAdmin()`
-- **Component imports**: Use `@/Components/...` alias (NOT `@/components/...`) — Windows case-insensitive FS workaround; use `@nreljed/booking-module/booking/...` and `@nreljed/booking-module/properties/...` for Booking module components, `@nreljed/blog/...` for Blog (all mapped in vite.config.js + tsconfig.json)
+- **Component imports**: Use `@/Components/...` alias (NOT `@/components/...`) — Windows case-insensitive FS workaround; use `@nreljed/booking-module/booking/...` and `@nreljed/booking-module/properties/...` for Booking module components (all mapped in vite.config.js + tsconfig.json)
 - **No ShadCN `asChild`**: Avoid `Slot` pattern when possible; use plain `<Link>` instead
 - **Authorization**: Route groups use `permission:{slug}` middleware. Individual create/edit/delete actions are authorized via Policy + `$this->authorize()` in controllers or FormRequest `authorize()`
 - **Policies**: Registered in `AppServiceProvider` via `Gate::policy()`
@@ -122,11 +120,10 @@ routes/
 
 ## Feature Architecture
 
-The old `app/Modules/*/` and `App\Shop`/`App\Blog` domains have been consolidated into three feature providers shipped by packages:
+The old `app/Modules/*/` and `App\Shop` domains have been consolidated into two feature providers shipped by packages:
 
 | Feature | Namespace | Directory | Service Provider | Slug |
 |---------|-----------|-----------|------------------|------|
-| Blog | `Nreljed\Blog` | `vendor/nreljed/blog/src/` (private GitHub repo `nreljed/blog`, composer pkg `nreljed/blog`, installed via VCS) | `BlogServiceProvider` | `posts` |
 | Bookings | `Nreljed\BookingModule\Booking` | `vendor/nreljed/booking-module/src/Booking/` | `BookingServiceProvider` | `bookings` |
 | Properties | `Nreljed\BookingModule\Properties` | `vendor/nreljed/booking-module/src/Properties/` | `PropertiesServiceProvider` | `properties` |
 
@@ -134,27 +131,25 @@ Each service provider implements `Nreljed\Platform\Contracts\FeatureProvider`: `
 
 ### FeatureRegistry
 `Nreljed\Platform\Services\FeatureRegistry` (in the `nreljed/platform` package) replaces the old `ModuleRegistry`. It:
-- Collects the feature providers listed in `config/features.php` `providers` (host adds `BookingServiceProvider`/`PropertiesServiceProvider` alongside the `PublicSiteServiceProvider`/`PostsServiceProvider`/`AiServiceProvider` from the `nreljed/platform` and `nreljed/blog` packages)
+- Collects the feature providers listed in `config/features.php` `providers` (host adds `BookingServiceProvider`/`PropertiesServiceProvider` alongside the `PublicSiteServiceProvider`/`AiServiceProvider` from the `nreljed/platform` package)
 - Exposes `allProviders()`, `getModuleList()`, `getAllNavItems()`, `getAllSharedData()`, `permissions()`, `missingDependencies()`, etc. **There is NO public `get(string $slug)` method** — build slug→provider maps from `allProviders()` instead
 - Used by `HandleInertiaRequests`, `PermissionGateServiceProvider`, `DashboardService`, `FormattingService`, `NotificationTypeRegistry`, `EmailSettingsController`, and other services
 
 ### Route Loading
 Each feature provider self-loads its own routes from its own `Routes/` directory in `boot()`:
-- Blog: `Nreljed\Blog\BlogServiceProvider::boot()` (prefix `dashboard/posts`, name `dashboard.posts.`) + public routes (prefix `blog`)
 - Bookings: `vendor/nreljed/booking-module/src/Booking/Routes/*.php`, loaded by `BookingServiceProvider::boot()`, group `web` middleware + `permission:bookings.view` + prefixes `dashboard.bookings.`
 - Properties: `vendor/nreljed/booking-module/src/Properties/Routes/*.php`, loaded by `PropertiesServiceProvider::boot()`, prefixes `dashboard.properties.` + public (prefix `properties`)
 
 ### Frontend Page Loading
 Inertia pages are loaded from package `pages.ts` kits, spread explicitly in `resources/js/page-config.ts`:
 - Core control-panel pages: `registerCoreTemplates()` from `@nreljed/platform/dashboard`
-- Blog pages: `registerBlogPages()` from `@nreljed/blog/pages` (registered under `posts/*`)
 - Booking pages: `registerBookingPages()` from `@nreljed/booking-module/booking/pages` (under `bookings/*`)
 - Properties pages: `registerPropertiesPages()` from `@nreljed/booking-module/properties/pages` (under `properties/*` + `properties/public/*`)
 - Host-local forked templates: `localPages` gathered via `import.meta.glob("./Pages/**/*.tsx")`
 
 The entry (`app.tsx`) imports `pageConfig` and calls `createFoundationApp(pageConfig)` — the config block is never duplicated.
 
-Alias mappings (`vite.config.js` + `tsconfig.json`): `@nreljed/platform` → `vendor/nreljed/platform/resources/js`; `@nreljed/blog` → `vendor/nreljed/blog/src/Resources/js`; `@nreljed/booking-module/booking` → `vendor/nreljed/booking-module/src/Booking/Resources/js`; `@nreljed/booking-module/properties` → `vendor/nreljed/booking-module/src/Properties/Resources/js`.
+Alias mappings (`vite.config.js` + `tsconfig.json`): `@nreljed/platform` → `vendor/nreljed/platform/resources/js`; `@nreljed/booking-module/booking` → `vendor/nreljed/booking-module/src/Booking/Resources/js`; `@nreljed/booking-module/properties` → `vendor/nreljed/booking-module/src/Properties/Resources/js`.
 
 ## Dev Environment
 

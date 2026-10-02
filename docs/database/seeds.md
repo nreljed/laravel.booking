@@ -20,8 +20,7 @@ php artisan demo:generate [--fresh]
         ├── createCoupons()                — 6 coupons (WELCOME10, FLAT5, FREESHIP, etc.)
         ├── createOrders()                 — 18 orders across all statuses
         ├── createProductReviews()         — 11 reviews (some pending moderation)
-        ├── createStockHistory()           — stock adjustments for 5 products
-        └── createBlogPosts() (commented)  — 5 blog posts with categories/tags
+        └── createStockHistory()           — stock adjustments for 5 products
 
 php artisan shop:product-seed
   └── ShopProductSeeder.php
@@ -43,7 +42,7 @@ php artisan app:create-admin
 
 | Component | What it does | Idempotent? |
 |-----------|-------------|-------------|
-| `RolesAndPermissionsSeeder` | Creates 4 roles + 11 core permissions. Migrates old `crm_user` → `customer`. Admin gets all perms; other roles get core (dashboard, profile, notifications). Module perms (shop.*, posts.*) are NOT seeded here — they come from `modules:sync-permissions` | Yes (`firstOrCreate`) |
+| `RolesAndPermissionsSeeder` | Creates 4 roles + 11 core permissions. Migrates old `crm_user` → `customer`. Admin gets all perms; other roles get core (dashboard, profile, notifications). Module perms (bookings.*, properties.*) are NOT seeded here — they come from `modules:sync-permissions` | Yes (`firstOrCreate`) |
 | User factory (x4) | Creates `nstudio` (admin), `shop_owner`, `shop_manager`, `customer` — all password `azerty123/*` | No (creates every run) |
 | `SettingsSeeder` | 25 settings across 7 groups (general, registration, notifications, security, email, maintenance, localization, formatting) | Yes (`firstOrCreate`) |
 | `CurrencySeeder` | 4 currencies (EUR default, USD, GBP, TND) | Yes (`updateOrInsert`) |
@@ -118,7 +117,7 @@ Called automatically by `DeployController::check()` during deploy via the webhoo
 | `php artisan db:seed --class=RolesAndPermissionsSeeder` | Syncs feature permissions from platform + module `permissions()` catalogs to DB (idempotent) |
 | `php artisan permissions:list` | Lists all registered permissions with their features |
 
-Module permissions (e.g., `bookings.*`, `properties.*`, `posts.*`) are defined in each package's `ServiceProvider::permissions()`. They are seeded to the database and attached to roles by `RolesAndPermissionsSeeder`, and gates auto-register from the `permissions` table plus `FeatureRegistry::permissions()`.
+Module permissions (e.g., `bookings.*`, `properties.*`) are defined in each package's `ServiceProvider::permissions()`. They are seeded to the database and attached to roles by `RolesAndPermissionsSeeder`, and gates auto-register from the `permissions` table plus `FeatureRegistry::permissions()`.
 
 ## Idempotency Summary
 

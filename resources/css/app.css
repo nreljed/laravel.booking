@@ -2,7 +2,6 @@
 @source "../";
 @source "../../vendor/nreljed/platform/resources/js/";
 @source "../../vendor/nreljed/platform/resources/themes/";
-@source "../../vendor/nreljed/blog/src/Resources/js/";
 @source "../../vendor/nreljed/booking-module/src/**/Resources/js/";
 
 @import "tw-animate-css";

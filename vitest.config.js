@@ -3,7 +3,6 @@ import path from "node:path";
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { platformAliases } from "./vendor/nreljed/platform/platform.aliases.js";
-import { blogAliases } from "./vendor/nreljed/blog/blog.aliases.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -37,7 +36,6 @@ export default defineConfig({
     resolve: {
         alias: {
             ...platformAliases(),
-            ...blogAliases(),
             "@booking": path.resolve(
                 __dirname,
                 "./vendor/nreljed/booking-module/src/Booking/Resources/js"

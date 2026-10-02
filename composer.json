@@ -13,7 +13,6 @@
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "minishlink/web-push": "^11.0",
-        "nreljed/blog": "^0.1",
         "nreljed/booking-module": "^0.1",
         "nreljed/platform": "^0.1",
         "stripe/stripe-php": "^20.0",
@@ -101,10 +100,6 @@
         {
             "type": "vcs",
             "url": "https://github.com/nreljed/platform.git"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/nreljed/blog.git"
         },
         {
             "type": "vcs",
