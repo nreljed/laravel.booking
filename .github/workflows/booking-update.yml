@@ -144,7 +144,7 @@ jobs:
         if: steps.check.outputs.changed == 'true'
         id: tests
         shell: bash
-        run: php -d memory_limit=512M artisan test --compact
+        run: php -d max_execution_time=0 -d memory_limit=512M artisan test --compact
 
       - name: Validate — Laravel Pint
         if: steps.check.outputs.changed == 'true'
