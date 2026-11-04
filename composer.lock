@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "024ede873ad81c4221be2c94e0ad3042",
+    "content-hash": "c776caceaf579decebfdc59b99f6ec2b",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -3349,21 +3349,21 @@
         },
         {
             "name": "nreljed/booking-module",
-            "version": "0.1.43",
+            "version": "0.1.44",
             "source": {
                 "type": "git",
                 "url": "git@github.com:nreljed/booking-module.git",
-                "reference": "99d60467ef9e33b0b4268d16371f8e26a0e6821a"
+                "reference": "6d5f1bf2f831cf5228dceba61ffdf6de13801f42"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nreljed/booking-module/zipball/99d60467ef9e33b0b4268d16371f8e26a0e6821a",
-                "reference": "99d60467ef9e33b0b4268d16371f8e26a0e6821a",
+                "url": "https://api.github.com/repos/nreljed/booking-module/zipball/6d5f1bf2f831cf5228dceba61ffdf6de13801f42",
+                "reference": "6d5f1bf2f831cf5228dceba61ffdf6de13801f42",
                 "shasum": ""
             },
             "require": {
                 "laravel/framework": "^13.0",
-                "nreljed/platform": "^0.2",
+                "nreljed/platform": ">=0.2 <1.0",
                 "php": "^8.4"
             },
             "require-dev": {
@@ -3401,10 +3401,10 @@
             ],
             "description": "Booking & properties feature for the Nreljed dashboard platform (property listings, availability calendar, bookings pipeline, guest portal, iCal sync, payments).",
             "support": {
-                "source": "https://github.com/nreljed/booking-module/tree/v0.1.43",
+                "source": "https://github.com/nreljed/booking-module/tree/v0.1.44",
                 "issues": "https://github.com/nreljed/booking-module/issues"
             },
-            "time": "2026-11-01T11:29:18+00:00"
+            "time": "2026-11-04T11:15:02+00:00"
         },
         {
             "name": "nreljed/platform",
